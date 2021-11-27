@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+include/lorawan_creds.h
+.pio
+.vscode
+.ccls-cache
