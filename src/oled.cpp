@@ -178,13 +178,10 @@ void oled_display_page_gps_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN
         last_gps_data_timestamp = millis();
     }
     snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "GPS sats: %d HDOP: %f", last_gps_data.satellites, last_gps_data.hdop);
-    if (last_gps_data.valid_time)
+    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "UTC%d-%02d-%02d %02d:%02d:%02d", last_gps_data.utc_year, last_gps_data.utc_month, last_gps_data.utc_day, last_gps_data.utc_hour, last_gps_data.utc_minute, last_gps_data.utc_second);
+    if (!last_gps_data.valid_time)
     {
-        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "UTC%d-%02d-%02d %02d:%02d:%02d", last_gps_data.utc_year, last_gps_data.utc_month, last_gps_data.utc_day, last_gps_data.utc_hour, last_gps_data.utc_minute, last_gps_data.utc_second);
-    }
-    else
-    {
-        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Acquiring time...");
+        snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Acquiring time...");
     }
     if (last_gps_data.valid_pos)
     {
@@ -216,7 +213,7 @@ void oled_display_page_gps_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN
     }
     else
     {
-        snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Acquiring position...");
+        snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Acquiring position...");
     }
 }
 
@@ -234,8 +231,8 @@ void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LE
 {
     snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Diagnosis info");
     snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Heap usage: %d/%dKB", (ESP.getHeapSize() - ESP.getFreeHeap()) / 1024, ESP.getHeapSize() / 1024);
-    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Batt: %.2fv Charging: %s", float(power_get_battery_millivolt()) / 1000.0, power_is_batt_charging() ? "Y" : "N");
-    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "RSSI: %d SNR: %d", LMIC.rssi, LMIC.snr);
+    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Bat: %.3fv Charging: %s", float(power_get_battery_millivolt()) / 1000.0, power_is_batt_charging() ? "Y" : "N");
+    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "LoRa RSSI: %d SNR: %d", LMIC.rssi, LMIC.snr);
     snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Pkts: %d up %d dn", LMIC.seqnoUp, LMIC.seqnoDn);
     snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "GPS: read %luB", gps_get_chars_processed());
 }
