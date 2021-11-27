@@ -188,25 +188,27 @@ void oled_display_page_gps_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN
     }
     if (last_gps_data.valid_pos)
     {
+        double latitude = last_gps_data.latitude;
         char north_south = 'N';
-        if (last_gps_data.latitude < 0)
+        if (latitude < 0)
         {
             north_south = 'S';
-            last_gps_data.latitude = -last_gps_data.latitude;
+            latitude = -latitude;
         }
+        double longitude = last_gps_data.longitude;
         char east_west = 'E';
-        if (last_gps_data.longitude < 0)
+        if (longitude < 0)
         {
             east_west = 'W';
-            last_gps_data.longitude = -last_gps_data.longitude;
+            longitude = -longitude;
         }
         // Convert coordinates from DD.DDDDDD to DD MM SS.
         double lat_d, lat_m, lat_s, throw_away;
-        lat_m = modf(last_gps_data.latitude, &lat_d) * 60;
+        lat_m = modf(latitude, &lat_d) * 60;
         lat_s = modf(lat_m, &throw_away) * 60;
         snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Lat: %c %dd %dm %ds", north_south, (int)lat_d, (int)lat_m, (int)lat_s);
         double lon_d, lon_m, lon_s;
-        lon_m = modf(last_gps_data.longitude, &lon_d) * 60;
+        lon_m = modf(longitude, &lon_d) * 60;
         lon_s = modf(lon_m, &throw_away) * 60;
         snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Lon: %c %dd %dm %ds", east_west, (int)lon_d, (int)lon_m, (int)lon_s);
         snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Spd: %.0fkm/h Hdg: %.0f", last_gps_data.speed_kmh, last_gps_data.heading_deg);
