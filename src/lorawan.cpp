@@ -268,6 +268,7 @@ void lorawan_prepare_uplink_transmission()
     {
       hdop = 256;
     }
+    pkt.writeInteger(hdop, 1);
     // Byte 43 - number of GPS satellites in view.
     pkt.writeInteger(gps.satellites, 1);
     lorawan_set_next_transmission(pkt.content, pkt.cursor, LORAWAN_PORT_STATUS);
