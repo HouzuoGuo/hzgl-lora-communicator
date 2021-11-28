@@ -6,6 +6,7 @@
 #include "i2c.h"
 #include "lorawan.h"
 #include "oled.h"
+#include "wifi.h"
 #include "power_management.h"
 
 static const char LOG_TAG[] = __FILE__;
@@ -51,7 +52,7 @@ int oled_get_last_morse_input_page_num()
 
 void oled_go_to_next_page()
 {
-    if (++curr_page_num == 6)
+    if (++curr_page_num == 7)
     {
         curr_page_num = OLED_PAGE_RX_INFO;
     }
@@ -227,6 +228,17 @@ void oled_display_page_env_sensor_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_L
     snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Alt(rel.std): %.2fm", data.altitude_metre);
 }
 
+void oled_display_page_env_wifi_sniffer_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
+{
+    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "WiFi monitor chan#%d", wifi_get_channel_num());
+    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Loudest sender chan#%d:", wifi_get_last_loudest_sender_channel());
+    uint8_t *loudest_sender_mac = wifi_get_last_loudest_sender_mac();
+    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "%02x:%02x:%02x:%02x:%02x:%02x", loudest_sender_mac[0], loudest_sender_mac[1], loudest_sender_mac[2], loudest_sender_mac[3], loudest_sender_mac[4], loudest_sender_mac[5]);
+    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Loudest RSSI: %d", wifi_get_last_loudest_sender_rssi());
+    snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Pkts (all.chan.): %d", wifi_get_total_pkts());
+    snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "Total rounds: %lu", wifi_get_round_num());
+}
+
 void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
     snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Diagnosis info");
@@ -260,6 +272,9 @@ void oled_display_refresh()
         break;
     case OLED_PAGE_ENV_SENSOR_INFO:
         oled_display_page_env_sensor_info(lines);
+        break;
+    case OLED_PAGE_WIFI_INFO:
+        oled_display_page_env_wifi_sniffer_info(lines);
         break;
     case OLED_PAGE_DIAGNOSIS:
         oled_display_page_diagnosis(lines);
