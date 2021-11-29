@@ -81,7 +81,7 @@ void oled_display_page_rx_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN 
     }
     if (last_transmission.timestamp_millis > 0)
     {
-        if (morse_signals.length() == 0 && morse_message.length() == 0)
+        if (morse_signals.length() == 0 && morse_message.length() == 0 || last_morse_input_page_num == 0)
         {
             snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Last check in: %lus ago", last_tx);
         }
