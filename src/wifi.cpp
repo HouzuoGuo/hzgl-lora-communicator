@@ -16,7 +16,7 @@ static const wifi_promiscuous_filter_t pkt_filter = {.filter_mask = WIFI_PROMIS_
 static wifi_country_t wifi_country_params = {"EU", 1, WIFI_MAX_CHANNEL_NUM, 100, WIFI_COUNTRY_POLICY_MANUAL};
 
 static uint8_t last_loudest_sender[6], loudest_sender[6];
-static int last_loudest_rssi = -100, loudest_rssi = -100;
+static int last_loudest_rssi = WIFI_RSSI_FLOOR, loudest_rssi = WIFI_RSSI_FLOOR;
 static size_t last_loudest_channel = 0, loudest_channel = 0;
 
 void wifi_setup()
@@ -69,7 +69,7 @@ void wifi_next_channel()
         last_loudest_channel = loudest_channel;
         memcpy(last_loudest_sender, loudest_sender, sizeof(uint8_t) * 6);
         // Reset the stats for the new round.
-        loudest_rssi = -100;
+        loudest_rssi = WIFI_RSSI_FLOOR;
         loudest_channel = 0;
         memset(loudest_sender, 0, sizeof(loudest_sender));
     }

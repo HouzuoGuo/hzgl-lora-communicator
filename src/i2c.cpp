@@ -10,9 +10,12 @@ static SemaphoreHandle_t i2c_mutex;
 void i2c_setup()
 {
     i2c_mutex = xSemaphoreCreateMutex();
-    if (Wire.begin(I2C_SDA, I2C_SCL) ) {
+    if (Wire.begin(I2C_SDA, I2C_SCL))
+    {
         ESP_LOGI(LOG_TAG, "successfully initialised I2C");
-    } else {
+    }
+    else
+    {
         ESP_LOGI(LOG_TAG, "failed to initialise I2C");
     }
 }

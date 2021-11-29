@@ -6,6 +6,7 @@
 
 #define WIFI_TASK_LOOP_DELAY_MS 250
 #define WIFI_MAX_CHANNEL_NUM 13
+#define WIFI_RSSI_FLOOR (-100)
 
 typedef struct
 {

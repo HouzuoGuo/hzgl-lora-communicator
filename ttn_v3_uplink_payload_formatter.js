@@ -52,6 +52,15 @@ function decodeUplink(input) {
         data.hdop = buf[i++];
         // Byte 43 - number of GPS satellites in view.
         data.sats = buf[i++];
+        // Byte 44 - WiFi monitor - the loudest sender's channel.
+        data.wifi_loudest_tx_chan = buf[i++];
+        // Byte 45 - WiFi monitor - the loudest sender's RSSI.
+        data.wifi_loudest_tx_rssi = -100 + buf[i++];
+        // Byte 46, 47, 48, 49, 50, 51 - WiFi monitor - the loudest sender's mac.
+        data.wifi_loudest_tx_mac = buf[i].toString(16) + ':' + buf[i + 1].toString(16) + ':' + buf[i + 2].toString(16) + ':' + buf[i + 3].toString(16) + ':' + buf[i + 4].toString(16) + ':' + buf[i + 5].toString(16);
+        i += 6;
+        // Byte 52 - WiFi monitor - number of inflight packets across all channels
+        data.wifi_inflight_pkts_all_chans = buf[i++];
     }
     return {
         data: data,

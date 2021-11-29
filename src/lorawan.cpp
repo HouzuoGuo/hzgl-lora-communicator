@@ -10,6 +10,7 @@
 #include "hardware_facts.h"
 #include "i2c.h"
 #include "lorawan.h"
+#include "wifi.h"
 #include "lorawan_creds.h"
 #include "oled.h"
 #include "power_management.h"
@@ -271,6 +272,23 @@ void lorawan_prepare_uplink_transmission()
     pkt.writeInteger(hdop, 1);
     // Byte 43 - number of GPS satellites in view.
     pkt.writeInteger(gps.satellites, 1);
+    // Byte 44 - WiFi monitor - the loudest sender's channel.
+    pkt.writeInteger(wifi_get_last_loudest_sender_channel(), 1);
+    // Byte 45 - WiFi monitor - the loudest sender's RSSI reading above RSSI floor (which is -100).
+    int loudest_rssi = wifi_get_last_loudest_sender_rssi();
+    if (loudest_rssi < -100)
+    {
+      loudest_rssi = -100;
+    }
+    pkt.writeInteger(loudest_rssi - WIFI_RSSI_FLOOR, 1);
+    // Byte 46, 47, 48, 49, 50, 51 - WiFi monitor - the loudest sender's mac.
+    uint8_t *sender_mac = wifi_get_last_loudest_sender_mac();
+    for (int i = 0; i < 6; ++i)
+    {
+      pkt.writeInteger(sender_mac[i], 1);
+    }
+    // Byte 52 - WiFi monitor - number of inflight packets across all channels
+    pkt.writeInteger(wifi_get_total_pkts(), 1);
     lorawan_set_next_transmission(pkt.content, pkt.cursor, LORAWAN_PORT_STATUS);
     ESP_LOGI(LOG_TAG, "going to transmit status and sensor readings in %d bytes", pkt.cursor);
   }
