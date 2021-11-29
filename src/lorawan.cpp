@@ -164,7 +164,7 @@ void lorawan_setup()
   // Do not lower transmission power automatically. According to The Things Network this feature is tricky to use.
   LMIC_setAdrMode(0);
   // Set the "max clock error to compensate for" to 10%.
-  LMIC_setClockError(MAX_CLOCK_ERROR * 10 / 100);
+  LMIC_setClockError(MAX_CLOCK_ERROR * 20 / 100);
 
   // The transmitter is activated by personalisation (i.e. static keys), so it has already "joined" the network.
   lorawan_handle_message(EV_JOINED);
@@ -194,7 +194,7 @@ lorawan_message_buf_t lorawan_get_transmission()
 
 void lorawan_prepare_uplink_transmission()
 {
-  if (tx_counter++ % 2 == 0)
+  if (tx_counter % 2 == 0)
   {
     // Transmit the text message/command in each even round.
     String morse_message = gp_button_get_morse_message_buf();
@@ -303,7 +303,15 @@ void lorawan_transceive()
   {
     lorawan_prepare_uplink_transmission();
     last_transmision_timestamp = millis();
-    LMIC_setTxData2(next_tx_message.port, next_tx_message.buf, next_tx_message.len, false);
+    lmic_tx_error_t err = LMIC_setTxData2_strict(next_tx_message.port, next_tx_message.buf, next_tx_message.len, false);
+    if (err == LMIC_ERROR_SUCCESS)
+    {
+      tx_counter++;
+    }
+    else
+    {
+      ESP_LOGI(LOG_TAG, "failed to transmit LoRaWAN message, error status code is %d.", err);
+    }
     if (LMIC.opmode & OP_TXRXPEND)
     {
       // My gut feeling says this state exists simply for avoiding to exceed duty cycle limit.

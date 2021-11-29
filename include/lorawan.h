@@ -22,7 +22,7 @@
 // LORAWAN_PORT_STATUS is the numeric port number used for transmitting system status and sensor readings.
 #define LORAWAN_PORT_STATUS 119
 // lorawan_transmission_interval_ms is the interval to wait in between two routine uplink transmissions.
-static const unsigned long LORAWAN_TRANSMISSION_INTERVAL_MS = (30 * 1000);
+#define LORAWAN_TRANSMISSION_INTERVAL_MS 15000
 
 // LORAWAN_MAX_MESSAGE_LEN is the length never exceeded by a message received from or transmitted to The Things Network.
 static const size_t LORAWAN_MAX_MESSAGE_LEN = 256;
