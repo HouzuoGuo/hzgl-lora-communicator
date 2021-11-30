@@ -12,6 +12,7 @@ struct env_data latest;
 
 void env_sensor_setup()
 {
+    memset(&latest, 0, sizeof(latest));
     i2c_lock();
     if (bme.begin(BME280_I2C_ADDR))
     {
@@ -31,6 +32,11 @@ void env_sensor_read_decode()
     latest.humidity_pct = bme.readHumidity();
     latest.pressure_hpa = bme.readPressure() / 100;
     latest.temp_celcius = bme.readTemperature();
+    if (latest.humidity_pct == 0 && latest.pressure_hpa == 0 && latest.temp_celcius == 0)
+    {
+        // Otherwise it will read 44330m.
+        latest.altitude_metre = 0;
+    }
     i2c_unlock();
 }
 
