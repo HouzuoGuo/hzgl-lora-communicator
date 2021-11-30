@@ -54,7 +54,7 @@ function decodeUplink(input) {
         // Byte 19 - number of GPS satellites in view.
         data.sats = buf[i++];
         // Byte 20 - WiFi monitor - number of inflight packets across all channels.
-        data.wifi_loudest_tx_chan = buf[i++];
+        data.wifi_inflight_pkts_all_chans = buf[i++];
         // Byte 21 - WiFi monitor - the loudest sender's channel.
         data.wifi_loudest_tx_chan = buf[i++];
         // Byte 22 - WiFi monitor - the loudest sender's RSSI reading above RSSI floor (which is -100).
