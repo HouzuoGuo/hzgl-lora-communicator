@@ -81,7 +81,7 @@ void oled_display_page_rx_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN 
     }
     if (last_transmission.timestamp_millis > 0)
     {
-        if (morse_signals.length() == 0 && morse_message.length() == 0 || last_morse_input_page_num == 0)
+        if ((morse_signals.length() == 0 && morse_message.length() == 0) || last_morse_input_page_num == 0)
         {
             snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Last check in: %lus ago", last_tx);
         }
@@ -241,11 +241,11 @@ void oled_display_page_env_wifi_sniffer_info(char lines[OLED_MAX_NUM_LINES][OLED
 
 void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
-    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Diagnosis info");
-    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Heap usage: %d/%dKB", (ESP.getHeapSize() - ESP.getFreeHeap()) / 1024, ESP.getHeapSize() / 1024);
-    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Bat: %.3fv Charging: %s", float(power_get_battery_millivolt()) / 1000.0, power_is_batt_charging() ? "Y" : "N");
-    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "LoRa RSSI: %d SNR: %d", LMIC.rssi, LMIC.snr);
-    snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Pkts: %d up %d dn", LMIC.seqnoUp, LMIC.seqnoDn);
+    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Heap usage: %d/%dKB", (ESP.getHeapSize() - ESP.getFreeHeap()) / 1024, ESP.getHeapSize() / 1024);
+    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Bat: %.3fv Charging: %s", float(power_get_battery_millivolt()) / 1000.0, power_is_batt_charging() ? "Y" : "N");
+    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "LoRa: RSSI %d SNR %d", LMIC.rssi, LMIC.snr);
+    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Pkts: %d up %d dn", LMIC.seqnoUp, LMIC.seqnoDn);
+    snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Data: %dB up %dB dn", lorawan_get_total_tx_bytes(), lorawan_get_total_rx_bytes());
     snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "GPS: read %luB", gps_get_chars_processed());
 }
 
@@ -296,8 +296,8 @@ void oled_task_loop(void *_)
 {
     while (true)
     {
+        esp_task_wdt_reset();
         vTaskDelay(pdMS_TO_TICKS(OLED_TASK_LOOP_DELAY_MS));
         oled_display_refresh();
-        esp_task_wdt_reset();
     }
 }

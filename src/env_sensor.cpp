@@ -43,8 +43,8 @@ void env_sensor_task_loop(void *_)
 {
     while (true)
     {
+        esp_task_wdt_reset();
         vTaskDelay(pdMS_TO_TICKS(ENV_SENSOR_TASK_LOOP_DELAY_MS));
         env_sensor_read_decode();
-        esp_task_wdt_reset();
     }
 }

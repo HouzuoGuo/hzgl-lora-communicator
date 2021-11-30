@@ -12,6 +12,7 @@
 #include "wifi.h"
 
 static const char LOG_TAG[] = __FILE__;
+static TaskHandle_t wifi_task, env_sensor_task, gps_task, lorawan_task, oled_task, gp_button_task, power_task;
 
 void setup()
 {
@@ -32,30 +33,40 @@ void setup()
   // Keey an eye on the setup itself too.
   esp_task_wdt_add(NULL);
 
-  TaskHandle_t wifi_task, env_sensor_task, gps_task, lorawan_task, oled_task, gp_button_task, power_task;
   unsigned long priority = tskIDLE_PRIORITY;
   // ESP32 uses the first core (core 0) to handle wifi and BT radio, leaving the second core available for other tasks.
   // The higher the priority number, the higher the task priority.
-  xTaskCreatePinnedToCore(wifi_task_loop, "wifi_task_loop", 16 * 1024, NULL, priority++, &wifi_task, 1);
+  // The stack capacity is very generous - they are more than 4x the actual usage.
+  xTaskCreatePinnedToCore(wifi_task_loop, "wifi_task_loop", 4 * 1024, NULL, priority++, &wifi_task, 1);
   esp_task_wdt_add(wifi_task);
-  xTaskCreatePinnedToCore(env_sensor_task_loop, "env_sensor_task_loop", 16 * 1024, NULL, priority++, &env_sensor_task, 1);
+  xTaskCreatePinnedToCore(env_sensor_task_loop, "env_sensor_task_loop", 8 * 1024, NULL, priority++, &env_sensor_task, 1);
   esp_task_wdt_add(env_sensor_task);
-  xTaskCreatePinnedToCore(gps_task_loop, "gps_task_loop", 16 * 1024, NULL, priority++, &gps_task, 1);
+  xTaskCreatePinnedToCore(gps_task_loop, "gps_task_loop", 4 * 1024, NULL, priority++, &gps_task, 1);
   esp_task_wdt_add(gps_task);
-  xTaskCreatePinnedToCore(lorawan_task_loop, "lorawan_task_loop", 32 * 1024, NULL, priority++, &lorawan_task, 1);
+  xTaskCreatePinnedToCore(lorawan_task_loop, "lorawan_task_loop", 16 * 1024, NULL, priority++, &lorawan_task, 1);
   esp_task_wdt_add(lorawan_task);
-  xTaskCreatePinnedToCore(oled_task_loop, "oled_task_loop", 32 * 1024, NULL, priority++, &oled_task, 1);
+  xTaskCreatePinnedToCore(oled_task_loop, "oled_task_loop", 16 * 1024, NULL, priority++, &oled_task, 1);
   esp_task_wdt_add(oled_task);
   xTaskCreatePinnedToCore(gp_button_task_loop, "gp_button_task_loop", 8 * 1024, NULL, priority++, &gp_button_task, 1);
   esp_task_wdt_add(gp_button_task);
-  xTaskCreatePinnedToCore(power_task_loop, "power_task_loop", 16 * 1024, NULL, priority++, &power_task, 1);
+  xTaskCreatePinnedToCore(power_task_loop, "power_task_loop", 8 * 1024, NULL, priority++, &power_task, 1);
   esp_task_wdt_add(power_task);
   ESP_LOGI(LOG_TAG, "setup completed");
 }
 
 void loop()
 {
-  // The loop simply yields to all other tasks.
-  vTaskDelay(pdMS_TO_TICKS(10 * 1000));
+  // The loop is mainly for regular housekeeping.
   esp_task_wdt_reset();
+  vTaskDelay(pdMS_TO_TICKS(20 * 1000));
+  ESP_LOGI(TAG, "heap usage: free - %dKB, min - %dKB, capacity - %dKB, maxalloc: %dKB, min.free stack: %dKB",
+           ESP.getFreeHeap() / 1024, ESP.getMinFreeHeap() / 1024, ESP.getHeapSize() / 1024,
+           ESP.getMaxAllocHeap() / 1024, uxTaskGetStackHighWaterMark(NULL) / 1024);
+  ESP_LOGI(TAG, "wifi task state: %d, min.free stack: %dKB", eTaskGetState(wifi_task), uxTaskGetStackHighWaterMark(wifi_task));
+  ESP_LOGI(TAG, "sensor task state: %d, min.free stack: %dKB", eTaskGetState(env_sensor_task), uxTaskGetStackHighWaterMark(env_sensor_task));
+  ESP_LOGI(TAG, "gps task state: %d, min.free stack: %dKB", eTaskGetState(gps_task), uxTaskGetStackHighWaterMark(gps_task));
+  ESP_LOGI(TAG, "lorawan task state: %d, min.free stack: %dKB", eTaskGetState(lorawan_task), uxTaskGetStackHighWaterMark(lorawan_task));
+  ESP_LOGI(TAG, "oled task state: %d, min.free stack: %dKB", eTaskGetState(oled_task), uxTaskGetStackHighWaterMark(oled_task));
+  ESP_LOGI(TAG, "GP button task state: %d, min.free stack: %dKB", eTaskGetState(gp_button_task), uxTaskGetStackHighWaterMark(gp_button_task));
+  ESP_LOGI(TAG, "power task state: %d, min.free stack: %dKB", eTaskGetState(power_task), uxTaskGetStackHighWaterMark(power_task));
 }

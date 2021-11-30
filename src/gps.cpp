@@ -82,9 +82,9 @@ void gps_task_loop(void *_)
 {
     while (true)
     {
+        esp_task_wdt_reset();
         vTaskDelay(pdMS_TO_TICKS(GPS_TASK_LOOP_DELAY_MS));
         gps_read_decode();
-        esp_task_wdt_reset();
     }
 }
 

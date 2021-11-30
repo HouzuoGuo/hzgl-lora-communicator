@@ -49,21 +49,21 @@ void wifi_task_loop(void *_)
 {
     while (true)
     {
+        esp_task_wdt_reset();
         vTaskDelay(pdMS_TO_TICKS(WIFI_TASK_LOOP_DELAY_MS));
         wifi_next_channel();
-        esp_task_wdt_reset();
     }
 }
 
 void wifi_next_channel()
 {
-    xSemaphoreTake(mutex, portMAX_DELAY);
     channel_pkt_counter[channel_num - 1] = pkt_counter;
     pkt_counter = 0;
     if (++channel_num > WIFI_MAX_CHANNEL_NUM)
     {
         channel_num = 1;
         rounds++;
+        xSemaphoreTake(mutex, portMAX_DELAY);
         // Remember the loudest sender from this round.
         last_loudest_rssi = loudest_rssi;
         last_loudest_channel = loudest_channel;
@@ -72,10 +72,10 @@ void wifi_next_channel()
         loudest_rssi = WIFI_RSSI_FLOOR;
         loudest_channel = 0;
         memset(loudest_sender, 0, sizeof(loudest_sender));
+        xSemaphoreGive(mutex);
     }
     esp_wifi_set_channel(channel_num, WIFI_SECOND_CHAN_NONE);
     channel_pkt_counter[channel_num] = 0;
-    xSemaphoreGive(mutex);
 }
 
 int wifi_get_last_loudest_sender_rssi()

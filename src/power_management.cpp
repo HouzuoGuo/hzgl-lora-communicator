@@ -147,8 +147,8 @@ void power_task_loop(void *_)
 {
     while (true)
     {
+        esp_task_wdt_reset();
         vTaskDelay(pdMS_TO_TICKS(POWER_TASK_LOOP_DELAY_MS));
         power_read_handle_lastest_irq();
-        esp_task_wdt_reset();
     }
 }

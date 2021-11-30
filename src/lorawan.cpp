@@ -15,6 +15,9 @@
 #include "oled.h"
 #include "power_management.h"
 
+#define LMIC_PRINTF_TO Serial
+#define LMIC_DEBUG_LEVEL 2
+
 static const char LOG_TAG[] = __FILE__;
 
 const lmic_pinmap lmic_pins = {
@@ -24,6 +27,7 @@ const lmic_pinmap lmic_pins = {
     .dio = {LORA_DIO0_GPIO, LORA_DIO1_GPIO, LORA_DIO2_GPIO},
 };
 
+static size_t total_tx_bytes = 0, total_rx_bytes = 0;
 static lorawan_message_buf_t next_tx_message, last_rx_message;
 static unsigned long last_transmision_timestamp = 0, tx_counter = 0;
 
@@ -64,17 +68,18 @@ void lorawan_handle_message(uint8_t message)
     ESP_LOGI(LOG_TAG, "idling before upcoming TX/RX");
     break;
   case LORAWAN_EV_QUEUED_FOR_TX:
-    ESP_LOGI(LOG_TAG, "prepared a message for transmission");
+    ESP_LOGI(LOG_TAG, "queued a %d bytes message for transmission", next_tx_message.len);
     break;
   case EV_TXCOMPLETE:
-    ESP_LOGI(LOG_TAG, "transmitted a message");
+    ESP_LOGI(LOG_TAG, "transmitted a %d bytes message", next_tx_message.len);
     break;
   case EV_RXCOMPLETE:
     ESP_LOGI(LOG_TAG, "received a message");
     break;
   case LORAWAN_EV_RESPONSE:
     // I've managed to receive a downlink message 41 bytes long maximum.
-    ESP_LOGI(LOG_TAG, "received a downlink message %d bytes long", LMIC.dataLen);
+    ESP_LOGI(LOG_TAG, "received a %d bytes downlink message", LMIC.dataLen);
+    total_rx_bytes += LMIC.dataLen;
     size_t data_len = LMIC.dataLen;
     if (data_len > 0)
     {
@@ -101,7 +106,8 @@ void onEvent(ev_t event)
   {
   case EV_TXCOMPLETE:
     next_tx_message.timestamp_millis = millis();
-    ESP_LOGI(LOG_TAG, "transmission completed");
+    tx_counter++;
+    ESP_LOGI(LOG_TAG, "finished transmitting a %d bytes message, tx counter is now %d", next_tx_message.len, tx_counter);
     if (LMIC.txrxFlags & TXRX_ACK)
     {
       ESP_LOGI(LOG_TAG, "received an acknowledgement of my transmitted message");
@@ -114,7 +120,7 @@ void onEvent(ev_t event)
     }
     break;
   case EV_TXSTART:
-    ESP_LOGI(LOG_TAG, "transmitting now");
+    ESP_LOGI(LOG_TAG, "start transmitting a %d bytes message", next_tx_message.len);
     break;
   default:
     ESP_LOGI(LOG_TAG, "ignored unrecognised event %d", event);
@@ -159,11 +165,10 @@ void lorawan_setup()
 
   // Do not ask gateways for a downlink message to check the connectivity.
   LMIC_setLinkCheckMode(0);
-  // Set transmission power to the maximum allowed on TTGO T-Beam.
-  LMIC_setDrTxpow(DR_SF8, 20);
+
   // Do not lower transmission power automatically. According to The Things Network this feature is tricky to use.
   LMIC_setAdrMode(0);
-  // Set the "max clock error to compensate for" to 10%.
+  // Open up the RX window earlier (20% "clock error to compensate for").
   LMIC_setClockError(MAX_CLOCK_ERROR * 20 / 100);
 
   // The transmitter is activated by personalisation (i.e. static keys), so it has already "joined" the network.
@@ -192,11 +197,21 @@ lorawan_message_buf_t lorawan_get_transmission()
   return next_tx_message;
 }
 
+size_t lorawan_get_total_tx_bytes()
+{
+  return total_tx_bytes;
+}
+
+size_t lorawan_get_total_rx_bytes()
+{
+  return total_rx_bytes;
+}
+
 void lorawan_prepare_uplink_transmission()
 {
-  if (tx_counter % 2 == 0)
+  int message_kind = tx_counter % 3;
+  if (message_kind == 0)
   {
-    // Transmit the text message/command in each even round.
     String morse_message = gp_button_get_morse_message_buf();
     uint8_t buf[LORAWAN_MAX_MESSAGE_LEN] = {0};
     for (int i = 0; i < morse_message.length(); ++i)
@@ -217,9 +232,8 @@ void lorawan_prepare_uplink_transmission()
       ESP_LOGI(LOG_TAG, "going to transmit message/command \"%s\"", morse_message.c_str());
     }
   }
-  else
+  else if (message_kind == 1)
   {
-    // Transmit sensor readings in each odd round.
     DataPacket pkt(LORAWAN_MAX_MESSAGE_LEN);
     // Byte 0, 1 - number of seconds since the reception of last downlink message (0 - 65535).
     lorawan_message_buf_t last_reception = lorawan_get_last_reception();
@@ -246,51 +260,70 @@ void lorawan_prepare_uplink_transmission()
     pkt.write32BitDouble(env.pressure_hpa);
     // Byte 20, 21, 22, 23 - pressure altitude in meters.
     pkt.write32BitDouble(env.altitude_metre);
-    // Byte 24, 25, 26, 27 - GPS latitude.
+    lorawan_set_next_transmission(pkt.content, pkt.cursor, LORAWAN_PORT_STATUS_SENSOR);
+    ESP_LOGI(LOG_TAG, "going to transmit status and sensor info in %d bytes", pkt.cursor);
+  }
+  else if (message_kind == 2)
+  {
+    DataPacket pkt(LORAWAN_MAX_MESSAGE_LEN);
+    // Byte 0, 1, 2, 3 - GPS latitude.
     struct gps_data gps = gps_get_data();
     pkt.write32BitDouble(gps.latitude);
-    // Byte 28, 29, 30, 31 - GPS longitude.
+    // Byte 4, 5, 6, 7 - GPS longitude.
     pkt.write32BitDouble(gps.longitude);
-    // Byte 32, 33 - GPS speed in km/h.
+    // Byte 8, 9 - GPS speed in km/h.
     pkt.writeInteger((int)gps.speed_kmh, 2);
-    // Byte 34, 35 - GPS heading in degrees.
+    // Byte 10, 11 - GPS heading in degrees.
     pkt.writeInteger((int)gps.heading_deg, 2);
-    // Byte 36, 37, 38, 39 - GPS altitude in metres.
+    // Byte 12, 13, 14, 15 - GPS altitude in metres.
     pkt.write32BitDouble(gps.altitude_metre);
-    // Byte 40, 41 - the age of last GPS fix in seconds (0 - 65536).
+    // Byte 16, 17 - the age of last GPS fix in seconds (0 - 65536).
     if (gps.pos_age_sec > 65536)
     {
       gps.pos_age_sec = 65536;
     }
     pkt.writeInteger(gps.pos_age_sec, 2);
-    // Byte 42 - HDOP in integer (0 - 256).
+    // Byte 18 - HDOP in integer (0 - 256).
     int hdop = (int)gps.hdop;
     if (hdop > 256)
     {
       hdop = 256;
     }
     pkt.writeInteger(hdop, 1);
-    // Byte 43 - number of GPS satellites in view.
+    // Byte 19 - number of GPS satellites in view.
     pkt.writeInteger(gps.satellites, 1);
-    // Byte 44 - WiFi monitor - the loudest sender's channel.
+    // Byte 20 - WiFi monitor - number of inflight packets across all channels.
+    pkt.writeInteger(wifi_get_total_pkts(), 1);
+    // Byte 21 - WiFi monitor - the loudest sender's channel.
     pkt.writeInteger(wifi_get_last_loudest_sender_channel(), 1);
-    // Byte 45 - WiFi monitor - the loudest sender's RSSI reading above RSSI floor (which is -100).
+    // Byte 22 - WiFi monitor - the loudest sender's RSSI reading above RSSI floor (which is -100).
     int loudest_rssi = wifi_get_last_loudest_sender_rssi();
     if (loudest_rssi < -100)
     {
       loudest_rssi = -100;
     }
     pkt.writeInteger(loudest_rssi - WIFI_RSSI_FLOOR, 1);
-    // Byte 46, 47, 48, 49, 50, 51 - WiFi monitor - the loudest sender's mac.
+    // Byte 23, 24, 25, 26, 27, 28 - WiFi monitor - the loudest sender's mac.
     uint8_t *sender_mac = wifi_get_last_loudest_sender_mac();
     for (int i = 0; i < 6; ++i)
     {
       pkt.writeInteger(sender_mac[i], 1);
     }
-    // Byte 52 - WiFi monitor - number of inflight packets across all channels
-    pkt.writeInteger(wifi_get_total_pkts(), 1);
-    lorawan_set_next_transmission(pkt.content, pkt.cursor, LORAWAN_PORT_STATUS);
-    ESP_LOGI(LOG_TAG, "going to transmit status and sensor readings in %d bytes", pkt.cursor);
+    lorawan_set_next_transmission(pkt.content, pkt.cursor, LORAWAN_PORT_GPS_WIFI);
+    ESP_LOGI(LOG_TAG, "going to transmit GPS and wifi info in %d bytes", pkt.cursor);
+  }
+}
+
+void lorawan_debug_to_log()
+{
+  ESP_LOGI(LOG_TAG, "LORAWANDEBUG: os_getTime - %d ticks = %d sec", os_getTime(), osticks2ms(os_getTime()) / 1000);
+  ESP_LOGI(LOG_TAG, "LORAWANDEBUG: globalDutyRate - %d ticks = %d sec", LMIC.globalDutyRate, osticks2ms(LMIC.globalDutyRate) / 1000);
+  ESP_LOGI(LOG_TAG, "LORAWANDEBUG: LMICbandplan_nextTx - %d ticks = %d sec", LMICbandplan_nextTx(os_getTime()), osticks2ms(LMICbandplan_nextTx(os_getTime())) / 1000);
+  ESP_LOGI(LOG_TAG, "LORAWANDEBUG: txend - %d, txChnl - %d - %d ticks = %d sec", LMIC.txend, LMIC.txChnl);
+  for (size_t band = 0; band < MAX_BANDS; ++band)
+  {
+    ESP_LOGI(LOG_TAG, "LORAWANDEBUG \"band\"[%d] - next avail at %d sec, lastchnl %d, txpow %d, txcap %d", band, osticks2ms(LMIC.bands[band].avail) / 1000, LMIC.bands[band].lastchnl, LMIC.bands[band].txpow, LMIC.bands[band].txcap);
+    LMIC.bands[band].avail = 3;
   }
 }
 
@@ -299,18 +332,30 @@ void lorawan_transceive()
   // Give the LoRaWAN library a chance to do its work.
   os_runloop_once();
   // Rate-limit transmission to observe duty cycle.
-  if (last_transmision_timestamp == 0 || millis() - last_transmision_timestamp > LORAWAN_TRANSMISSION_INTERVAL_MS)
+  if (last_transmision_timestamp == 0 || millis() - last_transmision_timestamp > LORAWAN_TX_INTERVAL_MS)
   {
     lorawan_prepare_uplink_transmission();
     last_transmision_timestamp = millis();
+    // Set transmission power to the maximum allowed on TTGO T-Beam.
+    // The combo of ​​SF7​​ and bandwidth 125khz is often referred to as "DR5" (data rate 5): https://avbentem.github.io/airtime-calculator/ttn/eu868/
+    LMIC_setDrTxpow(DR_SF7, LORAWAN_TX_POWER_DBM);
+    // Rely on LORAWAN_TX_INTERVAL_MS alone to control the duty cycle. Reset LMIC library's internal duty cycle stats.
+    for (size_t band = 0; band < MAX_BANDS; ++band)
+    {
+      LMIC.bands[band].avail = 3;
+      LMIC.bands[band].txpow = LORAWAN_TX_POWER_DBM;
+    }
     lmic_tx_error_t err = LMIC_setTxData2_strict(next_tx_message.port, next_tx_message.buf, next_tx_message.len, false);
+    LMIC.globalDutyRate = 0;
+    LMIC.globalDutyAvail = 0;
     if (err == LMIC_ERROR_SUCCESS)
     {
-      tx_counter++;
+      total_tx_bytes += next_tx_message.len;
     }
     else
     {
-      ESP_LOGI(LOG_TAG, "failed to transmit LoRaWAN message, error status code is %d.", err);
+      ESP_LOGI(LOG_TAG, "failed to transmit LoRaWAN message due to error code %d", err);
+      lorawan_debug_to_log();
     }
     if (LMIC.opmode & OP_TXRXPEND)
     {
@@ -326,8 +371,8 @@ void lorawan_task_loop(void *_)
 {
   while (true)
   {
+    esp_task_wdt_reset();
     vTaskDelay(pdMS_TO_TICKS(LORAWAN_TASK_LOOP_DELAY_MS));
     lorawan_transceive();
-    esp_task_wdt_reset();
   }
 }

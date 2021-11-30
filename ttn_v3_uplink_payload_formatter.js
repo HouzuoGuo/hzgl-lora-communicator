@@ -30,37 +30,38 @@ function decodeUplink(input) {
         // Byte 20, 21, 22, 23 - pressure altitude in meters.
         data.ambient_altitude_metre = decode_double(buf[i], buf[i + 1], buf[i + 2], buf[i + 3]);
         i += 4;
-        // Byte 24, 25, 26, 27 - GPS latitude.
+    } else if (input.fPort == 120) {
+        // Byte 0, 1, 2, 3 - GPS latitude.
         data.latitude = decode_double(buf[i], buf[i + 1], buf[i + 2], buf[i + 3]);
         i += 4;
-        // Byte 28, 29, 30, 31 - GPS longitude.
+        // Byte 4, 5, 6, 7 - GPS longitude.
         data.longitude = decode_double(buf[i], buf[i + 1], buf[i + 2], buf[i + 3]);
         i += 4;
-        // Byte 32, 33 - speed in km/h.
+        // Byte 8, 9 - GPS speed in km/h.
         data.gps_speed_kmh = buf[i++];
         data.gps_speed_kmh += buf[i++] << 8;
-        // Byte 34, 35 - GPS heading in degrees.
+        // Byte 10, 11 - GPS heading in degrees.
         data.gps_heading_deg = buf[i++];
         data.gps_heading_deg += buf[i++] << 8;
-        // Byte 36, 37, 38, 39 - GPS altitude in metres.
+        // Byte 12, 13, 14, 15 - GPS altitude in metres.
         data.altitude = decode_double(buf[i], buf[i + 1], buf[i + 2], buf[i + 3]);
         i += 4;
-        // Byte 40, 41 - the age of last GPS fix in seconds (0 - 65536).
+        // Byte 16, 17 - the age of last GPS fix in seconds (0 - 65536).
         data.gps_pos_age_sec = buf[i++];
         data.gps_pos_age_sec += buf[i++] << 8;
-        // Byte 42 - HDOP in integer (0 - 256).
+        // Byte 18 - HDOP in integer (0 - 256).
         data.hdop = buf[i++];
-        // Byte 43 - number of GPS satellites in view.
+        // Byte 19 - number of GPS satellites in view.
         data.sats = buf[i++];
-        // Byte 44 - WiFi monitor - the loudest sender's channel.
+        // Byte 20 - WiFi monitor - number of inflight packets across all channels.
         data.wifi_loudest_tx_chan = buf[i++];
-        // Byte 45 - WiFi monitor - the loudest sender's RSSI.
+        // Byte 21 - WiFi monitor - the loudest sender's channel.
+        data.wifi_loudest_tx_chan = buf[i++];
+        // Byte 22 - WiFi monitor - the loudest sender's RSSI reading above RSSI floor (which is -100).
         data.wifi_loudest_tx_rssi = -100 + buf[i++];
-        // Byte 46, 47, 48, 49, 50, 51 - WiFi monitor - the loudest sender's mac.
+        // Byte 23, 24, 25, 26, 27, 28 - WiFi monitor - the loudest sender's mac.
         data.wifi_loudest_tx_mac = buf[i].toString(16) + ':' + buf[i + 1].toString(16) + ':' + buf[i + 2].toString(16) + ':' + buf[i + 3].toString(16) + ':' + buf[i + 4].toString(16) + ':' + buf[i + 5].toString(16);
         i += 6;
-        // Byte 52 - WiFi monitor - number of inflight packets across all channels
-        data.wifi_inflight_pkts_all_chans = buf[i++];
     }
     return {
         data: data,
