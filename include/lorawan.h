@@ -59,3 +59,4 @@ size_t lorawan_get_total_rx_bytes();
 size_t lorawan_get_total_tx_bytes();
 void lorawan_transceive();
 void lorawan_debug_to_log();
+void lorawan_reset_tx_stats();

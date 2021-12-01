@@ -327,6 +327,16 @@ void lorawan_debug_to_log()
   }
 }
 
+void lorawan_reset_tx_stats()
+{
+  // Rely on LORAWAN_TX_INTERVAL_MS alone to control the duty cycle. Reset LMIC library's internal duty cycle stats.
+  for (size_t band = 0; band < MAX_BANDS; ++band)
+  {
+    LMIC.bands[band].avail = 3;
+    LMIC.bands[band].txpow = LORAWAN_TX_POWER_DBM;
+  }
+}
+
 void lorawan_transceive()
 {
   // Give the LoRaWAN library a chance to do its work.
@@ -339,15 +349,9 @@ void lorawan_transceive()
     // Set transmission power to the maximum allowed on TTGO T-Beam.
     // The combo of ​​SF7​​ and bandwidth 125khz is often referred to as "DR5" (data rate 5): https://avbentem.github.io/airtime-calculator/ttn/eu868/
     LMIC_setDrTxpow(DR_SF7, LORAWAN_TX_POWER_DBM);
-    // Rely on LORAWAN_TX_INTERVAL_MS alone to control the duty cycle. Reset LMIC library's internal duty cycle stats.
-    for (size_t band = 0; band < MAX_BANDS; ++band)
-    {
-      LMIC.bands[band].avail = 3;
-      LMIC.bands[band].txpow = LORAWAN_TX_POWER_DBM;
-    }
+    lorawan_reset_tx_stats();
     lmic_tx_error_t err = LMIC_setTxData2_strict(next_tx_message.port, next_tx_message.buf, next_tx_message.len, false);
-    LMIC.globalDutyRate = 0;
-    LMIC.globalDutyAvail = 0;
+    lorawan_reset_tx_stats();
     if (err == LMIC_ERROR_SUCCESS)
     {
       total_tx_bytes += next_tx_message.len;
