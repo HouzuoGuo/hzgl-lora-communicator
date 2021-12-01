@@ -212,28 +212,6 @@ void lorawan_prepare_uplink_transmission()
   int message_kind = tx_counter % 3;
   if (message_kind == 0)
   {
-    String morse_message = gp_button_get_morse_message_buf();
-    uint8_t buf[LORAWAN_MAX_MESSAGE_LEN] = {0};
-    for (int i = 0; i < morse_message.length(); ++i)
-    {
-      buf[i] = (uint8_t)morse_message.charAt(i);
-    }
-
-    // Determine the type of the message according to which OLED page the input came from.
-    int port = LORAWAN_PORT_MESSAGE;
-    if (oled_get_last_morse_input_page_num() == OLED_PAGE_TX_COMMAND)
-    {
-      port = LORAWAN_PORT_COMMAND;
-    }
-    // Set the transmission buffer only if user is has finished typing a message.
-    if (oled_get_page_number() != OLED_PAGE_TX_COMMAND && oled_get_page_number() != OLED_PAGE_TX_MESSAGE)
-    {
-      lorawan_set_next_transmission(buf, morse_message.length(), port);
-      ESP_LOGI(LOG_TAG, "going to transmit message/command \"%s\"", morse_message.c_str());
-    }
-  }
-  else if (message_kind == 1)
-  {
     DataPacket pkt(LORAWAN_MAX_MESSAGE_LEN);
     // Byte 0, 1 - number of seconds since the reception of last downlink message (0 - 65535).
     lorawan_message_buf_t last_reception = lorawan_get_last_reception();
@@ -263,7 +241,7 @@ void lorawan_prepare_uplink_transmission()
     lorawan_set_next_transmission(pkt.content, pkt.cursor, LORAWAN_PORT_STATUS_SENSOR);
     ESP_LOGI(LOG_TAG, "going to transmit status and sensor info in %d bytes", pkt.cursor);
   }
-  else if (message_kind == 2)
+  else if (message_kind == 1)
   {
     DataPacket pkt(LORAWAN_MAX_MESSAGE_LEN);
     // Byte 0, 1, 2, 3 - GPS latitude.
@@ -311,6 +289,27 @@ void lorawan_prepare_uplink_transmission()
     }
     lorawan_set_next_transmission(pkt.content, pkt.cursor, LORAWAN_PORT_GPS_WIFI);
     ESP_LOGI(LOG_TAG, "going to transmit GPS and wifi info in %d bytes", pkt.cursor);
+  }
+  else if (message_kind == 2)
+  {
+    String morse_message = gp_button_get_morse_message_buf();
+    uint8_t buf[LORAWAN_MAX_MESSAGE_LEN] = {0};
+    for (int i = 0; i < morse_message.length(); ++i)
+    {
+      buf[i] = (uint8_t)morse_message.charAt(i);
+    }
+    // Determine the type of the message according to which OLED page the input came from.
+    int port = LORAWAN_PORT_MESSAGE;
+    if (oled_get_last_morse_input_page_num() == OLED_PAGE_TX_COMMAND)
+    {
+      port = LORAWAN_PORT_COMMAND;
+    }
+    // Set the transmission buffer only if user is has finished typing a message.
+    if (oled_get_page_number() != OLED_PAGE_TX_COMMAND && oled_get_page_number() != OLED_PAGE_TX_MESSAGE)
+    {
+      lorawan_set_next_transmission(buf, morse_message.length(), port);
+      ESP_LOGI(LOG_TAG, "going to transmit message/command \"%s\"", morse_message.c_str());
+    }
   }
 }
 
