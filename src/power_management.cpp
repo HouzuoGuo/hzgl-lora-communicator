@@ -210,7 +210,7 @@ void power_read_status()
     }
     else
     {
-        status.power_draw_milliamp = pmu.getBattDischargeCurrent();
+        status.power_draw_milliamp = -pmu.getBattDischargeCurrent();
     }
     i2c_unlock();
 }
@@ -228,7 +228,7 @@ void power_task_loop(void *_)
     {
         esp_task_wdt_reset();
         vTaskDelay(pdMS_TO_TICKS(POWER_TASK_LOOP_DELAY_MS));
-        if (rounds % (POWER_TASK_READ_STATUS_DELAY_MS / POWER_TASK_LOOP_DELAY_MS) == 0)
+        if ((rounds++) % (POWER_TASK_READ_STATUS_DELAY_MS / POWER_TASK_LOOP_DELAY_MS) == 0)
         {
             power_read_status();
         }

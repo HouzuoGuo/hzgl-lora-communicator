@@ -249,7 +249,7 @@ void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LE
     }
     else
     {
-        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Bat: %.3fv USB%+.0fmA", float(power.batt_millivolt) / 1000.0, power.power_draw_milliamp);
+        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Bat: %.3fv USB%.0fmA", float(power.batt_millivolt) / 1000.0, -power.power_draw_milliamp);
     }
     snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "LoRa: RSSI %d SNR %d", LMIC.rssi, LMIC.snr);
     snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Pkts: %d up %d dn", LMIC.seqnoUp, LMIC.seqnoDn);
