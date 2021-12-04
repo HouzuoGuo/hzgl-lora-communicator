@@ -15,9 +15,6 @@
 #include "oled.h"
 #include "power_management.h"
 
-#define LMIC_PRINTF_TO Serial
-#define LMIC_DEBUG_LEVEL 2
-
 static const char LOG_TAG[] = __FILE__;
 
 const lmic_pinmap lmic_pins = {
