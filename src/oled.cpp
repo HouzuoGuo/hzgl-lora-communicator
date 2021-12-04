@@ -242,7 +242,15 @@ void oled_display_page_env_wifi_sniffer_info(char lines[OLED_MAX_NUM_LINES][OLED
 void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
     snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Heap usage: %d/%dKB", (ESP.getHeapSize() - ESP.getFreeHeap()) / 1024, ESP.getHeapSize() / 1024);
-    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Bat: %.3fv Charging: %s", float(power_get_battery_millivolt()) / 1000.0, power_is_batt_charging() ? "Y" : "N");
+    struct power_status power = power_get_status();
+    if (power.is_batt_charging || !power.is_usb_power_available)
+    {
+        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Bat: %.3fv %+.0fmA", float(power.batt_millivolt) / 1000.0, power.batt_milliamp);
+    }
+    else
+    {
+        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Bat: %.3fv USB%+.0fmA", float(power.batt_millivolt) / 1000.0, power.power_draw_milliamp);
+    }
     snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "LoRa: RSSI %d SNR %d", LMIC.rssi, LMIC.snr);
     snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Pkts: %d up %d dn", LMIC.seqnoUp, LMIC.seqnoDn);
     snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Data: %dB up %dB dn", lorawan_get_total_tx_bytes(), lorawan_get_total_rx_bytes());

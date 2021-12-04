@@ -14,8 +14,6 @@
 
 static const char LOG_TAG[] = __FILE__;
 
-static TaskHandle_t supervisor_task;
-
 void setup()
 {
   pinMode(GENERIC_PURPOSE_BUTTON, INPUT);
@@ -43,4 +41,5 @@ void loop()
   // The loop is not used at all. Just yield to all other tasks.
   esp_task_wdt_reset();
   vTaskDelay(pdMS_TO_TICKS(SUPERVISOR_TASK_LOOP_DELAY_MS));
+  power_log_status();
 }

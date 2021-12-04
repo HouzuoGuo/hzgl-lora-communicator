@@ -9,9 +9,11 @@
 static const char LOG_TAG[] = __FILE__;
 
 static AXP20X_Class pmu;
+static struct power_status status;
 
 void power_setup()
 {
+    memset(&status, 0, sizeof(status));
     i2c_lock();
     if (!pmu.begin(Wire, AXP192_SLAVE_ADDRESS))
     {
@@ -130,10 +132,50 @@ void power_read_handle_lastest_irq()
     i2c_unlock();
 }
 
-bool power_is_batt_charging()
+bool power_is_battery_charging()
 {
     i2c_lock();
     bool ret = pmu.isChargeing();
+    i2c_unlock();
+    return ret;
+}
+
+bool power_is_supplied_by_battery()
+{
+    i2c_lock();
+    bool ret = pmu.getVbusVoltage() > 3000;
+    i2c_unlock();
+    return ret;
+}
+
+float power_get_battery_milliamp()
+{
+    float ret = 0;
+    i2c_lock();
+    if (pmu.isChargeing())
+    {
+        ret = pmu.getBattChargeCurrent();
+    }
+    else
+    {
+        ret = pmu.getBattDischargeCurrent();
+    }
+    i2c_unlock();
+    return ret;
+}
+
+float power_get_power_draw_milliamp()
+{
+    float ret = 0;
+    i2c_lock();
+    if (pmu.getVbusVoltage() > 3000)
+    {
+        ret = pmu.getVbusCurrent();
+    }
+    else
+    {
+        ret = pmu.getBattDischargeCurrent();
+    }
     i2c_unlock();
     return ret;
 }
@@ -143,12 +185,53 @@ int power_get_uptime_sec()
     return (esp_timer_get_time() / 1000000);
 }
 
+struct power_status power_get_status()
+{
+    return status;
+}
+
+void power_read_status()
+{
+    i2c_lock();
+    status.batt_millivolt = pmu.getBattVoltage();
+    status.is_batt_charging = pmu.isChargeing();
+    status.is_usb_power_available = pmu.getVbusCurrent() > 5;
+    if (status.is_batt_charging)
+    {
+        status.batt_milliamp = pmu.getBattChargeCurrent();
+    }
+    else
+    {
+        status.batt_milliamp = -pmu.getBattDischargeCurrent();
+    }
+    if (status.is_usb_power_available)
+    {
+        status.power_draw_milliamp = pmu.getVbusCurrent();
+    }
+    else
+    {
+        status.power_draw_milliamp = pmu.getBattDischargeCurrent();
+    }
+    i2c_unlock();
+}
+
+void power_log_status()
+{
+    ESP_LOGI(LOG_TAG, "is_batt_charging: %d is_usb_power_available: %d batt millivolt: %d batt_milliamp: %.2f power_draw_milliamp: %.2f",
+             status.is_batt_charging, status.is_usb_power_available, status.batt_millivolt, status.batt_milliamp, status.power_draw_milliamp);
+}
+
 void power_task_loop(void *_)
 {
+    unsigned long rounds = 0;
     while (true)
     {
         esp_task_wdt_reset();
         vTaskDelay(pdMS_TO_TICKS(POWER_TASK_LOOP_DELAY_MS));
+        if (rounds % (POWER_TASK_READ_STATUS_DELAY_MS / POWER_TASK_LOOP_DELAY_MS) == 0)
+        {
+            power_read_status();
+        }
         power_read_handle_lastest_irq();
     }
 }

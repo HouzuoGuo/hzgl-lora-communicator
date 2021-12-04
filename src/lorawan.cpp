@@ -226,17 +226,20 @@ void lorawan_prepare_uplink_transmission()
     // Byte 6, 7 - heap usage in KB.
     pkt.writeInteger((ESP.getHeapSize() - ESP.getFreeHeap()) / 1024, 2);
     // Byte 8, 9 - battery voltage in millivolts.
-    pkt.writeInteger(power_get_battery_millivolt(), 2);
-    // Byte 10 - is battery charging (0 - false, 1 - true).
-    pkt.writeInteger(power_is_batt_charging() ? 1 : 0, 1);
-    // Byte 11, 12, 13, 14 - ambient temperature in celcius.
+    struct power_status power = power_get_status();
+    pkt.writeInteger(power.batt_millivolt, 2);
+    // Byte 10, 11 - power supply current draw in milliamps.
+    pkt.writeInteger(power.power_draw_milliamp, 2);
+    // Byte 12 - is battery charging (0 - false, 1 - true).
+    pkt.writeInteger(power.is_batt_charging ? 1 : 0, 1);
+    // Byte 13, 14, 15, 16 - ambient temperature in celcius.
     struct env_data env = env_sensor_get_data();
     pkt.write32BitDouble(env.temp_celcius);
-    // Byte 15 - ambient humidity in percentage.
+    // Byte 17 - ambient humidity in percentage.
     pkt.writeInteger((int)env.humidity_pct, 1);
-    // Byte 16, 17, 18, 19 - ambient pressure in hpa.
+    // Byte 18, 19, 20, 21 - ambient pressure in hpa.
     pkt.write32BitDouble(env.pressure_hpa);
-    // Byte 20, 21, 22, 23 - pressure altitude in meters.
+    // Byte 22, 23, 24, 25 - pressure altitude in meters.
     pkt.write32BitDouble(env.altitude_metre);
     lorawan_set_next_transmission(pkt.content, pkt.cursor, LORAWAN_PORT_STATUS_SENSOR);
     ESP_LOGI(LOG_TAG, "going to transmit status and sensor info in %d bytes", pkt.cursor);

@@ -48,3 +48,13 @@
 
 // GENERIC_PURPOSE_BUTTON is the GPIO pin number of the only generic purpose programmable button on the board.
 #define GENERIC_PURPOSE_BUTTON 38
+
+// TEMP_OFFSET_CELCIUS_BATT is the temperature reading offset to be added (or substracted when negative)
+// when the microcontroller board is powered by battery alone.
+// The BME280 sensor is mounted on the battery-holder side of the board parallel to the battery holder.
+#define TEMP_OFFSET_CELCIUS_BATT -6.857
+
+// TEMP_OFFSET_CELCIUS_USB is the temperature reading offset to be added (or substracted when negative)
+// when the microcontroller board is powered by USB alone and not charging.
+// The BME280 sensor is mounted on the battery-holder side of the board parallel to the battery holder.
+#define TEMP_OFFSET_CELCIUS_USB -8.003

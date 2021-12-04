@@ -17,17 +17,20 @@ function decodeUplink(input) {
         // Byte 8, 9 - battery voltage in millivolts.
         data.batt_millivolt = buf[i++];
         data.batt_millivolt += buf[i++] << 8;
-        // Byte 10 - is battery charging (0 - false, 1 - true).
+        // Byte 10, 11 - power supply current draw in milliamps.
+        data.power_milliamp = buf[i++];
+        data.power_milliamp += buf[i++] << 8;
+        // Byte 12 - is battery charging (0 - false, 1 - true).
         data.is_batt_charging = buf[i++];
-        // Byte 11, 12, 13, 14 - ambient temperature in celcius.
+        // Byte 13, 14, 15, 16 - ambient temperature in celcius.
         data.ambient_temp_celcius = decode_double(buf[i], buf[i + 1], buf[i + 2], buf[i + 3]);
         i += 4;
-        // Byte 15 - ambient humidity in percentage.
+        // Byte 17 - ambient humidity in percentage.
         data.ambient_humidity_pct = buf[i++];
-        // Byte 16, 17, 18, 19 - ambient pressure in hpa.
+        // Byte 18, 19, 20, 21 - ambient pressure in hpa.
         data.ambient_pressure_hpa = decode_double(buf[i], buf[i + 1], buf[i + 2], buf[i + 3]);
         i += 4;
-        // Byte 20, 21, 22, 23 - pressure altitude in meters.
+        // Byte 22, 23, 24, 25 - pressure altitude in meters.
         data.ambient_altitude_metre = decode_double(buf[i], buf[i + 1], buf[i + 2], buf[i + 3]);
         i += 4;
     } else if (input.fPort == 120) {
