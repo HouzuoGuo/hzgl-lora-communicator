@@ -95,8 +95,10 @@ void supervisor_check_gps()
 {
     if (gps_get_chars_processed() == gps_chars_processed_reading)
     {
-        gps_consecutive_readings++;
-        ESP_LOGE(TAG, "gps task does not appear to be making progress, chars processed reads %lu for %d times", gps_chars_processed_reading, gps_consecutive_readings);
+        if (++gps_consecutive_readings > 2)
+        {
+            ESP_LOGE(TAG, "gps task does not appear to be making progress, chars processed reads %lu for %d times", gps_chars_processed_reading, gps_consecutive_readings);
+        }
         if (gps_consecutive_readings >= SUPERVISOR_STUCK_PROGRESS_THRESHOLD)
         {
             supervisor_reset();
@@ -113,8 +115,10 @@ void supervisor_check_lorawan()
 {
     if (lorawan_get_total_tx_bytes() == lorawan_tx_bytes_reading)
     {
-        lorawan_consecutive_readings++;
-        ESP_LOGE(TAG, "lorawan task does not appear to be making progress, total tx bytes reads %d for %d times", lorawan_tx_bytes_reading, lorawan_consecutive_readings);
+        if (++lorawan_consecutive_readings > 2)
+        {
+            ESP_LOGE(TAG, "lorawan task does not appear to be making progress, total tx bytes reads %d for %d times", lorawan_tx_bytes_reading, lorawan_consecutive_readings);
+        }
         if (lorawan_consecutive_readings >= SUPERVISOR_STUCK_PROGRESS_THRESHOLD)
         {
             supervisor_reset();
@@ -131,8 +135,10 @@ void supervisor_check_wifi()
 {
     if (wifi_get_round_num() == wifi_rounds_reading)
     {
-        wifi_consecutive_readings++;
-        ESP_LOGE(TAG, "wifi task does not appear to be making progress, total number of rounds reads %d for %d times", wifi_rounds_reading, wifi_consecutive_readings);
+        if (++wifi_consecutive_readings > 2)
+        {
+            ESP_LOGE(TAG, "wifi task does not appear to be making progress, total number of rounds reads %d for %d times", wifi_rounds_reading, wifi_consecutive_readings);
+        }
         if (wifi_consecutive_readings >= SUPERVISOR_STUCK_PROGRESS_THRESHOLD)
         {
             supervisor_reset();

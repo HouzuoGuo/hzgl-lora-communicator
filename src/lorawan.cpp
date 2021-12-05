@@ -318,11 +318,10 @@ void lorawan_debug_to_log()
   ESP_LOGI(LOG_TAG, "LORAWANDEBUG: os_getTime - %d ticks = %d sec", os_getTime(), osticks2ms(os_getTime()) / 1000);
   ESP_LOGI(LOG_TAG, "LORAWANDEBUG: globalDutyRate - %d ticks = %d sec", LMIC.globalDutyRate, osticks2ms(LMIC.globalDutyRate) / 1000);
   ESP_LOGI(LOG_TAG, "LORAWANDEBUG: LMICbandplan_nextTx - %d ticks = %d sec", LMICbandplan_nextTx(os_getTime()), osticks2ms(LMICbandplan_nextTx(os_getTime())) / 1000);
-  ESP_LOGI(LOG_TAG, "LORAWANDEBUG: txend - %d, txChnl - %d - %d ticks = %d sec", LMIC.txend, LMIC.txChnl);
+  ESP_LOGI(LOG_TAG, "LORAWANDEBUG: txend - %d, txChnl - %d", LMIC.txend, LMIC.txChnl);
   for (size_t band = 0; band < MAX_BANDS; ++band)
   {
     ESP_LOGI(LOG_TAG, "LORAWANDEBUG \"band\"[%d] - next avail at %d sec, lastchnl %d, txpow %d, txcap %d", band, osticks2ms(LMIC.bands[band].avail) / 1000, LMIC.bands[band].lastchnl, LMIC.bands[band].txpow, LMIC.bands[band].txcap);
-    LMIC.bands[band].avail = 3;
   }
 }
 
@@ -331,7 +330,11 @@ void lorawan_reset_tx_stats()
   // Rely on LORAWAN_TX_INTERVAL_MS alone to control the duty cycle. Reset LMIC library's internal duty cycle stats.
   for (size_t band = 0; band < MAX_BANDS; ++band)
   {
-    LMIC.bands[band].avail = 3;
+    LMIC.bands[band].avail = ms2osticks(millis() - 1000);
+    if (LMIC.bands[band].avail < 0)
+    {
+      LMIC.bands[band].avail = 0;
+    }
     LMIC.bands[band].txpow = LORAWAN_TX_POWER_DBM;
   }
 }
@@ -351,6 +354,7 @@ void lorawan_transceive()
     lorawan_reset_tx_stats();
     lmic_tx_error_t err = LMIC_setTxData2_strict(next_tx_message.port, next_tx_message.buf, next_tx_message.len, false);
     lorawan_reset_tx_stats();
+    // lorawan_debug_to_log();
     if (err == LMIC_ERROR_SUCCESS)
     {
       total_tx_bytes += next_tx_message.len;
