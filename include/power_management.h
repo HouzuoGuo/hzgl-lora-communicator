@@ -10,9 +10,9 @@ struct power_status
 {
     int batt_millivolt;
     bool is_batt_charging, is_usb_power_available;
-    // batt_milliamp is the amount of milliamps entering(+) in or discharged(-) from the battery.
+    // batt_milliamp is the rate of milliamps entering(+) in or discharged(-) from the battery.
     float batt_milliamp;
-    // power_draw_milliamp is the amount of milliamps drawn from power source. The number is always positive.
+    // power_draw_milliamp is the rate of milliamps drawn from power source. The number is always positive.
     float power_draw_milliamp;
 };
 
