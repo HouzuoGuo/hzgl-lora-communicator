@@ -212,6 +212,10 @@ void power_read_status()
     {
         status.power_draw_milliamp = -pmu.getBattDischargeCurrent();
     }
+    if (status.power_draw_milliamp < 0)
+    {
+        status.power_draw_milliamp = 0;
+    }
     i2c_unlock();
 }
 

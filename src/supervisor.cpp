@@ -31,21 +31,21 @@ void supervisor_setup()
     // The higher the priority number, the higher the task priority.
     // The stack capacity is very generous - they are more than 4x the actual usage.
     xTaskCreatePinnedToCore(wifi_task_loop, "wifi_task_loop", 8 * 1024, NULL, priority++, &wifi_task, 1);
-    esp_task_wdt_add(wifi_task);
+    ESP_ERROR_CHECK(esp_task_wdt_add(wifi_task));
     xTaskCreatePinnedToCore(env_sensor_task_loop, "env_sensor_task_loop", 8 * 1024, NULL, priority++, &env_sensor_task, 1);
-    esp_task_wdt_add(env_sensor_task);
+    ESP_ERROR_CHECK(esp_task_wdt_add(env_sensor_task));
     xTaskCreatePinnedToCore(gps_task_loop, "gps_task_loop", 8 * 1024, NULL, priority++, &gps_task, 1);
-    esp_task_wdt_add(gps_task);
+    ESP_ERROR_CHECK(esp_task_wdt_add(gps_task));
     xTaskCreatePinnedToCore(lorawan_task_loop, "lorawan_task_loop", 16 * 1024, NULL, priority++, &lorawan_task, 1);
-    esp_task_wdt_add(lorawan_task);
+    ESP_ERROR_CHECK(esp_task_wdt_add(lorawan_task));
     xTaskCreatePinnedToCore(oled_task_loop, "oled_task_loop", 16 * 1024, NULL, priority++, &oled_task, 1);
-    esp_task_wdt_add(oled_task);
+    ESP_ERROR_CHECK(esp_task_wdt_add(oled_task));
     xTaskCreatePinnedToCore(gp_button_task_loop, "gp_button_task_loop", 8 * 1024, NULL, priority++, &gp_button_task, 1);
-    esp_task_wdt_add(gp_button_task);
+    ESP_ERROR_CHECK(esp_task_wdt_add(gp_button_task));
     xTaskCreatePinnedToCore(power_task_loop, "power_task_loop", 8 * 1024, NULL, priority++, &power_task, 1);
-    esp_task_wdt_add(power_task);
+    ESP_ERROR_CHECK(esp_task_wdt_add(power_task));
     xTaskCreatePinnedToCore(supervisor_task_loop, "supervisor_task_loop", 16 * 1024, NULL, priority++, &supervisor_task, 1);
-    esp_task_wdt_add(supervisor_task);
+    ESP_ERROR_CHECK(esp_task_wdt_add(supervisor_task));
     ESP_LOGI(LOG_TAG, "supervisor has successfully started all essential tasks");
 }
 

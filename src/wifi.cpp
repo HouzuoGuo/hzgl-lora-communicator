@@ -31,6 +31,7 @@ void wifi_setup()
     esp_wifi_set_country(&wifi_country_params);
     esp_wifi_set_storage(WIFI_STORAGE_RAM);
     esp_wifi_set_mode(WIFI_MODE_NULL);
+    esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
     if (esp_wifi_start() == ESP_OK)
     {
         ESP_LOGI(LOG_TAG, "successfully initialised WiFi");
@@ -38,6 +39,7 @@ void wifi_setup()
     else
     {
         ESP_LOGI(LOG_TAG, "failed to initialise WiFi");
+        return;
     }
     esp_wifi_set_promiscuous(true);
     esp_wifi_set_promiscuous_filter(&pkt_filter);

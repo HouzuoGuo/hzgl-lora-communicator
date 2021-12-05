@@ -226,7 +226,7 @@ void lorawan_prepare_uplink_transmission()
     struct power_status power = power_get_status();
     pkt.writeInteger(power.batt_millivolt, 2);
     // Byte 10, 11 - power supply current draw in milliamps.
-    pkt.writeInteger(power.power_draw_milliamp, 2);
+    pkt.writeInteger((int)power.power_draw_milliamp, 2);
     // Byte 12 - is battery charging (0 - false, 1 - true).
     pkt.writeInteger(power.is_batt_charging ? 1 : 0, 1);
     // Byte 13, 14, 15, 16 - ambient temperature in celcius.
