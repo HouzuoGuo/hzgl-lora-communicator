@@ -165,8 +165,8 @@ void lorawan_setup()
 
   // Do not lower transmission power automatically. According to The Things Network this feature is tricky to use.
   LMIC_setAdrMode(0);
-  // Open up the RX window earlier (20% "clock error to compensate for").
-  LMIC_setClockError(MAX_CLOCK_ERROR * 20 / 100);
+  // Open up the RX window earlier (25% "clock error to compensate for").
+  LMIC_setClockError(MAX_CLOCK_ERROR * 25 / 100);
 
   // The transmitter is activated by personalisation (i.e. static keys), so it has already "joined" the network.
   lorawan_handle_message(EV_JOINED);

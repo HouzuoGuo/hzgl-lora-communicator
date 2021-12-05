@@ -16,13 +16,9 @@ static const char LOG_TAG[] = __FILE__;
 
 void setup()
 {
-  if (!setCpuFrequencyMhz(80))
-  {
-    ESP_LOGI(LOG_TAG, "failed to set CPU frequency");
-  }
   pinMode(GENERIC_PURPOSE_BUTTON, INPUT);
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   i2c_setup();
   power_setup();
   gp_button_setup();
