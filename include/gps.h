@@ -1,7 +1,7 @@
 #pragma once
 
 // GPS_TASK_LOOP_DELAY_MS is the sleep interval of the GPS receiver task loop.
-#define GPS_TASK_LOOP_DELAY_MS 1000
+#define GPS_TASK_LOOP_DELAY_MS 1500
 
 // gps_data describes the coordinates and clock time read from GPS.
 struct gps_data

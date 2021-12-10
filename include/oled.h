@@ -19,7 +19,7 @@
 #define OLED_PAGE_DIAGNOSIS 6
 
 // OLED_TASK_LOOP_DELAY_MS is the sleep interval of the OLED display refresh task loop. The display refreshes at 20 FPS.
-#define OLED_TASK_LOOP_DELAY_MS (1000 / 20)
+#define OLED_TASK_LOOP_DELAY_MS (1000 / 15)
 
 // oled_setup initialises the OLED hardware and its user interface library.
 void oled_setup();

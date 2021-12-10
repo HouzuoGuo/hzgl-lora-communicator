@@ -1,7 +1,7 @@
 #pragma once
 
 // ENV_SENSOR_TASK_LOOP_DELAY_MS is the sleep interval of the environment sensor task loop.
-#define ENV_SENSOR_TASK_LOOP_DELAY_MS 1000
+#define ENV_SENSOR_TASK_LOOP_DELAY_MS 1500
 
 struct env_data
 {
