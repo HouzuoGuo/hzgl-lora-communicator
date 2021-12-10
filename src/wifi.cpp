@@ -8,7 +8,7 @@ static const char LOG_TAG[] = __FILE__;
 
 static SemaphoreHandle_t mutex;
 
-static unsigned long rounds = 0;
+static unsigned long round_num = 0;
 static size_t channel_num = 1;
 static size_t pkt_counter = 0;
 static size_t channel_pkt_counter[WIFI_MAX_CHANNEL_NUM];
@@ -64,7 +64,7 @@ void wifi_next_channel()
     if (++channel_num > WIFI_MAX_CHANNEL_NUM)
     {
         channel_num = 1;
-        rounds++;
+        round_num++;
         xSemaphoreTake(mutex, portMAX_DELAY);
         // Remember the loudest sender from this round.
         last_loudest_rssi = loudest_rssi;
@@ -95,7 +95,7 @@ size_t wifi_get_last_loudest_sender_channel()
     return last_loudest_channel;
 }
 
-size_t wifi_get_total_pkts()
+size_t wifi_get_total_num_pkts()
 {
     size_t sum = 0;
     for (size_t i = 0; i < WIFI_MAX_CHANNEL_NUM; ++i)
@@ -112,7 +112,7 @@ size_t wifi_get_channel_num()
 
 unsigned long wifi_get_round_num()
 {
-    return rounds;
+    return round_num;
 }
 
 void wifi_sniffer_packet_handler(void *buff, wifi_promiscuous_pkt_type_t type)

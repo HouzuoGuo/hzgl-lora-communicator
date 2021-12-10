@@ -10,20 +10,20 @@
 #include "data_packet.h"
 #include "env_sensor.h"
 #include "wifi.h"
+#include "bluetooth.h"
 #include "supervisor.h"
 
 static const char LOG_TAG[] = __FILE__;
 
 void setup()
 {
+  Serial.begin(9600);
   if (!setCpuFrequencyMhz(80))
   {
     ESP_LOGI(LOG_TAG, "failed to set CPU frequency for power savings");
   }
 
   pinMode(GENERIC_PURPOSE_BUTTON, INPUT);
-
-  Serial.begin(9600);
   i2c_setup();
   power_setup();
   gp_button_setup();
@@ -32,6 +32,7 @@ void setup()
   gps_setup();
   env_sensor_setup();
   wifi_setup();
+  bluetooth_setup();
   // Automatically panic and reset when a task gets stuck for over 30 seconds.
   ESP_ERROR_CHECK(esp_task_wdt_init(SUPERVISOR_WATCHDOG_TIMEOUT_SEC, true));
   // Keey an eye on the setup itself too.

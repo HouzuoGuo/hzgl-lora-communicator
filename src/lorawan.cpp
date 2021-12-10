@@ -11,6 +11,7 @@
 #include "i2c.h"
 #include "lorawan.h"
 #include "wifi.h"
+#include "bluetooth.h"
 #include "lorawan_creds.h"
 #include "oled.h"
 #include "power_management.h"
@@ -271,24 +272,45 @@ void lorawan_prepare_uplink_transmission()
     // Byte 19 - number of GPS satellites in view.
     pkt.writeInteger(gps.satellites, 1);
     // Byte 20 - WiFi monitor - number of inflight packets across all channels.
-    pkt.writeInteger(wifi_get_total_pkts(), 1);
+    pkt.writeInteger(wifi_get_total_num_pkts(), 1);
     // Byte 21 - WiFi monitor - the loudest sender's channel.
     pkt.writeInteger(wifi_get_last_loudest_sender_channel(), 1);
     // Byte 22 - WiFi monitor - the loudest sender's RSSI reading above RSSI floor (which is -100).
-    int loudest_rssi = wifi_get_last_loudest_sender_rssi();
-    if (loudest_rssi < -100)
+    int wifi_rssi = wifi_get_last_loudest_sender_rssi();
+    if (wifi_rssi < -100)
     {
-      loudest_rssi = -100;
+      wifi_rssi = -100;
     }
-    pkt.writeInteger(loudest_rssi - WIFI_RSSI_FLOOR, 1);
-    // Byte 23, 24, 25, 26, 27, 28 - WiFi monitor - the loudest sender's mac.
-    uint8_t *sender_mac = wifi_get_last_loudest_sender_mac();
+    pkt.writeInteger(wifi_rssi - WIFI_RSSI_FLOOR, 1);
+    // Byte 23, 24, 25, 26, 27, 28 - WiFi monitor - the loudest sender's MAC address.
+    uint8_t *wifi_mac = wifi_get_last_loudest_sender_mac();
     for (int i = 0; i < 6; ++i)
     {
-      pkt.writeInteger(sender_mac[i], 1);
+      pkt.writeInteger(wifi_mac[i], 1);
+    }
+    // Byte 29 - Bluetooth monitor - number of devices in the vicinity.
+    pkt.writeInteger(bluetooth_get_total_num_devices(), 1);
+    // Byte 30 - Bluetooth monitor - the loudest sender's RSSI reading above RSSI floor (which is -100).
+    BLEAdvertisedDevice dev = bluetooth_get_loudest_sender();
+    int bt_rssi = dev.getRSSI();
+    if (bt_rssi < -100)
+    {
+      bt_rssi = -100;
+    }
+    pkt.writeInteger(bt_rssi - BLUETOOTH_RSSI_FLOOR, 1);
+    // Byte 31, 32, 33, 34, 35, 36 - Bluetooth monitor - the loudest sender's MAC address.
+    uint8_t bt_mac[6];
+    memset(bt_mac, 0, sizeof(bt_mac));
+    if (dev.haveRSSI())
+    {
+      memcpy(bt_mac, dev.getAddress().getNative(), 6);
+    }
+    for (int i = 0; i < 6; ++i)
+    {
+      pkt.writeInteger(bt_mac[i], 1);
     }
     lorawan_set_next_transmission(pkt.content, pkt.cursor, LORAWAN_PORT_GPS_WIFI);
-    ESP_LOGI(LOG_TAG, "going to transmit GPS and wifi info in %d bytes", pkt.cursor);
+    ESP_LOGI(LOG_TAG, "going to transmit GPS, wifi, and bluetooth info in %d bytes", pkt.cursor);
   }
   else if (message_kind == 2)
   {

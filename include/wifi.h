@@ -28,7 +28,7 @@ typedef struct
 void wifi_setup();
 void wifi_task_loop(void *_);
 void wifi_next_channel();
-size_t wifi_get_total_pkts();
+size_t wifi_get_total_num_pkts();
 size_t wifi_get_channel_num();
 unsigned long wifi_get_round_num();
 void wifi_sniffer_packet_handler(void *buff, wifi_promiscuous_pkt_type_t type);

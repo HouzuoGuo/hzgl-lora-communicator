@@ -10,10 +10,12 @@
 #include "data_packet.h"
 #include "env_sensor.h"
 #include "wifi.h"
+#include "bluetooth.h"
 #include "supervisor.h"
 
 static const char LOG_TAG[] = __FILE__;
-static TaskHandle_t wifi_task, env_sensor_task, gps_task, lorawan_task, oled_task, gp_button_task, power_task, supervisor_task;
+static TaskHandle_t bluetooth_task, wifi_task, env_sensor_task,
+    gps_task, lorawan_task, oled_task, gp_button_task, power_task, supervisor_task;
 
 static unsigned long gps_chars_processed_reading = 0;
 static int gps_consecutive_readings = 0;
@@ -24,12 +26,17 @@ static int lorawan_consecutive_readings = 0;
 static unsigned long wifi_rounds_reading = 0;
 static int wifi_consecutive_readings = 0;
 
+static unsigned long bluetooth_rounds_reading = 0;
+static int bluetooth_consecutive_readings = 0;
+
 void supervisor_setup()
 {
     unsigned long priority = tskIDLE_PRIORITY;
     // ESP32 uses the first core (core 0) to handle wifi and BT radio, leaving the second core available for other tasks.
     // The higher the priority number, the higher the task priority.
-    // The stack capacity is very generous - they are more than 4x the actual usage.
+    // The stack capacity is very generous - they are at least 3x the actual usage.
+    xTaskCreatePinnedToCore(bluetooth_task_loop, "bluetooth_task_loop", 8 * 1024, NULL, priority++, &bluetooth_task, 1);
+    ESP_ERROR_CHECK(esp_task_wdt_add(bluetooth_task));
     xTaskCreatePinnedToCore(wifi_task_loop, "wifi_task_loop", 8 * 1024, NULL, priority++, &wifi_task, 1);
     ESP_ERROR_CHECK(esp_task_wdt_add(wifi_task));
     xTaskCreatePinnedToCore(env_sensor_task_loop, "env_sensor_task_loop", 8 * 1024, NULL, priority++, &env_sensor_task, 1);
@@ -62,7 +69,8 @@ void supervisor_check_task_stack()
     ESP_LOGI(TAG, "heap usage: free - %dKB, min.free - %dKB, capacity - %dKB, maxalloc: %dKB, min.free stack: %dKB",
              ESP.getFreeHeap() / 1024, heap_min_free_kb, ESP.getHeapSize() / 1024,
              ESP.getMaxAllocHeap() / 1024, uxTaskGetStackHighWaterMark(NULL) / 1024);
-    UBaseType_t wifi_stack_free_kb = uxTaskGetStackHighWaterMark(wifi_task) / 1024,
+    UBaseType_t bluetooth_stack_free_kb = uxTaskGetStackHighWaterMark(bluetooth_task) / 1024,
+                wifi_stack_free_kb = uxTaskGetStackHighWaterMark(wifi_task) / 1024,
                 sensor_stack_free_kb = uxTaskGetStackHighWaterMark(env_sensor_task) / 1024,
                 gps_stack_free_kb = uxTaskGetStackHighWaterMark(gps_task) / 1024,
                 lorawan_stack_free_kb = uxTaskGetStackHighWaterMark(lorawan_task) / 1024,
@@ -70,6 +78,7 @@ void supervisor_check_task_stack()
                 button_stack_free_kb = uxTaskGetStackHighWaterMark(gp_button_task) / 1024,
                 power_stack_free_kb = uxTaskGetStackHighWaterMark(power_task) / 1024,
                 supervisor_stack_free_kb = uxTaskGetStackHighWaterMark(supervisor_task) / 1024;
+    ESP_LOGI(TAG, "bluetooth task state: %d, min.free stack: %dKB", eTaskGetState(bluetooth_task), bluetooth_stack_free_kb);
     ESP_LOGI(TAG, "wifi task state: %d, min.free stack: %dKB", eTaskGetState(wifi_task), wifi_stack_free_kb);
     ESP_LOGI(TAG, "sensor task state: %d, min.free stack: %dKB", eTaskGetState(env_sensor_task), sensor_stack_free_kb);
     ESP_LOGI(TAG, "gps task state: %d, min.free stack: %dKB", eTaskGetState(gps_task), gps_stack_free_kb);
@@ -82,7 +91,8 @@ void supervisor_check_task_stack()
     {
         supervisor_reset();
     }
-    if (wifi_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB || sensor_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB ||
+    if (bluetooth_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB ||
+        wifi_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB || sensor_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB ||
         gps_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB || lorawan_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB ||
         oled_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB || button_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB ||
         power_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB)
@@ -151,6 +161,26 @@ void supervisor_check_wifi()
     }
 }
 
+void supervisor_check_bluetooth()
+{
+    if (bluetooth_get_round_num() == bluetooth_rounds_reading)
+    {
+        if (++bluetooth_consecutive_readings > 2)
+        {
+            ESP_LOGE(TAG, "bluetooth task does not appear to be making progress, total number of rounds reads %d for %d times", bluetooth_rounds_reading, bluetooth_consecutive_readings);
+        }
+        if (bluetooth_consecutive_readings >= SUPERVISOR_STUCK_PROGRESS_THRESHOLD)
+        {
+            supervisor_reset();
+        }
+    }
+    else
+    {
+        bluetooth_rounds_reading = wifi_get_round_num();
+        bluetooth_consecutive_readings = 0;
+    }
+}
+
 void supervisor_task_loop(void *_)
 {
     while (true)
@@ -161,5 +191,6 @@ void supervisor_task_loop(void *_)
         supervisor_check_gps();
         supervisor_check_lorawan();
         supervisor_check_wifi();
+        supervisor_check_bluetooth();
     }
 }

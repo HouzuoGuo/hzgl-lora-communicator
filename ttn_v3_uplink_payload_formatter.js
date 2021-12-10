@@ -65,6 +65,13 @@ function decodeUplink(input) {
         // Byte 23, 24, 25, 26, 27, 28 - WiFi monitor - the loudest sender's mac.
         data.wifi_loudest_tx_mac = buf[i].toString(16) + ':' + buf[i + 1].toString(16) + ':' + buf[i + 2].toString(16) + ':' + buf[i + 3].toString(16) + ':' + buf[i + 4].toString(16) + ':' + buf[i + 5].toString(16);
         i += 6;
+        // Byte 29 - Bluetooth monitor - number of devices in the vicinity.
+        data.bt_num_devices = buf[i++];
+        // Byte 30 - Bluetooth monitor - the loudest sender's RSSI reading above RSSI floor (which is -100).
+        data.bt_loudest_tx_rssi = -100 + buf[i++];
+        // Byte 31, 32, 33, 34, 35, 36 - Bluetooth monitor - the loudest sender's MAC address.
+        data.bt_loudest_tx_mac = buf[i].toString(16) + ':' + buf[i + 1].toString(16) + ':' + buf[i + 2].toString(16) + ':' + buf[i + 3].toString(16) + ':' + buf[i + 4].toString(16) + ':' + buf[i + 5].toString(16);
+        i += 6;
     }
     return {
         data: data,
