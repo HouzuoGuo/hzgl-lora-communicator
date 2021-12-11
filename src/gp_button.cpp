@@ -7,11 +7,12 @@
 static const char LOG_TAG[] = __FILE__;
 
 static SemaphoreHandle_t mutex;
-bool is_button_down = false;
+bool is_button_down = false, is_lower_case = true;
 unsigned long pushed_down_timestamp = 0;
 unsigned long last_click_timestamp = 0;
 String morse_signals_buf = "";
 String morse_message_buf = "";
+String morse_edit_hint = "";
 bool morse_space_inserted_after_word = false;
 
 void gp_button_setup()
@@ -34,6 +35,12 @@ void gp_button_clear_morse_message_buf()
 void gp_button_decode_morse_and_clear()
 {
   char ch = gp_button_decode_morse(morse_signals_buf);
+  if (ch == '\0')
+  {
+    ESP_LOGI(LOG_TAG, "clear invalid morse input");
+    morse_signals_buf.clear();
+    return;
+  }
   ESP_LOGI(LOG_TAG, "morse decoded %c from %s", ch, morse_signals_buf.c_str());
   morse_message_buf += ch;
   morse_signals_buf.clear();
@@ -41,116 +48,123 @@ void gp_button_decode_morse_and_clear()
 
 char gp_button_decode_morse(const String presses)
 {
+  char ret = '\0';
   if (presses == ".-")
-    return 'a';
+    ret = 'a';
   else if (presses == "-...")
-    return 'b';
+    ret = 'b';
   else if (presses == "-.-.")
-    return 'c';
+    ret = 'c';
   else if (presses == "-..")
-    return 'd';
+    ret = 'd';
   else if (presses == ".")
-    return 'e';
+    ret = 'e';
   else if (presses == "..-.")
-    return 'f';
+    ret = 'f';
   else if (presses == "--.")
-    return 'g';
+    ret = 'g';
   else if (presses == "....")
-    return 'h';
+    ret = 'h';
   else if (presses == "..")
-    return 'i';
+    ret = 'i';
   else if (presses == ".---")
-    return 'j';
+    ret = 'j';
   else if (presses == "-.-")
-    return 'k';
+    ret = 'k';
   else if (presses == ".-..")
-    return 'l';
+    ret = 'l';
   else if (presses == "--")
-    return 'm';
+    ret = 'm';
   else if (presses == "-.")
-    return 'n';
+    ret = 'n';
   else if (presses == "---")
-    return 'o';
+    ret = 'o';
   else if (presses == ".--.")
-    return 'p';
+    ret = 'p';
   else if (presses == "--.-")
-    return 'q';
+    ret = 'q';
   else if (presses == ".-.")
-    return 'r';
+    ret = 'r';
   else if (presses == "...")
-    return 's';
+    ret = 's';
   else if (presses == "-")
-    return 't';
+    ret = 't';
   else if (presses == "..-")
-    return 'u';
+    ret = 'u';
   else if (presses == "...-")
-    return 'v';
+    ret = 'v';
   else if (presses == ".--")
-    return 'w';
+    ret = 'w';
   else if (presses == "-..-")
-    return 'x';
+    ret = 'x';
   else if (presses == "-.--")
-    return 'y';
+    ret = 'y';
   else if (presses == "--..")
-    return 'z';
+    ret = 'z';
   else if (presses == ".----")
-    return '1';
+    ret = '1';
   else if (presses == "..---")
-    return '2';
+    ret = '2';
   else if (presses == "...--")
-    return '3';
+    ret = '3';
   else if (presses == "....-")
-    return '4';
+    ret = '4';
   else if (presses == ".....")
-    return '5';
+    ret = '5';
   else if (presses == "-....")
-    return '6';
+    ret = '6';
   else if (presses == "--...")
-    return '7';
+    ret = '7';
   else if (presses == "---..")
-    return '8';
+    ret = '8';
   else if (presses == "----.")
-    return '9';
+    ret = '9';
   else if (presses == "-----")
-    return '0';
+    ret = '0';
   else if (presses == ".-.-.-")
-    return '.';
+    ret = '.';
   else if (presses == "--..--")
-    return ',';
+    ret = ',';
   else if (presses == "..--..")
-    return '?';
+    ret = '?';
   else if (presses == ".----.")
-    return '\'';
+    ret = '\'';
   else if (presses == "-.-.--")
-    return '!';
+    ret = '!';
   else if (presses == "-..-.")
-    return '/';
+    ret = '/';
   else if (presses == "-.--.")
-    return '(';
+    ret = '(';
   else if (presses == "-.--.-")
-    return ')';
+    ret = ')';
   else if (presses == ".-...")
-    return '&';
+    ret = '&';
   else if (presses == "---...")
-    return ':';
+    ret = ':';
   else if (presses == "-.-.-.")
-    return ';';
+    ret = ';';
   else if (presses == "-...-")
-    return '=';
+    ret = '=';
   else if (presses == ".-.-.")
-    return '+';
+    ret = '+';
   else if (presses == "-....-")
-    return '-';
+    ret = '-';
   else if (presses == "..--.-")
-    return '_';
+    ret = '_';
   else if (presses == ".-..-.")
-    return '"';
+    ret = '"';
   else if (presses == "...-..-")
-    return '$';
+    ret = '$';
   else if (presses == ".--.-.")
-    return '@';
+    ret = '@';
   else
-    return '?';
+    morse_edit_hint = "Unknown morse input";
+
+  if (!is_lower_case && ret >= 'a' && ret <= 'z')
+  {
+    ret = toupper(ret);
+  }
+  return ret;
 }
 
 void gp_button_read()
@@ -163,6 +177,22 @@ void gp_button_read()
     {
       is_button_down = true;
       pushed_down_timestamp = millis();
+    }
+    else
+    {
+      unsigned long duration = millis() - pushed_down_timestamp;
+      if (duration > MORSE_CLEAR_PRESS_DURATION_MS)
+      {
+        morse_edit_hint = "Release to clear";
+      }
+      else if (duration > MORSE_CHANGE_CASE_PRESS_DURATION_MS)
+      {
+        morse_edit_hint = "Release to switch a/A";
+      }
+      else if (duration > MORSE_BACKSPACE_PRESS_DURATION_MS)
+      {
+        morse_edit_hint = "Release to backspace";
+      }
     }
   }
   else
@@ -179,12 +209,20 @@ void gp_button_read()
       {
         morse_signals_buf.clear();
         morse_message_buf.clear();
+        morse_edit_hint.clear();
         ESP_LOGI(LOG_TAG, "buffers cleared after a long press");
+      }
+      else if (duration > MORSE_CHANGE_CASE_PRESS_DURATION_MS)
+      {
+        is_lower_case = !is_lower_case;
+        morse_edit_hint.clear();
+        ESP_LOGI(LOG_TAG, "changed case");
       }
       else if (duration > MORSE_BACKSPACE_PRESS_DURATION_MS)
       {
         morse_signals_buf.clear();
         morse_message_buf.remove(morse_message_buf.length() - 1);
+        morse_edit_hint.clear();
         ESP_LOGI(LOG_TAG, "deleted last character");
       }
       else if (duration > MORSE_DASH_PRESS_DURATION_MS)
@@ -238,6 +276,22 @@ String gp_button_get_morse_message_buf()
 {
   xSemaphoreTake(mutex, portMAX_DELAY);
   String ret = morse_message_buf;
+  xSemaphoreGive(mutex);
+  return ret;
+}
+
+String gp_button_get_edit_hint()
+{
+  xSemaphoreTake(mutex, portMAX_DELAY);
+  String ret = morse_edit_hint;
+  xSemaphoreGive(mutex);
+  return ret;
+}
+
+bool gp_button_is_input_lower_case()
+{
+  xSemaphoreTake(mutex, portMAX_DELAY);
+  bool ret = is_lower_case;
   xSemaphoreGive(mutex);
   return ret;
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 // POWER_TASK_LOOP_DELAY_MS is the sleep interval of power management IRQ polling task loop.
-#define POWER_TASK_LOOP_DELAY_MS 300
+#define POWER_TASK_LOOP_DELAY_MS 200
 
 // POWER_TASK_READ_STATUS_DELAY_MS is the interval between two readings of the latest power status.
 #define POWER_TASK_READ_STATUS_DELAY_MS (POWER_TASK_LOOP_DELAY_MS * 5)

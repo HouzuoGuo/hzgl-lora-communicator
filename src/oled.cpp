@@ -130,8 +130,10 @@ void oled_display_page_tx_message(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_L
     {
         snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Type a message in morse");
         snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "using the user button.");
-        snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Hold 2sec to backspace.");
-        snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Hold 4sec to clear.");
+        snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Hold the button to:");
+        snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "1sec - backspace");
+        snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "2sec - switch case a/A");
+        snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "3sec - clear");
     }
     else
     {
@@ -141,6 +143,8 @@ void oled_display_page_tx_message(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_L
         memcpy(lines[1], &tx_info_display[OLED_MAX_LINE_LEN], OLED_MAX_LINE_LEN);
         memcpy(lines[2], &tx_info_display[OLED_MAX_LINE_LEN * 2], OLED_MAX_LINE_LEN);
         memcpy(lines[3], &tx_info_display[OLED_MAX_LINE_LEN * 3], OLED_MAX_LINE_LEN);
+        // Line 4 is intentionally left blank.
+        snprintf(lines[5], OLED_MAX_LINE_LEN, "%c|%s", gp_button_is_input_lower_case() ? 'a' : 'A', gp_button_get_edit_hint().c_str());
     }
 }
 
@@ -157,8 +161,10 @@ void oled_display_page_tx_command(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_L
     {
         snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Type a command in morse");
         snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "using the user button.");
-        snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Hold 2sec to backspace.");
-        snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Hold 4sec to clear.");
+        snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Hold the button to:");
+        snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "1sec - backspace");
+        snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "2sec - switch case a/A");
+        snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "3sec - clear");
     }
     else
     {
@@ -168,6 +174,8 @@ void oled_display_page_tx_command(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_L
         memcpy(lines[1], &tx_info_display[OLED_MAX_LINE_LEN], OLED_MAX_LINE_LEN);
         memcpy(lines[2], &tx_info_display[OLED_MAX_LINE_LEN * 2], OLED_MAX_LINE_LEN);
         memcpy(lines[3], &tx_info_display[OLED_MAX_LINE_LEN * 3], OLED_MAX_LINE_LEN);
+        // Line 4 is intentionally left blank.
+        snprintf(lines[5], OLED_MAX_LINE_LEN, "%c|%s", gp_button_is_input_lower_case() ? 'a' : 'A', gp_button_get_edit_hint().c_str());
     }
 }
 
