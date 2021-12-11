@@ -11,9 +11,9 @@
 #define LORAWAN_EV_ACK 102
 // LORAWAN_EV_RESPONSE is a magic event number unrelated to LoRaWAN standard, it is exclusively used by this program's LoRaWAN event loop.
 #define LORAWAN_EV_RESPONSE 103
-// LORAWAN_TASK_LOOP_DELAY_MS is the sleep interval of the LoRaWAN transceiver task loop.
-// The reception of a downlink message is very sensitive to timing, therefore keep the delay short.
-#define LORAWAN_TASK_LOOP_DELAY_MS 50
+// LORAWAN_TASK_LOOP_DELAY_MS is the maximum sleep interval of the LoRaWAN transceiver task loop.
+// The actual interval will be determined at runtime depending on the deadline of LMIC internal tasks.
+#define LORAWAN_TASK_LOOP_DELAY_MS 256
 
 // LORAWAN_PORT_COMMAND is the numeric port number used for transmitting uplink toolbox command messages.
 #define LORAWAN_PORT_COMMAND 112

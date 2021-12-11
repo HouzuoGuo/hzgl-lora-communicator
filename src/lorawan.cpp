@@ -167,7 +167,7 @@ void lorawan_setup()
   // Do not lower transmission power automatically. According to The Things Network this feature is tricky to use.
   LMIC_setAdrMode(0);
   // Open up the RX window earlier ("clock error to compensate for").
-  LMIC_setClockError(MAX_CLOCK_ERROR * 20 / 100);
+  LMIC_setClockError(MAX_CLOCK_ERROR * 12 / 100);
 
   // The transmitter is activated by personalisation (i.e. static keys), so it has already "joined" the network.
   lorawan_handle_message(EV_JOINED);
@@ -352,7 +352,7 @@ void lorawan_reset_tx_stats()
   // Rely on LORAWAN_TX_INTERVAL_MS alone to control the duty cycle. Reset LMIC library's internal duty cycle stats.
   for (size_t band = 0; band < MAX_BANDS; ++band)
   {
-    LMIC.bands[band].avail = ms2osticks(millis() - 1000);
+    LMIC.bands[band].avail = ms2osticks(millis() - LORAWAN_TASK_LOOP_DELAY_MS * 2);
     if (LMIC.bands[band].avail < 0)
     {
       LMIC.bands[band].avail = 0;
@@ -400,10 +400,26 @@ void lorawan_task_loop(void *_)
 {
   // Wait for environment sensor readings to be available.
   vTaskDelay(pdMS_TO_TICKS(ENV_SENSOR_TASK_LOOP_DELAY_MS));
+  int delays[] = {LORAWAN_TASK_LOOP_DELAY_MS,
+                  LORAWAN_TASK_LOOP_DELAY_MS / 32,
+                  LORAWAN_TASK_LOOP_DELAY_MS / 128};
   while (true)
   {
     esp_task_wdt_reset();
-    vTaskDelay(pdMS_TO_TICKS(LORAWAN_TASK_LOOP_DELAY_MS));
+    bool waited = false;
+    for (int i = 0; i < 3; i++)
+    {
+      if (!os_queryTimeCriticalJobs(ms2osticks(delays[i])))
+      {
+        vTaskDelay(pdMS_TO_TICKS(LORAWAN_TASK_LOOP_DELAY_MS));
+        waited = true;
+      }
+    }
+    if (!waited)
+    {
+      // Do not occupy the CPU core for too long. I hope the LMIC library won't mind the slight delay.
+      vTaskDelay(pdMS_TO_TICKS(1));
+    }
     lorawan_transceive();
   }
 }
