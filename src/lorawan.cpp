@@ -400,26 +400,10 @@ void lorawan_task_loop(void *_)
 {
   // Wait for environment sensor readings to be available.
   vTaskDelay(pdMS_TO_TICKS(ENV_SENSOR_TASK_LOOP_DELAY_MS));
-  int delays[] = {LORAWAN_TASK_LOOP_DELAY_MS,
-                  LORAWAN_TASK_LOOP_DELAY_MS / 32,
-                  LORAWAN_TASK_LOOP_DELAY_MS / 128};
   while (true)
   {
     esp_task_wdt_reset();
-    bool waited = false;
-    for (int i = 0; i < 3; i++)
-    {
-      if (!os_queryTimeCriticalJobs(ms2osticks(delays[i])))
-      {
-        vTaskDelay(pdMS_TO_TICKS(LORAWAN_TASK_LOOP_DELAY_MS));
-        waited = true;
-      }
-    }
-    if (!waited)
-    {
-      // Do not occupy the CPU core for too long. I hope the LMIC library won't mind the slight delay.
-      vTaskDelay(pdMS_TO_TICKS(1));
-    }
+    vTaskDelay(pdMS_TO_TICKS(3));
     lorawan_transceive();
   }
 }
