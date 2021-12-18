@@ -18,6 +18,9 @@
 // MORSE_INTERVAL_BETWEEN_WORDS_MS is the duration to wait before automatically inserting a space into the morse message buffer.
 #define MORSE_INTERVAL_BETWEEN_WORDS_MS 4000
 
+// GP_BUTTON_CLICK_DURATION is the duration the button needs to be held and released in order to register a click.
+#define GP_BUTTON_CLICK_DURATION MORSE_DOT_PRESS_DURATION_MS
+
 // GP_BUTTON_TASK_LOOP_DELAY_MS is the sleep interval of the GP button task loop.
 #define GP_BUTTON_TASK_LOOP_DELAY_MS (MORSE_DOT_PRESS_DURATION_MS / 5)
 

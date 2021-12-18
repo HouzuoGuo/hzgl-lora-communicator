@@ -26,9 +26,6 @@
 // LORAWAN_TX_INTERVAL_MS is the interval to wait in between two routine uplink transmissions.
 #define LORAWAN_TX_INTERVAL_MS 20000
 
-// LORAWAN_TX_POWER_DBM is the transmission power in dbM.
-#define LORAWAN_TX_POWER_DBM 20
-
 // LORAWAN_MAX_MESSAGE_LEN is the length never exceeded by a message received from or transmitted to The Things Network.
 static const size_t LORAWAN_MAX_MESSAGE_LEN = 256;
 
@@ -40,6 +37,22 @@ typedef struct
     unsigned long timestamp_millis;
     int port;
 } lorawan_message_buf_t;
+
+const static String LORAWAN_POWER_REGULAR = "regular";
+const static String LORAWAN_POWER_BOOST = "boost";
+
+typedef struct
+{
+    int power_dbm;
+    int spreading_factor;
+    String mode_name;
+} lorawan_power_config_t;
+
+const static lorawan_power_config_t lorawan_power_boost = {.power_dbm = 20, .spreading_factor = DR_SF9, .mode_name = LORAWAN_POWER_BOOST};
+// The combo of ​​SF7​​ and bandwidth 125khz is often referred to as "DR5" (data rate 5): https://avbentem.github.io/airtime-calculator/ttn/eu868/
+const static lorawan_power_config_t lorawan_power_regular = {.power_dbm = 14, .spreading_factor = DR_SF7, .mode_name = LORAWAN_POWER_REGULAR};
+void lorawan_set_power_config(lorawan_power_config_t val);
+lorawan_power_config_t lorawan_get_power_config();
 
 // lorawan_setup initialises LoRaWAN library and prepares it for transmission/receiving operations.
 void lorawan_setup();

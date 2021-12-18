@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <esp_task_wdt.h>
 #include "gp_button.h"
+#include "oled.h"
 #include "hardware_facts.h"
 #include "power_management.h"
 
@@ -178,8 +179,9 @@ void gp_button_read()
       is_button_down = true;
       pushed_down_timestamp = millis();
     }
-    else
+    else if (oled_get_page_number() == OLED_PAGE_TX_MESSAGE || OLED_PAGE_TX_COMMAND)
     {
+      // Show morse edit hint.
       unsigned long duration = millis() - pushed_down_timestamp;
       if (duration > MORSE_CLEAR_PRESS_DURATION_MS)
       {
@@ -187,7 +189,7 @@ void gp_button_read()
       }
       else if (duration > MORSE_CHANGE_CASE_PRESS_DURATION_MS)
       {
-        morse_edit_hint = "Release to switch a/A";
+        morse_edit_hint = "Release to switch aA";
       }
       else if (duration > MORSE_BACKSPACE_PRESS_DURATION_MS)
       {
@@ -204,51 +206,73 @@ void gp_button_read()
       unsigned long duration = millis() - pushed_down_timestamp;
       ESP_LOGI(LOG_TAG, "pressed duration %d", duration);
       is_button_down = false;
-
-      if (duration > MORSE_CLEAR_PRESS_DURATION_MS)
+      if (oled_get_page_number() == OLED_PAGE_TX_MESSAGE || oled_get_page_number() == OLED_PAGE_TX_COMMAND)
       {
-        morse_signals_buf.clear();
-        morse_message_buf.clear();
-        morse_edit_hint.clear();
-        ESP_LOGI(LOG_TAG, "buffers cleared after a long press");
+        // Interpret the press as a morse input command.
+        if (duration > MORSE_CLEAR_PRESS_DURATION_MS)
+        {
+          morse_signals_buf.clear();
+          morse_message_buf.clear();
+          morse_edit_hint.clear();
+          ESP_LOGI(LOG_TAG, "buffers cleared after a long press");
+        }
+        else if (duration > MORSE_CHANGE_CASE_PRESS_DURATION_MS)
+        {
+          is_lower_case = !is_lower_case;
+          morse_edit_hint.clear();
+          ESP_LOGI(LOG_TAG, "changed case");
+        }
+        else if (duration > MORSE_BACKSPACE_PRESS_DURATION_MS)
+        {
+          morse_signals_buf.clear();
+          morse_message_buf.remove(morse_message_buf.length() - 1);
+          morse_edit_hint.clear();
+          ESP_LOGI(LOG_TAG, "deleted last character");
+        }
+        else if (duration > MORSE_DASH_PRESS_DURATION_MS)
+        {
+          morse_signals_buf += "-";
+          ESP_LOGI(LOG_TAG, "latest_presses + dash: %s", morse_signals_buf.c_str());
+        }
+        else if (duration > MORSE_DOT_PRESS_DURATION_MS)
+        {
+          morse_signals_buf += ".";
+          ESP_LOGI(LOG_TAG, "latest_presses + dot: %s", morse_signals_buf.c_str());
+        }
       }
-      else if (duration > MORSE_CHANGE_CASE_PRESS_DURATION_MS)
+      else if (oled_get_page_number() == OLED_PAGE_LORAWAN)
       {
-        is_lower_case = !is_lower_case;
-        morse_edit_hint.clear();
-        ESP_LOGI(LOG_TAG, "changed case");
-      }
-      else if (duration > MORSE_BACKSPACE_PRESS_DURATION_MS)
-      {
-        morse_signals_buf.clear();
-        morse_message_buf.remove(morse_message_buf.length() - 1);
-        morse_edit_hint.clear();
-        ESP_LOGI(LOG_TAG, "deleted last character");
-      }
-      else if (duration > MORSE_DASH_PRESS_DURATION_MS)
-      {
-        morse_signals_buf += "-";
-        ESP_LOGI(LOG_TAG, "latest_presses + dash: %s", morse_signals_buf.c_str());
-      }
-      else if (duration > MORSE_DOT_PRESS_DURATION_MS)
-      {
-        morse_signals_buf += ".";
-        ESP_LOGI(LOG_TAG, "latest_presses + dot: %s", morse_signals_buf.c_str());
+        // Interpret the press as a click on the LoRaWAN page, which switches between the two power modes.
+        if (duration > GP_BUTTON_CLICK_DURATION)
+        {
+          lorawan_power_config_t conf = lorawan_get_power_config();
+          if (conf.mode_name.equals(LORAWAN_POWER_REGULAR))
+          {
+            lorawan_set_power_config(lorawan_power_boost);
+          }
+          else
+          {
+            lorawan_set_power_config(lorawan_power_regular);
+          }
+        }
       }
     }
-
-    unsigned long sinceLastPress = millis() - last_click_timestamp;
-    if (sinceLastPress > MORSE_INTERVAL_BETWEEN_LETTERS_MS && morse_signals_buf.length() > 0)
+    if (oled_get_page_number() == OLED_PAGE_TX_MESSAGE || oled_get_page_number() == OLED_PAGE_TX_COMMAND)
     {
-      ESP_LOGI(LOG_TAG, "%dms have elapsed since last press, decoding the character.", sinceLastPress);
-      gp_button_decode_morse_and_clear();
-      morse_space_inserted_after_word = false;
-    }
-    else if (sinceLastPress > MORSE_INTERVAL_BETWEEN_WORDS_MS && !morse_space_inserted_after_word && morse_message_buf.length() > 0)
-    {
-      ESP_LOGI(LOG_TAG, "%dms have elapsed since last press, inserting word boundary.", sinceLastPress);
-      morse_message_buf += ' ';
-      morse_space_inserted_after_word = true;
+      // Handle the idle after last morse key input.
+      unsigned long since_last_press = millis() - last_click_timestamp;
+      if (since_last_press > MORSE_INTERVAL_BETWEEN_LETTERS_MS && morse_signals_buf.length() > 0)
+      {
+        ESP_LOGI(LOG_TAG, "%dms have elapsed since last press, decoding the character.", since_last_press);
+        gp_button_decode_morse_and_clear();
+        morse_space_inserted_after_word = false;
+      }
+      else if (since_last_press > MORSE_INTERVAL_BETWEEN_WORDS_MS && !morse_space_inserted_after_word && morse_message_buf.length() > 0)
+      {
+        ESP_LOGI(LOG_TAG, "%dms have elapsed since last press, inserting word boundary.", since_last_press);
+        morse_message_buf += ' ';
+        morse_space_inserted_after_word = true;
+      }
     }
   }
   xSemaphoreGive(mutex);

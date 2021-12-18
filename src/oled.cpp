@@ -53,7 +53,7 @@ int oled_get_last_morse_input_page_num()
 
 void oled_go_to_next_page()
 {
-    if (++curr_page_num == 8)
+    if (++curr_page_num == 9)
     {
         curr_page_num = OLED_PAGE_RX_INFO;
     }
@@ -129,7 +129,7 @@ void oled_display_page_tx_message(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_L
     if ((morse_signals.length() == 0 && morse_message.length() == 0) || last_morse_input_page_num != OLED_PAGE_TX_MESSAGE)
     {
         snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Type a message in morse");
-        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "using the user button.");
+        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "using the func button.");
         snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Hold the button to:");
         snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "1sec - backspace");
         snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "2sec - switch case a/A");
@@ -160,7 +160,7 @@ void oled_display_page_tx_command(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_L
     if ((morse_signals.length() == 0 && morse_message.length() == 0) || last_morse_input_page_num != OLED_PAGE_TX_COMMAND)
     {
         snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Type a command in morse");
-        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "using the user button.");
+        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "using the func button.");
         snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Hold the button to:");
         snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "1sec - backspace");
         snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "2sec - switch case a/A");
@@ -259,6 +259,27 @@ void oled_display_page_env_bt_sniffer_info(char lines[OLED_MAX_NUM_LINES][OLED_M
     snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "Scan round: %lu", bluetooth_get_round_num());
 }
 
+void oled_display_page_lora(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
+{
+    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "LoRaWAN");
+    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Data rate: %d Chan: %d", LMIC.datarate, LMIC.txChnl);
+    lorawan_power_config_t conf = lorawan_get_power_config();
+    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Power mode: %s", conf.mode_name.c_str());
+    int sf_reading = 0;
+    switch (conf.spreading_factor)
+    {
+    case DR_SF7:
+        sf_reading = 7;
+        break;
+    case DR_SF9:
+        sf_reading = 9;
+        break;
+    }
+    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Power: %ddBm SF: %d", conf.power_dbm, sf_reading);
+    snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Click the user button");
+    snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "to change TX power.");
+}
+
 void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
     snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Heap usage: %d/%dKB", (ESP.getHeapSize() - ESP.getFreeHeap()) / 1024, ESP.getHeapSize() / 1024);
@@ -306,6 +327,9 @@ void oled_display_refresh()
         break;
     case OLED_PAGE_BT_INFO:
         oled_display_page_env_bt_sniffer_info(lines);
+        break;
+    case OLED_PAGE_LORAWAN:
+        oled_display_page_lora(lines);
         break;
     case OLED_PAGE_DIAGNOSIS:
         oled_display_page_diagnosis(lines);

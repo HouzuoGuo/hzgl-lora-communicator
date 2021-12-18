@@ -27,6 +27,7 @@ const lmic_pinmap lmic_pins = {
 
 static size_t total_tx_bytes = 0, total_rx_bytes = 0;
 static lorawan_message_buf_t next_tx_message, last_rx_message;
+static lorawan_power_config_t power_config = lorawan_power_regular;
 static unsigned long last_transmision_timestamp = 0, tx_counter = 0;
 
 // os_getArtEui is referenced by "engineUpdate" symbol defined by the "MCCI LoRaWAN LMIC" library.
@@ -357,7 +358,7 @@ void lorawan_reset_tx_stats()
     {
       LMIC.bands[band].avail = 0;
     }
-    LMIC.bands[band].txpow = LORAWAN_TX_POWER_DBM;
+    LMIC.bands[band].txpow = power_config.power_dbm;
   }
 }
 
@@ -370,9 +371,8 @@ void lorawan_transceive()
   {
     lorawan_prepare_uplink_transmission();
     last_transmision_timestamp = millis();
-    // Set transmission power to the maximum allowed on TTGO T-Beam.
-    // The combo of ​​SF7​​ and bandwidth 125khz is often referred to as "DR5" (data rate 5): https://avbentem.github.io/airtime-calculator/ttn/eu868/
-    LMIC_setDrTxpow(DR_SF7, LORAWAN_TX_POWER_DBM);
+    // Reset transmission power and spreading factor.
+    LMIC_setDrTxpow(power_config.spreading_factor, power_config.power_dbm);
     lorawan_reset_tx_stats();
     lmic_tx_error_t err = LMIC_setTxData2_strict(next_tx_message.port, next_tx_message.buf, next_tx_message.len, false);
     lorawan_reset_tx_stats();
@@ -406,4 +406,14 @@ void lorawan_task_loop(void *_)
     vTaskDelay(pdMS_TO_TICKS(3));
     lorawan_transceive();
   }
+}
+
+void lorawan_set_power_config(lorawan_power_config_t val)
+{
+  power_config = val;
+}
+
+lorawan_power_config_t lorawan_get_power_config()
+{
+  return power_config;
 }
