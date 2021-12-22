@@ -1,8 +1,8 @@
 # hzgl-lora-communicator
 
 ["hzgl-lora-communicator"](https://github.com/HouzuoGuo/hzgl-lora-communicator)
-is an [open source](https://github.com/HouzuoGuo/hzgl-lora-communicator/blob/master/LICENSE)
-software for a battery-powered two-way messaging device. It uses [The Things Network Community Edition](https://www.thethingsindustries.com/docs/getting-started/ttn/)
+is an open source software for a battery-powered two-way messaging device. It
+uses [The Things Network Community Edition](https://www.thethingsindustries.com/docs/getting-started/ttn/)
 (LoRaWAN) for bi-directional data connectivity.
 
 ## Features
