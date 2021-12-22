@@ -367,7 +367,7 @@ void lorawan_transceive()
   // Give the LoRaWAN library a chance to do its work.
   os_runloop_once();
   // Rate-limit transmission to observe duty cycle.
-  if (last_transmision_timestamp == 0 || millis() - last_transmision_timestamp > LORAWAN_TX_INTERVAL_MS)
+  if (last_transmision_timestamp == 0 || millis() - last_transmision_timestamp > power_config.tx_internal_sec * 1000)
   {
     lorawan_prepare_uplink_transmission();
     last_transmision_timestamp = millis();
@@ -403,6 +403,8 @@ void lorawan_task_loop(void *_)
   while (true)
   {
     esp_task_wdt_reset();
+    // This interval must be kept extremely short, or the timing will be so off that LMIC MCCI library will be prevented from
+    // receiving downlink packets.
     vTaskDelay(pdMS_TO_TICKS(3));
     lorawan_transceive();
   }

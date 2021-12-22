@@ -261,10 +261,9 @@ void oled_display_page_env_bt_sniffer_info(char lines[OLED_MAX_NUM_LINES][OLED_M
 
 void oled_display_page_lora(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
-    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "LoRaWAN");
-    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Data rate: %d Chan: %d", LMIC.datarate, LMIC.txChnl);
+    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "LoRaWAN DR#%d Ch#%d", LMIC.datarate, LMIC.txChnl);
     lorawan_power_config_t conf = lorawan_get_power_config();
-    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Power mode: %s", conf.mode_name.c_str());
+    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Power mode: %s", conf.mode_name.c_str());
     int sf_reading = 0;
     switch (conf.spreading_factor)
     {
@@ -275,7 +274,8 @@ void oled_display_page_lora(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1
         sf_reading = 9;
         break;
     }
-    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Power: %ddBm SF: %d", conf.power_dbm, sf_reading);
+    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Power: %ddBm SF: %d", conf.power_dbm, sf_reading);
+    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "TX interval: %d sec", conf.tx_internal_sec);
     snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Click the user button");
     snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "to change TX power.");
 }

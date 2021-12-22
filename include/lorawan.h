@@ -45,12 +45,14 @@ typedef struct
 {
     int power_dbm;
     int spreading_factor;
+    int tx_internal_sec;
     String mode_name;
 } lorawan_power_config_t;
 
-const static lorawan_power_config_t lorawan_power_boost = {.power_dbm = 20, .spreading_factor = DR_SF9, .mode_name = LORAWAN_POWER_BOOST};
 // The combo of ​​SF7​​ and bandwidth 125khz is often referred to as "DR5" (data rate 5): https://avbentem.github.io/airtime-calculator/ttn/eu868/
-const static lorawan_power_config_t lorawan_power_regular = {.power_dbm = 14, .spreading_factor = DR_SF7, .mode_name = LORAWAN_POWER_REGULAR};
+// Whereas the data rate drops to "3" when a transmission uses SF9.
+const static lorawan_power_config_t lorawan_power_boost = {.power_dbm = 20, .spreading_factor = DR_SF9, .tx_internal_sec = 20, .mode_name = LORAWAN_POWER_BOOST};
+const static lorawan_power_config_t lorawan_power_regular = {.power_dbm = 14, .spreading_factor = DR_SF7, .tx_internal_sec = 60, .mode_name = LORAWAN_POWER_REGULAR};
 void lorawan_set_power_config(lorawan_power_config_t val);
 lorawan_power_config_t lorawan_get_power_config();
 
