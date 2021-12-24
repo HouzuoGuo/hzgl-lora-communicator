@@ -405,7 +405,7 @@ void lorawan_task_loop(void *_)
     esp_task_wdt_reset();
     // This interval must be kept extremely short, or the timing will be so off that LMIC MCCI library will be prevented from
     // receiving downlink packets.
-    vTaskDelay(pdMS_TO_TICKS(3));
+    vTaskDelay(pdMS_TO_TICKS(2));
     lorawan_transceive();
   }
 }
