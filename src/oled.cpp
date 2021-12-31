@@ -15,7 +15,7 @@ static const char LOG_TAG[] = __FILE__;
 static int curr_page_num = 0, last_morse_input_page_num = 0;
 static unsigned long last_page_nav_timestamp = 0, last_gps_data_timestamp = 0;
 static struct gps_data last_gps_data;
-static bool is_screen_on = true;
+static bool is_oled_on = false;
 static unsigned long last_input_timestamp = 0;
 
 static SSD1306Wire oled(OLED_I2C_ADDR, I2C_SDA, I2C_SCL);
@@ -35,6 +35,11 @@ bool oled_reset_last_input_timestamp()
     bool ret = millis() - last_input_timestamp > OLED_SLEEP_AFTER_INACTIVE_MS;
     last_input_timestamp = millis();
     return ret;
+}
+
+bool oled_is_awake()
+{
+    return is_oled_on;
 }
 
 void oled_draw_string_line(int line_number, String text)
@@ -304,7 +309,7 @@ void oled_display_going_to_sleep(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LE
     snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "The screen is going to");
     snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "sleep soon.");
     snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "TX will continue.");
-    snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Press PWR button to");
+    snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Click PWR button to");
     snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "wake screen up.");
 }
 
@@ -315,6 +320,11 @@ unsigned int oled_get_ms_since_last_input()
 
 void oled_on()
 {
+    if (is_oled_on)
+    {
+        return;
+    }
+    ESP_LOGI(LOG_TAG, "turning on OLED");
     i2c_lock();
     oled.displayOn();
     oled.clear();
@@ -325,15 +335,22 @@ void oled_on()
     oled.setTextAlignment(TEXT_ALIGN_LEFT);
     oled.setFont(ArialMT_Plain_10);
     i2c_unlock();
+    is_oled_on = true;
 }
 
 void oled_off()
 {
+    if (!is_oled_on)
+    {
+        return;
+    }
+    ESP_LOGI(LOG_TAG, "turning off OLED");
     i2c_lock();
     oled.clear();
     oled.setBrightness(0);
     oled.displayOff();
     i2c_unlock();
+    is_oled_on = false;
 }
 
 void oled_display_refresh()
@@ -341,24 +358,18 @@ void oled_display_refresh()
     // Conserve power when power management is in the saver mode.
     if (lorawan_get_power_config().mode_id == LORAWAN_POWER_SAVER)
     {
-        if (oled_get_ms_since_last_input() < OLED_SLEEP_AFTER_INACTIVE_MS && !is_screen_on)
+        if (oled_get_ms_since_last_input() < OLED_SLEEP_AFTER_INACTIVE_MS && !is_oled_on)
         {
-            // Bring screen back on.
-            ESP_LOGI(LOG_TAG, "bringing OLED back on from sleep");
-            is_screen_on = true;
             oled_on();
             power_led_off();
         }
-        else if (oled_get_ms_since_last_input() > OLED_SLEEP_AFTER_INACTIVE_MS && is_screen_on)
+        else if (oled_get_ms_since_last_input() > OLED_SLEEP_AFTER_INACTIVE_MS && is_oled_on)
         {
-            // Put screen to sleep.
-            ESP_LOGI(LOG_TAG, "putting OLED to sleep");
-            is_screen_on = false;
             oled_off();
             power_led_blink();
         }
     }
-    if (is_screen_on)
+    if (is_oled_on)
     {
         char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1];
         for (int i = 0; i < OLED_MAX_NUM_LINES; i++)

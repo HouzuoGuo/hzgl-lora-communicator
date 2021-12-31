@@ -13,6 +13,8 @@ class BTDeviceDiscoveryCallBack : public BLEAdvertisedDeviceCallbacks
 };
 
 void bluetooth_setup();
+void bluetooth_on();
+void bluetooth_off();
 void bluetooth_scan();
 void bluetooth_task_loop(void *_);
 unsigned long bluetooth_get_round_num();

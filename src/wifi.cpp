@@ -4,9 +4,14 @@
 #include <esp_wifi_types.h>
 #include <esp_task_wdt.h>
 
+#include "oled.h"
+#include "lorawan.h"
+
 static const char LOG_TAG[] = __FILE__;
 
 static SemaphoreHandle_t mutex;
+
+static bool is_powered_on = false;
 
 static unsigned long round_num = 0;
 static size_t channel_num = 1;
@@ -23,6 +28,17 @@ void wifi_setup()
 {
     mutex = xSemaphoreCreateMutex();
     memset(&channel_pkt_counter, 0, sizeof(channel_pkt_counter));
+    wifi_on();
+}
+
+void wifi_on()
+{
+    if (is_powered_on)
+    {
+        return;
+    }
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    ESP_LOGI(LOG_TAG, "turing on WiFi");
     wifi_init_config_t wifi_init_conf = WIFI_INIT_CONFIG_DEFAULT();
     wifi_init_conf.nvs_enable = 0;
     // Core 1 is already occupied by a great number of tasks, see setup.
@@ -32,19 +48,32 @@ void wifi_setup()
     esp_wifi_set_storage(WIFI_STORAGE_RAM);
     esp_wifi_set_mode(WIFI_MODE_NULL);
     esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
-    if (esp_wifi_start() == ESP_OK)
-    {
-        ESP_LOGI(LOG_TAG, "successfully initialised WiFi");
-    }
-    else
-    {
-        ESP_LOGI(LOG_TAG, "failed to initialise WiFi");
-        return;
-    }
+
+    esp_wifi_start();
+    esp_wifi_set_channel(channel_num, WIFI_SECOND_CHAN_NONE);
+
     esp_wifi_set_promiscuous(true);
     esp_wifi_set_promiscuous_filter(&pkt_filter);
     esp_wifi_set_promiscuous_rx_cb(&wifi_sniffer_packet_handler);
-    esp_wifi_set_channel(channel_num, WIFI_SECOND_CHAN_NONE);
+    xSemaphoreGive(mutex);
+    is_powered_on = true;
+}
+
+void wifi_off()
+{
+    if (!is_powered_on)
+    {
+        return;
+    }
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    ESP_LOGI(LOG_TAG, "turing off WiFi");
+    esp_wifi_disconnect();
+    esp_wifi_scan_stop();
+    esp_wifi_set_promiscuous(false);
+    esp_wifi_stop();
+    esp_wifi_deinit();
+    xSemaphoreGive(mutex);
+    is_powered_on = false;
 }
 
 void wifi_task_loop(void *_)
@@ -53,7 +82,15 @@ void wifi_task_loop(void *_)
     {
         esp_task_wdt_reset();
         vTaskDelay(pdMS_TO_TICKS(WIFI_TASK_LOOP_DELAY_MS));
-        wifi_next_channel();
+        if (lorawan_is_warming_up() || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_WIFI_INFO))
+        {
+            wifi_on();
+            wifi_next_channel();
+        }
+        else
+        {
+            wifi_off();
+        }
     }
 }
 

@@ -1,11 +1,15 @@
 #include <Arduino.h>
 #include <BLEDevice.h>
 #include <esp_task_wdt.h>
+
 #include "bluetooth.h"
+#include "lorawan.h"
+#include "oled.h"
 
 static const char LOG_TAG[] = __FILE__;
 
 static SemaphoreHandle_t mutex;
+static bool is_powered_on = false;
 
 static unsigned long round_num = 0;
 static BLEScan *scanner = NULL;
@@ -16,15 +20,7 @@ static int last_num_devices = 0, num_devices = 0;
 void bluetooth_setup()
 {
     mutex = xSemaphoreCreateMutex();
-    // The device name is not used because this scanner does not need to advertise itself.
-    BLEDevice::init("hzgl-comm");
-    BLEDevice::setPower(ESP_PWR_LVL_P9);
-    scanner = BLEDevice::getScan();
-    scanner->setAdvertisedDeviceCallbacks(new BTDeviceDiscoveryCallBack());
-    scanner->setActiveScan(true);
-    scanner->setInterval(100);
-    scanner->setWindow(BLUETOOTH_SCAN_DUTY_CYCLE_PCT);
-    ESP_LOGI(LOG_TAG, "successfully initialised bluetooth");
+    bluetooth_on();
 }
 
 void BTDeviceDiscoveryCallBack::onResult(BLEAdvertisedDevice dev)
@@ -37,6 +33,40 @@ void BTDeviceDiscoveryCallBack::onResult(BLEAdvertisedDevice dev)
     }
     num_devices++;
     xSemaphoreGive(mutex);
+}
+
+void bluetooth_on()
+{
+    if (is_powered_on)
+    {
+        return;
+    }
+    ESP_LOGI(LOG_TAG, "turing on Bluetooth");
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    // The device name is not used because this scanner does not need to advertise itself.
+    BLEDevice::init("hzgl-comm");
+    BLEDevice::setPower(ESP_PWR_LVL_P9);
+    scanner = BLEDevice::getScan();
+    scanner->setAdvertisedDeviceCallbacks(new BTDeviceDiscoveryCallBack());
+    scanner->setActiveScan(true);
+    scanner->setInterval(100);
+    scanner->setWindow(BLUETOOTH_SCAN_DUTY_CYCLE_PCT);
+    xSemaphoreGive(mutex);
+    is_powered_on = true;
+}
+
+void bluetooth_off()
+{
+    if (!is_powered_on)
+    {
+        return;
+    }
+    ESP_LOGI(LOG_TAG, "turing off Bluetooth");
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    btStop();
+    BLEDevice::deinit();
+    xSemaphoreGive(mutex);
+    is_powered_on = false;
 }
 
 void bluetooth_scan()
@@ -61,7 +91,15 @@ void bluetooth_task_loop(void *_)
         esp_task_wdt_reset();
         // The scanner runs for BLUETOOTH_SCAN_DURATION_SEC and then rests for a short period of time.
         vTaskDelay(pdMS_TO_TICKS(BLUETOOTH_TASK_LOOP_DELAY_MS));
-        bluetooth_scan();
+        if (lorawan_is_warming_up() || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_BT_INFO))
+        {
+            bluetooth_on();
+            bluetooth_scan();
+        }
+        else
+        {
+            bluetooth_off();
+        }
     }
 }
 

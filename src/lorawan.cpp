@@ -362,6 +362,21 @@ void lorawan_reset_tx_stats()
   }
 }
 
+bool lorawan_is_warming_up()
+{
+  if (last_transmision_timestamp == 0)
+  {
+    return true;
+  }
+  unsigned long since_last_tx = millis() - last_transmision_timestamp;
+  // "Warm up" during the couple of seconds prior to the upcomming transmission.
+  if (since_last_tx > power_config.tx_internal_sec * 1000 - LORAWAN_WARM_UP_MS && since_last_tx < power_config.tx_internal_sec * 1000)
+  {
+    return true;
+  }
+  return false;
+}
+
 void lorawan_transceive()
 {
   // Give the LoRaWAN library a chance to do its work.

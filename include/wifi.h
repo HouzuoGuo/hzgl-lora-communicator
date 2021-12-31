@@ -26,6 +26,8 @@ typedef struct
 } wifi_ieee80211_packet_t;
 
 void wifi_setup();
+void wifi_on();
+void wifi_off();
 void wifi_task_loop(void *_);
 void wifi_next_channel();
 size_t wifi_get_total_num_pkts();

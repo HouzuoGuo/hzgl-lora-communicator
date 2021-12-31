@@ -26,6 +26,8 @@
 // LORAWAN_TX_INTERVAL_MS is the interval to wait in between two routine uplink transmissions.
 #define LORAWAN_TX_INTERVAL_MS 20000
 
+#define LORAWAN_WARM_UP_MS (5 * 1000)
+
 // LORAWAN_MAX_MESSAGE_LEN is the length never exceeded by a message received from or transmitted to The Things Network.
 static const size_t LORAWAN_MAX_MESSAGE_LEN = 256;
 
@@ -79,3 +81,4 @@ size_t lorawan_get_total_tx_bytes();
 void lorawan_transceive();
 void lorawan_debug_to_log();
 void lorawan_reset_tx_stats();
+bool lorawan_is_warming_up();
