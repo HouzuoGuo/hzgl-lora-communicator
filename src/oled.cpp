@@ -24,17 +24,8 @@ void oled_setup()
 {
     i2c_lock();
     oled.init();
-    oled.displayOn();
-    oled.resetOrientation();
-    oled.resetDisplay();
-    oled.clear();
-
-    oled.flipScreenVertically();
-    oled.setBrightness(64);
-    oled.setContrast(0xF1, 128, 0x40);
-    oled.setTextAlignment(TEXT_ALIGN_LEFT);
-    oled.setFont(ArialMT_Plain_10);
     i2c_unlock();
+    oled_on();
     last_input_timestamp = millis();
     ESP_LOGI(LOG_TAG, "successfully initialised OLED");
 }
@@ -322,6 +313,29 @@ unsigned int oled_get_ms_since_last_input()
     return millis() - last_input_timestamp;
 }
 
+void oled_on()
+{
+    i2c_lock();
+    oled.displayOn();
+    oled.clear();
+    oled.setBrightness(64);
+    oled.setContrast(0xF1, 128, 0x40);
+    oled.resetOrientation();
+    oled.flipScreenVertically();
+    oled.setTextAlignment(TEXT_ALIGN_LEFT);
+    oled.setFont(ArialMT_Plain_10);
+    i2c_unlock();
+}
+
+void oled_off()
+{
+    i2c_lock();
+    oled.clear();
+    oled.setBrightness(0);
+    oled.displayOff();
+    i2c_unlock();
+}
+
 void oled_display_refresh()
 {
     // Conserve power when power management is in the saver mode.
@@ -332,20 +346,16 @@ void oled_display_refresh()
             // Bring screen back on.
             ESP_LOGI(LOG_TAG, "bringing OLED back on from sleep");
             is_screen_on = true;
+            oled_on();
             power_led_off();
-            i2c_lock();
-            oled.displayOn();
-            i2c_unlock();
         }
         else if (oled_get_ms_since_last_input() > OLED_SLEEP_AFTER_INACTIVE_MS && is_screen_on)
         {
             // Put screen to sleep.
             ESP_LOGI(LOG_TAG, "putting OLED to sleep");
             is_screen_on = false;
+            oled_off();
             power_led_blink();
-            i2c_lock();
-            oled.displayOff();
-            i2c_unlock();
         }
     }
     if (is_screen_on)

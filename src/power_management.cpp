@@ -129,6 +129,7 @@ void power_read_handle_lastest_irq()
     if (pmu.isPEKLongtPressIRQ())
     {
         ESP_LOGI(TAG, "shutting down");
+        oled_off();
         i2c_lock();
         pmu.setPowerOutPut(AXP192_LDO2, AXP202_OFF);  // LoRa
         pmu.setPowerOutPut(AXP192_LDO3, AXP202_OFF);  // GPS
