@@ -292,10 +292,17 @@ void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LE
     struct power_status power = power_get_status();
     if (power.is_batt_charging || !power.is_usb_power_available)
     {
+        // Battery is installed and it is charging/discharging.
         snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Bat: %.3fv %+.0fmA", float(power.batt_millivolt) / 1000.0, power.batt_milliamp);
+    }
+    else if (power.batt_millivolt < 100)
+    {
+        // Battery is not installed.
+        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "USB: %.3fv %.0fmA", float(power.usb_millivolt) / 1000.0, -power.power_draw_milliamp);
     }
     else
     {
+        // Battery is installed and it is neither charging nor discharging.
         snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Bat: %.3fv USB%.0fmA", float(power.batt_millivolt) / 1000.0, -power.power_draw_milliamp);
     }
     snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "LoRa: RSSI %d SNR %d", LMIC.rssi, LMIC.snr);

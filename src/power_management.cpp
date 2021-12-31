@@ -205,9 +205,10 @@ void power_read_status()
 {
     i2c_lock();
     status.is_batt_charging = pmu.isChargeing();
+    status.batt_millivolt = pmu.getBattVoltage();
+    status.usb_millivolt = pmu.getVbusVoltage();
     // The power management chip always draws power from USB when it is available.
     status.is_usb_power_available = pmu.getVbusCurrent() > 5;
-    status.batt_millivolt = pmu.getBattVoltage();
     if (status.is_batt_charging)
     {
         status.batt_milliamp = pmu.getBattChargeCurrent();
@@ -235,10 +236,8 @@ void power_read_status()
 void power_log_status()
 {
     i2c_lock();
-    ESP_LOGI(LOG_TAG, "vbus_millivolt: %.2f vbus_milliamp: %.2f batt_millivolt: %.2f batt_charge_milliamp: %.2f, batt_discharge_milliamp: %.2f",
-             pmu.getVbusVoltage(), pmu.getVbusCurrent(), pmu.getBattVoltage(), pmu.getBattChargeCurrent(), pmu.getBattDischargeCurrent());
-    ESP_LOGI(LOG_TAG, "is_batt_charging: %d is_usb_power_available: %d batt millivolt: %d batt_milliamp: %.2f power_draw_milliamp: %.2f",
-             status.is_batt_charging, status.is_usb_power_available, status.batt_millivolt, status.batt_milliamp, status.power_draw_milliamp);
+    ESP_LOGI(LOG_TAG, "is_batt_charging: %d is_usb_power_available: %d usb_millivolt: %d batt_millivolt: %d batt_milliamp: %.2f power_draw_milliamp: %.2f",
+             status.is_batt_charging, status.is_usb_power_available, status.usb_millivolt, status.batt_millivolt, status.batt_milliamp, status.power_draw_milliamp);
     i2c_unlock();
 }
 
