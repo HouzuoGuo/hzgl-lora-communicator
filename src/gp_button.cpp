@@ -8,13 +8,13 @@
 static const char LOG_TAG[] = __FILE__;
 
 static SemaphoreHandle_t mutex;
-bool is_button_down = false, is_lower_case = true;
-unsigned long pushed_down_timestamp = 0;
-unsigned long last_click_timestamp = 0;
-String morse_signals_buf = "";
-String morse_message_buf = "";
-String morse_edit_hint = "";
-bool morse_space_inserted_after_word = false;
+static bool is_button_down = false, is_lower_case = true;
+static unsigned long pushed_down_timestamp = 0;
+static unsigned long last_click_timestamp = 0;
+static String morse_signals_buf = "";
+static String morse_message_buf = "";
+static String morse_edit_hint = "";
+static bool morse_space_inserted_after_word = false;
 
 void gp_button_setup()
 {
@@ -171,6 +171,7 @@ char gp_button_decode_morse(const String presses)
 void gp_button_read()
 {
   xSemaphoreTake(mutex, portMAX_DELAY);
+  // LOW means the button is pressed down.
   if (digitalRead(GENERIC_PURPOSE_BUTTON) == LOW)
   {
     power_led_on();
@@ -178,6 +179,7 @@ void gp_button_read()
     {
       is_button_down = true;
       pushed_down_timestamp = millis();
+      oled_reset_last_input_timestamp();
     }
     else if (oled_get_page_number() == OLED_PAGE_TX_MESSAGE || OLED_PAGE_TX_COMMAND)
     {
@@ -246,9 +248,14 @@ void gp_button_read()
         if (duration > GP_BUTTON_CLICK_DURATION)
         {
           lorawan_power_config_t conf = lorawan_get_power_config();
-          if (conf.mode_name.equals(LORAWAN_POWER_REGULAR))
+          // regular (default) -> boost -> saver
+          if (conf.mode_id == LORAWAN_POWER_REGULAR)
           {
             lorawan_set_power_config(lorawan_power_boost);
+          }
+          else if (conf.mode_id == LORAWAN_POWER_BOOST)
+          {
+            lorawan_set_power_config(lorawan_power_saver);
           }
           else
           {

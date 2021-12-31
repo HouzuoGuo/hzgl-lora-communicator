@@ -78,6 +78,13 @@ void power_led_off()
     i2c_unlock();
 }
 
+void power_led_blink()
+{
+    i2c_lock();
+    pmu.setChgLEDMode(AXP20X_LED_BLINK_1HZ);
+    i2c_unlock();
+}
+
 int power_get_battery_millivolt()
 {
     i2c_lock();
@@ -111,8 +118,13 @@ void power_read_handle_lastest_irq()
     }
     if (pmu.isPEKShortPressIRQ())
     {
-        ESP_LOGI(TAG, "turning to the next page");
-        oled_go_to_next_page();
+        // If the button is clicked before OLED's timer deemed the display to have been inactive.
+        // Otherwise, the user is simply clicking the button to wake the screen up.
+        if (!oled_reset_last_input_timestamp())
+        {
+            ESP_LOGI(TAG, "turning to the next page");
+            oled_go_to_next_page();
+        }
     }
     if (pmu.isPEKLongtPressIRQ())
     {
@@ -121,8 +133,6 @@ void power_read_handle_lastest_irq()
         pmu.setPowerOutPut(AXP192_LDO2, AXP202_OFF);  // LoRa
         pmu.setPowerOutPut(AXP192_LDO3, AXP202_OFF);  // GPS
         pmu.setPowerOutPut(AXP192_DCDC1, AXP202_OFF); // OLED
-        pmu.setPowerOutPut(AXP192_DCDC2, AXP202_OFF); // unused
-        pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF); // unused
         pmu.setChgLEDMode(AXP20X_LED_OFF);
         pmu.shutdown();
         i2c_unlock();

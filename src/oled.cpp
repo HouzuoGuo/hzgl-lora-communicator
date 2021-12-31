@@ -15,6 +15,8 @@ static const char LOG_TAG[] = __FILE__;
 static int curr_page_num = 0, last_morse_input_page_num = 0;
 static unsigned long last_page_nav_timestamp = 0, last_gps_data_timestamp = 0;
 static struct gps_data last_gps_data;
+static bool is_screen_on = true;
+static unsigned long last_input_timestamp = 0;
 
 static SSD1306Wire oled(OLED_I2C_ADDR, I2C_SDA, I2C_SCL);
 
@@ -33,7 +35,15 @@ void oled_setup()
     oled.setTextAlignment(TEXT_ALIGN_LEFT);
     oled.setFont(ArialMT_Plain_10);
     i2c_unlock();
+    last_input_timestamp = millis();
     ESP_LOGI(LOG_TAG, "successfully initialised OLED");
+}
+
+bool oled_reset_last_input_timestamp()
+{
+    bool ret = millis() - last_input_timestamp > OLED_SLEEP_AFTER_INACTIVE_MS;
+    last_input_timestamp = millis();
+    return ret;
 }
 
 void oled_draw_string_line(int line_number, String text)
@@ -263,7 +273,6 @@ void oled_display_page_lora(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1
 {
     snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "LoRaWAN DR#%d Ch#%d", LMIC.datarate, LMIC.txChnl);
     lorawan_power_config_t conf = lorawan_get_power_config();
-    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Power mode: %s", conf.mode_name.c_str());
     int sf_reading = 0;
     switch (conf.spreading_factor)
     {
@@ -274,10 +283,11 @@ void oled_display_page_lora(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1
         sf_reading = 9;
         break;
     }
-    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Power: %ddBm SF: %d", conf.power_dbm, sf_reading);
+    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "TX power: %ddBm SF: %d", conf.power_dbm, sf_reading);
     snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "TX interval: %d sec", conf.tx_internal_sec);
+    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Power mode: %s", conf.mode_name.c_str());
     snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Click the user button");
-    snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "to change TX power.");
+    snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "to change power mode.");
 }
 
 void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
@@ -298,53 +308,104 @@ void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LE
     snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "GPS: read %luB", gps_get_chars_processed());
 }
 
+void oled_display_going_to_sleep(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
+{
+    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "The screen is going to");
+    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "sleep soon.");
+    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "TX will continue.");
+    snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Press PWR button to");
+    snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "wake screen up.");
+}
+
+unsigned int oled_get_ms_since_last_input()
+{
+    return millis() - last_input_timestamp;
+}
+
 void oled_display_refresh()
 {
-    char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1];
-    for (int i = 0; i < OLED_MAX_NUM_LINES; i++)
+    // Conserve power when power management is in the saver mode.
+    if (lorawan_get_power_config().mode_id == LORAWAN_POWER_SAVER)
     {
-        memset(lines[i], 0, OLED_MAX_LINE_LEN + 1);
+        if (oled_get_ms_since_last_input() < OLED_SLEEP_AFTER_INACTIVE_MS && !is_screen_on)
+        {
+            // Bring screen back on.
+            ESP_LOGI(LOG_TAG, "bringing OLED back on from sleep");
+            is_screen_on = true;
+            power_led_off();
+            i2c_lock();
+            oled.displayOn();
+            i2c_unlock();
+        }
+        else if (oled_get_ms_since_last_input() > OLED_SLEEP_AFTER_INACTIVE_MS && is_screen_on)
+        {
+            // Put screen to sleep.
+            ESP_LOGI(LOG_TAG, "putting OLED to sleep");
+            is_screen_on = false;
+            power_led_blink();
+            i2c_lock();
+            oled.displayOff();
+            i2c_unlock();
+        }
     }
-    switch (oled_get_page_number())
+    if (is_screen_on)
     {
-    case OLED_PAGE_RX_INFO:
-        oled_display_page_rx_info(lines);
-        break;
-    case OLED_PAGE_TX_MESSAGE:
-        oled_display_page_tx_message(lines);
-        break;
-    case OLED_PAGE_TX_COMMAND:
-        oled_display_page_tx_command(lines);
-        break;
-    case OLED_PAGE_GPS_INFO:
-        oled_display_page_gps_info(lines);
-        break;
-    case OLED_PAGE_ENV_SENSOR_INFO:
-        oled_display_page_env_sensor_info(lines);
-        break;
-    case OLED_PAGE_WIFI_INFO:
-        oled_display_page_env_wifi_sniffer_info(lines);
-        break;
-    case OLED_PAGE_BT_INFO:
-        oled_display_page_env_bt_sniffer_info(lines);
-        break;
-    case OLED_PAGE_LORAWAN:
-        oled_display_page_lora(lines);
-        break;
-    case OLED_PAGE_DIAGNOSIS:
-        oled_display_page_diagnosis(lines);
-        break;
-    default:
-        break;
+        char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1];
+        for (int i = 0; i < OLED_MAX_NUM_LINES; i++)
+        {
+            memset(lines[i], 0, OLED_MAX_LINE_LEN + 1);
+        }
+        if (lorawan_get_power_config().mode_id == LORAWAN_POWER_SAVER &&
+            (oled_get_ms_since_last_input() > (OLED_SLEEP_AFTER_INACTIVE_MS - OLED_SLEEP_REMINDER_DURATION_MS) &&
+             oled_get_ms_since_last_input() < OLED_SLEEP_AFTER_INACTIVE_MS))
+        {
+            // Reminder the user for the brief period before the screen goes to sleep.
+            oled_display_going_to_sleep(lines);
+        }
+        else
+        {
+            switch (oled_get_page_number())
+            {
+            case OLED_PAGE_RX_INFO:
+                oled_display_page_rx_info(lines);
+                break;
+            case OLED_PAGE_TX_MESSAGE:
+                oled_display_page_tx_message(lines);
+                break;
+            case OLED_PAGE_TX_COMMAND:
+                oled_display_page_tx_command(lines);
+                break;
+            case OLED_PAGE_GPS_INFO:
+                oled_display_page_gps_info(lines);
+                break;
+            case OLED_PAGE_ENV_SENSOR_INFO:
+                oled_display_page_env_sensor_info(lines);
+                break;
+            case OLED_PAGE_WIFI_INFO:
+                oled_display_page_env_wifi_sniffer_info(lines);
+                break;
+            case OLED_PAGE_BT_INFO:
+                oled_display_page_env_bt_sniffer_info(lines);
+                break;
+            case OLED_PAGE_LORAWAN:
+                oled_display_page_lora(lines);
+                break;
+            case OLED_PAGE_DIAGNOSIS:
+                oled_display_page_diagnosis(lines);
+                break;
+            default:
+                break;
+            }
+        }
+        oled.clear();
+        for (int i = 0; i < OLED_MAX_NUM_LINES; i++)
+        {
+            oled_draw_string_line(i, lines[i]);
+        }
+        i2c_lock();
+        oled.display();
+        i2c_unlock();
     }
-    oled.clear();
-    for (int i = 0; i < OLED_MAX_NUM_LINES; i++)
-    {
-        oled_draw_string_line(i, lines[i]);
-    }
-    i2c_lock();
-    oled.display();
-    i2c_unlock();
 }
 
 void oled_task_loop(void *_)

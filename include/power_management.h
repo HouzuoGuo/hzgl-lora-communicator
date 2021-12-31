@@ -19,6 +19,7 @@ struct power_status
 void power_setup();
 void power_led_on();
 void power_led_off();
+void power_led_blink();
 int power_get_uptime_sec();
 struct power_status power_get_status();
 void power_read_status();

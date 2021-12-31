@@ -22,6 +22,11 @@
 // OLED_PAGE_DIAGNOSIS is the page index number of the diagnosis information page.
 #define OLED_PAGE_DIAGNOSIS 8
 
+// OLED_SLEEP_AFTER_INACTIVE_MS is the number of seconds after which the screen goes to sleep.
+#define OLED_SLEEP_AFTER_INACTIVE_MS (30 * 1000)
+// OLED_SLEEP_AFTER_INACTIVE_MS is the number of seconds to display the screen sleep reminder before it goes to sleep.
+#define OLED_SLEEP_REMINDER_DURATION_MS (10 * 1000)
+
 // OLED_TASK_LOOP_DELAY_MS is the sleep interval of the OLED display refresh task loop. The display refreshes at 20 FPS.
 #define OLED_TASK_LOOP_DELAY_MS (1000 / 15)
 
@@ -31,6 +36,8 @@ void oled_setup();
 // oled_display_line displays a string text on the specified line. Line number begins at 0.
 void oled_draw_string_line(int line_number, String text);
 
+bool oled_reset_last_input_timestamp();
+unsigned int oled_get_ms_since_last_input();
 int oled_get_page_number();
 void oled_go_to_next_page();
 unsigned long oled_get_last_page_nav_timestamp();
@@ -43,5 +50,6 @@ void oled_display_page_env_sensor_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_L
 void oled_display_page_env_wifi_sniffer_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1]);
 void oled_display_page_env_bt_sniffer_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1]);
 void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1]);
+void oled_display_going_to_sleep(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1]);
 void oled_display_refresh();
 void oled_task_loop(void *_);
