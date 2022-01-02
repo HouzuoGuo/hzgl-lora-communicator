@@ -349,6 +349,13 @@ void lorawan_debug_to_log()
 
 void lorawan_reset_tx_stats()
 {
+  // An unusual workaround for the issue of LMIC library getting stuck.
+  // FIXME: get rid of this workaround after figuring out the root cause.
+  int power_dbm = power_get_config().power_dbm;
+  if (LMIC.seqnoUp % 2 == 1)
+  {
+    power_dbm += 1;
+  }
   // Rely on LORAWAN_TX_INTERVAL_MS alone to control the duty cycle. Reset LMIC library's internal duty cycle stats.
   for (size_t band = 0; band < MAX_BANDS; ++band)
   {
@@ -357,7 +364,7 @@ void lorawan_reset_tx_stats()
     {
       LMIC.bands[band].avail = 0;
     }
-    LMIC.bands[band].txpow = power_get_config().power_dbm;
+    LMIC.bands[band].txpow = power_dbm;
   }
 }
 

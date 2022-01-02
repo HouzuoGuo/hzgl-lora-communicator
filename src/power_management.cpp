@@ -152,6 +152,7 @@ void power_start_conserving()
     {
         return;
     }
+    ESP_LOGI(TAG, "start conserving power by switching to power saver config");
     config_before_conserving = config;
     config = power_config_saver;
     is_conserving_power = true;
@@ -163,6 +164,7 @@ void power_stop_conserving()
     {
         return;
     }
+    ESP_LOGI(TAG, "stop conserving power");
     config = config_before_conserving;
     is_conserving_power = false;
 }
@@ -285,6 +287,14 @@ void power_task_loop(void *_)
         if ((rounds++) % (POWER_TASK_READ_STATUS_DELAY_MS / POWER_TASK_LOOP_DELAY_MS) == 0)
         {
             power_read_status();
+            if (status.batt_milliamp < 0)
+            {
+                power_start_conserving();
+            }
+            else
+            {
+                power_stop_conserving();
+            }
         }
         power_read_handle_lastest_irq();
     }
