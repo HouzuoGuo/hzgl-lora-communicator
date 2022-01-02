@@ -414,7 +414,7 @@ void lorawan_transceive()
 void lorawan_task_loop(void *_)
 {
   // Wait for environment sensor readings to be available.
-  vTaskDelay(pdMS_TO_TICKS(ENV_SENSOR_TASK_LOOP_DELAY_MS));
+  vTaskDelay(pdMS_TO_TICKS(ENV_SENSOR_TASK_LOOP_DELAY_MS * 1.1));
   while (true)
   {
     esp_task_wdt_reset();
