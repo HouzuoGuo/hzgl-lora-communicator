@@ -21,7 +21,7 @@ void env_sensor_setup()
     }
     else
     {
-        ESP_LOGI(LOG_TAG, "failed to initialise BME280 sensor");
+        ESP_LOGW(LOG_TAG, "failed to initialise BME280 sensor");
     }
     i2c_unlock();
 }
