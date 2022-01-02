@@ -24,7 +24,7 @@ void power_setup()
     }
     else
     {
-        ESP_LOGI(LOG_TAG, "failed to initialise AXP power management chip");
+        ESP_LOGW(LOG_TAG, "failed to initialise AXP power management chip");
     }
     // The voltage levels took some inspiration from ESP32-paxcounter.
     pmu.setDCDC1Voltage(3300); // OLED
@@ -104,7 +104,7 @@ void power_read_handle_lastest_irq()
     if (pmu.isVbusOverVoltageIRQ())
     {
         i2c_lock();
-        ESP_LOGI(TAG, "USB power supply voltage is too high (%f.3v)", pmu.getVbusVoltage() / 1000);
+        ESP_LOGW(TAG, "USB power supply voltage is too high (%f.3v)", pmu.getVbusVoltage() / 1000);
         i2c_unlock();
     }
     if (pmu.isBattPlugInIRQ())
@@ -131,7 +131,7 @@ void power_read_handle_lastest_irq()
     }
     if (pmu.isPEKLongtPressIRQ())
     {
-        ESP_LOGI(TAG, "shutting down");
+        ESP_LOGW(TAG, "shutting down");
         oled_off();
         i2c_lock();
         pmu.setPowerOutPut(AXP192_LDO2, AXP202_OFF);  // LoRa
@@ -152,7 +152,7 @@ void power_start_conserving()
     {
         return;
     }
-    ESP_LOGI(TAG, "start conserving power by switching to power saver config");
+    ESP_LOGW(TAG, "start conserving power by switching from mode %d to power save mode, battery current reads: %+.1f", config.mode_id, status.batt_milliamp);
     config_before_conserving = config;
     config = power_config_saver;
     is_conserving_power = true;
@@ -164,7 +164,7 @@ void power_stop_conserving()
     {
         return;
     }
-    ESP_LOGI(TAG, "stop conserving power");
+    ESP_LOGW(TAG, "stop conserving power and return to power mode %d", config_before_conserving.mode_id);
     config = config_before_conserving;
     is_conserving_power = false;
 }
@@ -253,7 +253,7 @@ void power_read_status()
     }
     if (status.power_draw_milliamp < 0)
     {
-        // This should not happen.
+        ESP_LOGI(TAG, "power draw reads negative (%.2f) - this should not have happened", status.power_draw_milliamp);
         status.power_draw_milliamp = 0;
     }
     i2c_unlock();
@@ -262,13 +262,14 @@ void power_read_status()
 void power_log_status()
 {
     i2c_lock();
-    ESP_LOGI(LOG_TAG, "is_batt_charging: %d is_usb_power_available: %d usb_millivolt: %d batt_millivolt: %d batt_milliamp: %.2f power_draw_milliamp: %.2f",
-             status.is_batt_charging, status.is_usb_power_available, status.usb_millivolt, status.batt_millivolt, status.batt_milliamp, status.power_draw_milliamp);
+    ESP_LOGI(LOG_TAG, "mode: %d, is_batt_charging: %d, is_usb_power_available: %d, usb_millivolt: %d, batt_millivolt: %d, batt_milliamp: %.2f, power_draw_milliamp: %.2f",
+             config.mode_id, status.is_batt_charging, status.is_usb_power_available, status.usb_millivolt, status.batt_millivolt, status.batt_milliamp, status.power_draw_milliamp);
     i2c_unlock();
 }
 
 void power_set_config(power_config_t val)
 {
+    ESP_LOGI(TAG, "setting power mode to %d", val.mode_id);
     config = val;
 }
 
@@ -287,7 +288,7 @@ void power_task_loop(void *_)
         if ((rounds++) % (POWER_TASK_READ_STATUS_DELAY_MS / POWER_TASK_LOOP_DELAY_MS) == 0)
         {
             power_read_status();
-            if (status.batt_milliamp < 0)
+            if (status.batt_milliamp < -10)
             {
                 power_start_conserving();
             }

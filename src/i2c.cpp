@@ -16,7 +16,7 @@ void i2c_setup()
     }
     else
     {
-        ESP_LOGI(LOG_TAG, "failed to initialise I2C");
+        ESP_LOGW(LOG_TAG, "failed to initialise I2C");
     }
 }
 

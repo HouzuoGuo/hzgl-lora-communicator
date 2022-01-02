@@ -20,7 +20,7 @@ void setup()
   Serial.begin(115200);
   if (!setCpuFrequencyMhz(80))
   {
-    ESP_LOGI(LOG_TAG, "failed to set CPU frequency for power savings");
+    ESP_LOGW(LOG_TAG, "failed to set CPU frequency for power savings");
   }
 
   pinMode(GENERIC_PURPOSE_BUTTON, INPUT);

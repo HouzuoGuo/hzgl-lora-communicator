@@ -47,17 +47,17 @@ void lorawan_handle_message(uint8_t message)
     ESP_LOGI(LOG_TAG, "joined network");
     break;
   case EV_JOIN_FAILED:
-    ESP_LOGI(LOG_TAG, "failed to join network");
+    ESP_LOGW(LOG_TAG, "failed to join network");
     break;
   case EV_REJOIN_FAILED:
-    ESP_LOGI(LOG_TAG, "failed to rejoin network");
+    ESP_LOGW(LOG_TAG, "failed to rejoin network");
     break;
   case EV_RESET:
     ESP_LOGI(LOG_TAG, "reset network connection");
     break;
   case EV_LINK_DEAD:
     // This is only applicable when adaptive-data-rate (see LMIC_setAdrMode) is enabled.
-    ESP_LOGI(LOG_TAG, "network link is dead");
+    ESP_LOGW(LOG_TAG, "network link is dead");
     break;
   case LORAWAN_EV_ACK:
     ESP_LOGI(LOG_TAG, "my transmitted message was acknowledged");
@@ -163,7 +163,6 @@ void lorawan_setup()
 
   // Do not ask gateways for a downlink message to check the connectivity.
   LMIC_setLinkCheckMode(0);
-
   // Do not lower transmission power automatically. According to The Things Network this feature is tricky to use.
   LMIC_setAdrMode(0);
   // Open up the RX window earlier ("clock error to compensate for").
@@ -349,22 +348,17 @@ void lorawan_debug_to_log()
 
 void lorawan_reset_tx_stats()
 {
-  // An unusual workaround for the issue of LMIC library getting stuck.
-  // FIXME: get rid of this workaround after figuring out the root cause.
-  int power_dbm = power_get_config().power_dbm;
-  if (LMIC.seqnoUp % 2 == 1)
-  {
-    power_dbm += 1;
-  }
+  LMIC_setDrTxpow(power_get_config().spreading_factor, power_get_config().power_dbm);
   // Rely on LORAWAN_TX_INTERVAL_MS alone to control the duty cycle. Reset LMIC library's internal duty cycle stats.
   for (size_t band = 0; band < MAX_BANDS; ++band)
   {
-    LMIC.bands[band].avail = ms2osticks(millis() - LORAWAN_TASK_LOOP_DELAY_MS * 2);
+    LMIC.bands[band].txcap = 1;
+    LMIC.bands[band].txpow = power_get_config().power_dbm;
+    LMIC.bands[band].avail = ms2osticks(millis() - 1);
     if (LMIC.bands[band].avail < 0)
     {
       LMIC.bands[band].avail = 0;
     }
-    LMIC.bands[band].txpow = power_dbm;
   }
 }
 
@@ -394,10 +388,8 @@ void lorawan_transceive()
     lorawan_prepare_uplink_transmission();
     last_transmision_timestamp = millis();
     // Reset transmission power and spreading factor.
-    LMIC_setDrTxpow(power_config.spreading_factor, power_config.power_dbm);
     lorawan_reset_tx_stats();
     lmic_tx_error_t err = LMIC_setTxData2_strict(next_tx_message.port, next_tx_message.buf, next_tx_message.len, false);
-    lorawan_reset_tx_stats();
     // lorawan_debug_to_log();
     if (err == LMIC_ERROR_SUCCESS)
     {
@@ -405,7 +397,7 @@ void lorawan_transceive()
     }
     else
     {
-      ESP_LOGI(LOG_TAG, "failed to transmit LoRaWAN message due to error code %d", err);
+      ESP_LOGW(LOG_TAG, "failed to transmit LoRaWAN message due to error code %d", err);
       lorawan_debug_to_log();
     }
     if (LMIC.opmode & OP_TXRXPEND)

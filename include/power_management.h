@@ -18,9 +18,9 @@ struct power_status
     float power_draw_milliamp;
 };
 
-const static int POWER_BOOST = 10999;
-const static int POWER_REGULAR = 10500;
-const static int POWER_SAVER = 10000;
+const static int POWER_BOOST = 19909;
+const static int POWER_REGULAR = 19905;
+const static int POWER_SAVER = 19901;
 
 typedef struct
 {
