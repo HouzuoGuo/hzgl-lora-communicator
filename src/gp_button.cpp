@@ -247,19 +247,19 @@ void gp_button_read()
         // Interpret the press as a click on the LoRaWAN page, which switches between the two power modes.
         if (duration > GP_BUTTON_CLICK_DURATION)
         {
-          lorawan_power_config_t conf = lorawan_get_power_config();
+          power_config_t conf = power_get_config();
           // regular (default) -> boost -> saver
-          if (conf.mode_id == LORAWAN_POWER_REGULAR)
+          if (conf.mode_id == POWER_REGULAR)
           {
-            lorawan_set_power_config(lorawan_power_boost);
+            power_set_config(power_config_boost);
           }
-          else if (conf.mode_id == LORAWAN_POWER_BOOST)
+          else if (conf.mode_id == POWER_BOOST)
           {
-            lorawan_set_power_config(lorawan_power_saver);
+            power_set_config(power_config_saver);
           }
           else
           {
-            lorawan_set_power_config(lorawan_power_regular);
+            power_set_config(power_config_regular);
           }
         }
       }

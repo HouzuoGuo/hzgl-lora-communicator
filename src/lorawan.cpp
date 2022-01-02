@@ -27,7 +27,6 @@ const lmic_pinmap lmic_pins = {
 
 static size_t total_tx_bytes = 0, total_rx_bytes = 0;
 static lorawan_message_buf_t next_tx_message, last_rx_message;
-static lorawan_power_config_t power_config = lorawan_power_regular;
 static unsigned long last_transmision_timestamp = 0, tx_counter = 0;
 
 // os_getArtEui is referenced by "engineUpdate" symbol defined by the "MCCI LoRaWAN LMIC" library.
@@ -358,7 +357,7 @@ void lorawan_reset_tx_stats()
     {
       LMIC.bands[band].avail = 0;
     }
-    LMIC.bands[band].txpow = power_config.power_dbm;
+    LMIC.bands[band].txpow = power_get_config().power_dbm;
   }
 }
 
@@ -370,7 +369,7 @@ bool lorawan_is_warming_up()
   }
   unsigned long since_last_tx = millis() - last_transmision_timestamp;
   // "Warm up" during the couple of seconds prior to the upcomming transmission.
-  if (since_last_tx > power_config.tx_internal_sec * 1000 - LORAWAN_WARM_UP_MS && since_last_tx < power_config.tx_internal_sec * 1000)
+  if (since_last_tx > power_get_config().tx_internal_sec * 1000 - LORAWAN_WARM_UP_MS && since_last_tx < power_get_config().tx_internal_sec * 1000)
   {
     return true;
   }
@@ -382,6 +381,7 @@ void lorawan_transceive()
   // Give the LoRaWAN library a chance to do its work.
   os_runloop_once();
   // Rate-limit transmission to observe duty cycle.
+  power_config_t power_config = power_get_config();
   if (last_transmision_timestamp == 0 || millis() - last_transmision_timestamp > power_config.tx_internal_sec * 1000)
   {
     lorawan_prepare_uplink_transmission();
@@ -423,14 +423,4 @@ void lorawan_task_loop(void *_)
     vTaskDelay(pdMS_TO_TICKS(2));
     lorawan_transceive();
   }
-}
-
-void lorawan_set_power_config(lorawan_power_config_t val)
-{
-  power_config = val;
-}
-
-lorawan_power_config_t lorawan_get_power_config()
-{
-  return power_config;
 }

@@ -268,7 +268,7 @@ void oled_display_page_env_bt_sniffer_info(char lines[OLED_MAX_NUM_LINES][OLED_M
 void oled_display_page_lora(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
     snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "LoRaWAN DR#%d Ch#%d", LMIC.datarate, LMIC.txChnl);
-    lorawan_power_config_t conf = lorawan_get_power_config();
+    power_config_t conf = power_get_config();
     int sf_reading = 0;
     switch (conf.spreading_factor)
     {
@@ -363,7 +363,7 @@ void oled_off()
 void oled_display_refresh()
 {
     // Conserve power when power management is in the saver mode.
-    if (lorawan_get_power_config().mode_id == LORAWAN_POWER_SAVER)
+    if (power_get_config().mode_id == POWER_SAVER)
     {
         if (oled_get_ms_since_last_input() < OLED_SLEEP_AFTER_INACTIVE_MS && !is_oled_on)
         {
@@ -383,7 +383,7 @@ void oled_display_refresh()
         {
             memset(lines[i], 0, OLED_MAX_LINE_LEN + 1);
         }
-        if (lorawan_get_power_config().mode_id == LORAWAN_POWER_SAVER &&
+        if (power_get_config().mode_id == POWER_SAVER &&
             (oled_get_ms_since_last_input() > (OLED_SLEEP_AFTER_INACTIVE_MS - OLED_SLEEP_REMINDER_DURATION_MS) &&
              oled_get_ms_since_last_input() < OLED_SLEEP_AFTER_INACTIVE_MS))
         {

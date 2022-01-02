@@ -40,27 +40,6 @@ typedef struct
     int port;
 } lorawan_message_buf_t;
 
-typedef struct
-{
-    int mode_id;
-    int power_dbm;
-    int spreading_factor;
-    int tx_internal_sec;
-    String mode_name;
-} lorawan_power_config_t;
-
-const static int LORAWAN_POWER_REGULAR = 10500;
-const static int LORAWAN_POWER_BOOST = 10999;
-const static int LORAWAN_POWER_SAVER = 10000;
-
-// The combo of ​​SF7​​ and bandwidth 125khz is often referred to as "DR5" (data rate 5): https://avbentem.github.io/airtime-calculator/ttn/eu868/
-// Whereas the data rate drops to "3" when a transmission uses SF9.
-const static lorawan_power_config_t lorawan_power_boost = {.mode_id = LORAWAN_POWER_BOOST, .power_dbm = 22, .spreading_factor = DR_SF9, .tx_internal_sec = 20, .mode_name = "boost"};
-const static lorawan_power_config_t lorawan_power_regular = {.mode_id = LORAWAN_POWER_REGULAR, .power_dbm = 18, .spreading_factor = DR_SF7, .tx_internal_sec = 60, .mode_name = "regular"};
-const static lorawan_power_config_t lorawan_power_saver = {.mode_id = LORAWAN_POWER_SAVER, .power_dbm = 14, .spreading_factor = DR_SF7, .tx_internal_sec = 60, .mode_name = "saver"};
-
-void lorawan_set_power_config(lorawan_power_config_t val);
-lorawan_power_config_t lorawan_get_power_config();
 
 // lorawan_setup initialises LoRaWAN library and prepares it for transmission/receiving operations.
 void lorawan_setup();

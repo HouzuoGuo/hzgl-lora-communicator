@@ -4,12 +4,15 @@
 #include "hardware_facts.h"
 #include "i2c.h"
 #include "oled.h"
+#include "lorawan.h"
 #include "power_management.h"
 
 static const char LOG_TAG[] = __FILE__;
 
 static AXP20X_Class pmu;
 static struct power_status status;
+static bool is_conserving_power;
+static power_config_t config = power_config_regular, config_before_conserving = power_config_regular;
 
 void power_setup()
 {
@@ -143,6 +146,27 @@ void power_read_handle_lastest_irq()
     i2c_unlock();
 }
 
+void power_start_conserving()
+{
+    if (is_conserving_power)
+    {
+        return;
+    }
+    config_before_conserving = config;
+    config = power_config_saver;
+    is_conserving_power = true;
+}
+
+void power_stop_conserving()
+{
+    if (!is_conserving_power)
+    {
+        return;
+    }
+    config = config_before_conserving;
+    is_conserving_power = false;
+}
+
 bool power_is_battery_charging()
 {
     i2c_lock();
@@ -239,6 +263,16 @@ void power_log_status()
     ESP_LOGI(LOG_TAG, "is_batt_charging: %d is_usb_power_available: %d usb_millivolt: %d batt_millivolt: %d batt_milliamp: %.2f power_draw_milliamp: %.2f",
              status.is_batt_charging, status.is_usb_power_available, status.usb_millivolt, status.batt_millivolt, status.batt_milliamp, status.power_draw_milliamp);
     i2c_unlock();
+}
+
+void power_set_config(power_config_t val)
+{
+    config = val;
+}
+
+power_config_t power_get_config()
+{
+    return config;
 }
 
 void power_task_loop(void *_)
