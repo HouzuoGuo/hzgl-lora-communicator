@@ -17,8 +17,8 @@
 #define OLED_PAGE_WIFI_INFO 5
 // OLED_PAGE_BT_INFO is the page index number of the Bluetooth monitoring info page.
 #define OLED_PAGE_BT_INFO 6
-// OLED_PAGE_LORAWAN is the page index number of the LoRaWAN settings page.
-#define OLED_PAGE_LORAWAN 7
+// OLED_PAGE_POWER_MGMT is the page index number of the LoRaWAN settings page.
+#define OLED_PAGE_POWER_MGMT 7
 // OLED_PAGE_DIAGNOSIS is the page index number of the diagnosis information page.
 #define OLED_PAGE_DIAGNOSIS 8
 

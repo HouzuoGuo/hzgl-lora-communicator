@@ -242,7 +242,7 @@ void gp_button_read()
           ESP_LOGI(LOG_TAG, "latest_presses + dot: %s", morse_signals_buf.c_str());
         }
       }
-      else if (oled_get_page_number() == OLED_PAGE_LORAWAN)
+      else if (oled_get_page_number() == OLED_PAGE_POWER_MGMT)
       {
         // Interpret the press as a click on the LoRaWAN page, which switches between the two power modes.
         if (duration > GP_BUTTON_CLICK_DURATION)
