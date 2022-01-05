@@ -22,9 +22,6 @@ static SSD1306Wire oled(OLED_I2C_ADDR, I2C_SDA, I2C_SCL);
 
 void oled_setup()
 {
-    i2c_lock();
-    oled.init();
-    i2c_unlock();
     oled_on();
     last_input_timestamp = millis();
     ESP_LOGI(LOG_TAG, "successfully initialised OLED");
@@ -333,6 +330,7 @@ void oled_on()
     }
     ESP_LOGI(LOG_TAG, "turning on OLED");
     i2c_lock();
+    oled.init();
     oled.displayOn();
     oled.clear();
     oled.setBrightness(64);
@@ -342,6 +340,7 @@ void oled_on()
     oled.setTextAlignment(TEXT_ALIGN_LEFT);
     oled.setFont(ArialMT_Plain_10);
     i2c_unlock();
+    power_led_off();
     is_oled_on = true;
 }
 
@@ -357,6 +356,7 @@ void oled_off()
     oled.setBrightness(0);
     oled.displayOff();
     i2c_unlock();
+    power_led_blink();
     is_oled_on = false;
 }
 
@@ -365,15 +365,13 @@ void oled_display_refresh()
     // Conserve power when power management is in the saver mode.
     if (power_get_config().mode_id == POWER_SAVER)
     {
-        if (oled_get_ms_since_last_input() < OLED_SLEEP_AFTER_INACTIVE_MS && !is_oled_on)
+        if (oled_get_ms_since_last_input() < OLED_SLEEP_AFTER_INACTIVE_MS)
         {
             oled_on();
-            power_led_off();
         }
-        else if (oled_get_ms_since_last_input() > OLED_SLEEP_AFTER_INACTIVE_MS && is_oled_on)
+        else if (oled_get_ms_since_last_input() > OLED_SLEEP_AFTER_INACTIVE_MS)
         {
             oled_off();
-            power_led_blink();
         }
     }
     if (is_oled_on)
