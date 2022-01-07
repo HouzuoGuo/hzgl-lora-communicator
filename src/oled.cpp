@@ -331,12 +331,16 @@ void oled_on()
     ESP_LOGI(LOG_TAG, "turning on OLED");
     i2c_lock();
     oled.init();
-    oled.displayOn();
-    oled.clear();
-    oled.setBrightness(64);
-    oled.setContrast(0xF1, 128, 0x40);
-    oled.resetOrientation();
-    oled.flipScreenVertically();
+    // Repeat these commands in an attempt to work around the problem of OLED not waking up.
+    for (int i = 0; i < 3; ++i)
+    {
+        oled.displayOn();
+        oled.clear();
+        oled.setBrightness(64);
+        oled.setContrast(0xF1, 128, 0x40);
+        oled.resetOrientation();
+        oled.flipScreenVertically();
+    }
     oled.setTextAlignment(TEXT_ALIGN_LEFT);
     oled.setFont(ArialMT_Plain_10);
     i2c_unlock();
