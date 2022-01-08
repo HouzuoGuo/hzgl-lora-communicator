@@ -129,7 +129,7 @@ void supervisor_check_lorawan()
         {
             ESP_LOGE(TAG, "lorawan task does not appear to be making progress, total tx bytes reads %d for %d times", lorawan_tx_bytes_reading, lorawan_consecutive_readings);
             lorawan_debug_to_log();
-            lorawan_reset_tx_stats();
+            lorawan_reset();
         }
         if (lorawan_consecutive_readings >= SUPERVISOR_STUCK_PROGRESS_THRESHOLD)
         {

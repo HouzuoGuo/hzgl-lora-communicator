@@ -40,7 +40,6 @@ typedef struct
     int port;
 } lorawan_message_buf_t;
 
-
 // lorawan_setup initialises LoRaWAN library and prepares it for transmission/receiving operations.
 void lorawan_setup();
 // lorawan_task_loop transmits the last message set repeatedly at regular interval and receives downlink messages.
@@ -55,6 +54,7 @@ void lorawan_prepare_uplink_transmission();
 // If the transmission has already occurred, the returned value will contain the transmission's timestamp.
 lorawan_message_buf_t lorawan_get_transmission();
 
+void lorawan_reset();
 size_t lorawan_get_total_rx_bytes();
 size_t lorawan_get_total_tx_bytes();
 void lorawan_transceive();

@@ -25,6 +25,7 @@ const lmic_pinmap lmic_pins = {
     .dio = {LORA_DIO0_GPIO, LORA_DIO1_GPIO, LORA_DIO2_GPIO},
 };
 
+static SemaphoreHandle_t mutex;
 static size_t total_tx_bytes = 0, total_rx_bytes = 0;
 static lorawan_message_buf_t next_tx_message, last_rx_message;
 static unsigned long last_transmision_timestamp = 0, tx_counter = 0;
@@ -129,12 +130,20 @@ void onEvent(ev_t event)
 
 void lorawan_setup()
 {
+  mutex = xSemaphoreCreateMutex();
   SPI.begin(SPI_SCK_GPIO, SPI_MISO_GPIO, SPI_MOSI_GPIO, SPI_NSS_GPIO);
   memset(&last_rx_message, 0, sizeof(last_rx_message));
   memset(&next_tx_message, 0, sizeof(next_tx_message));
 
   // Initialise the library's internal states.
   os_init();
+  lorawan_reset();
+  ESP_LOGI(LOG_TAG, "successfully initialised LoRaWAN");
+}
+
+void lorawan_reset()
+{
+  xSemaphoreTake(mutex, portMAX_DELAY);
   LMIC_reset();
 
   // Prepare network keys for the library to use. They are defined in #include "lorawan_creds.h":
@@ -170,11 +179,13 @@ void lorawan_setup()
 
   // The transmitter is activated by personalisation (i.e. static keys), so it has already "joined" the network.
   lorawan_handle_message(EV_JOINED);
-  ESP_LOGI(LOG_TAG, "successfully initialised LoRaWAN");
+  xSemaphoreGive(mutex);
+  ESP_LOGI(LOG_TAG, "finished resetting LoRaWAN");
 }
 
 void lorawan_set_next_transmission(uint8_t *buf, size_t len, int port)
 {
+  xSemaphoreTake(mutex, portMAX_DELAY);
   if (len > LORAWAN_MAX_MESSAGE_LEN)
   {
     len = LORAWAN_MAX_MESSAGE_LEN;
@@ -182,6 +193,7 @@ void lorawan_set_next_transmission(uint8_t *buf, size_t len, int port)
   memcpy(next_tx_message.buf, buf, len);
   next_tx_message.len = len;
   next_tx_message.port = port;
+  xSemaphoreGive(mutex);
 }
 
 lorawan_message_buf_t lorawan_get_last_reception()
@@ -336,6 +348,7 @@ void lorawan_prepare_uplink_transmission()
 
 void lorawan_debug_to_log()
 {
+  xSemaphoreTake(mutex, portMAX_DELAY);
   ESP_LOGI(LOG_TAG, "LORAWANDEBUG: os_getTime - %d ticks = %d sec", os_getTime(), osticks2ms(os_getTime()) / 1000);
   ESP_LOGI(LOG_TAG, "LORAWANDEBUG: globalDutyRate - %d ticks = %d sec", LMIC.globalDutyRate, osticks2ms(LMIC.globalDutyRate) / 1000);
   ESP_LOGI(LOG_TAG, "LORAWANDEBUG: LMICbandplan_nextTx - %d ticks = %d sec", LMICbandplan_nextTx(os_getTime()), osticks2ms(LMICbandplan_nextTx(os_getTime())) / 1000);
@@ -344,10 +357,12 @@ void lorawan_debug_to_log()
   {
     ESP_LOGI(LOG_TAG, "LORAWANDEBUG \"band\"[%d] - next avail at %d sec, lastchnl %d, txpow %d, txcap %d", band, osticks2ms(LMIC.bands[band].avail) / 1000, LMIC.bands[band].lastchnl, LMIC.bands[band].txpow, LMIC.bands[band].txcap);
   }
+  xSemaphoreGive(mutex);
 }
 
 void lorawan_reset_tx_stats()
 {
+  xSemaphoreTake(mutex, portMAX_DELAY);
   LMIC_setDrTxpow(power_get_config().spreading_factor, power_get_config().power_dbm);
   // Rely on LORAWAN_TX_INTERVAL_MS alone to control the duty cycle. Reset LMIC library's internal duty cycle stats.
   for (size_t band = 0; band < MAX_BANDS; ++band)
@@ -360,6 +375,7 @@ void lorawan_reset_tx_stats()
       LMIC.bands[band].avail = 0;
     }
   }
+  xSemaphoreGive(mutex);
 }
 
 bool lorawan_is_warming_up()
@@ -380,7 +396,9 @@ bool lorawan_is_warming_up()
 void lorawan_transceive()
 {
   // Give the LoRaWAN library a chance to do its work.
+  xSemaphoreTake(mutex, portMAX_DELAY);
   os_runloop_once();
+  xSemaphoreGive(mutex);
   // Rate-limit transmission to observe duty cycle.
   power_config_t power_config = power_get_config();
   if (last_transmision_timestamp == 0 || millis() - last_transmision_timestamp > power_config.tx_internal_sec * 1000)
@@ -389,7 +407,9 @@ void lorawan_transceive()
     last_transmision_timestamp = millis();
     // Reset transmission power and spreading factor.
     lorawan_reset_tx_stats();
+    xSemaphoreTake(mutex, portMAX_DELAY);
     lmic_tx_error_t err = LMIC_setTxData2_strict(next_tx_message.port, next_tx_message.buf, next_tx_message.len, false);
+    xSemaphoreGive(mutex);
     // lorawan_debug_to_log();
     if (err == LMIC_ERROR_SUCCESS)
     {
@@ -412,7 +432,7 @@ void lorawan_transceive()
 
 void lorawan_task_loop(void *_)
 {
-  // Wait for environment sensor readings to be available.
+  // Wait for environment sensor to pick up its first round of readings.
   vTaskDelay(pdMS_TO_TICKS(ENV_SENSOR_TASK_LOOP_DELAY_MS * 1.1));
   while (true)
   {

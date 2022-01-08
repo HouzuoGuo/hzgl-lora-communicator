@@ -261,10 +261,8 @@ void power_read_status()
 
 void power_log_status()
 {
-    i2c_lock();
     ESP_LOGI(LOG_TAG, "mode: %d, is_batt_charging: %d, is_usb_power_available: %d, usb_millivolt: %d, batt_millivolt: %d, batt_milliamp: %.2f, power_draw_milliamp: %.2f",
              config.mode_id, status.is_batt_charging, status.is_usb_power_available, status.usb_millivolt, status.batt_millivolt, status.batt_milliamp, status.power_draw_milliamp);
-    i2c_unlock();
 }
 
 void power_set_config(power_config_t val)
