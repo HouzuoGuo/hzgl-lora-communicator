@@ -20,7 +20,7 @@ static TaskHandle_t bluetooth_task, wifi_task, env_sensor_task,
 static unsigned long gps_chars_processed_reading = 0;
 static int gps_consecutive_readings = 0;
 
-static size_t lorawan_tx_bytes_reading = 0;
+static size_t lorawan_tx_counter_reading = 0;
 static int lorawan_consecutive_readings = 0;
 
 static unsigned long wifi_rounds_reading = 0;
@@ -123,11 +123,11 @@ void supervisor_check_gps()
 
 void supervisor_check_lorawan()
 {
-    if (lorawan_get_total_tx_bytes() == lorawan_tx_bytes_reading)
+    if (lorawan_get_tx_counter() == lorawan_tx_counter_reading)
     {
         if (++lorawan_consecutive_readings > 2)
         {
-            ESP_LOGE(TAG, "lorawan task does not appear to be making progress, total tx bytes reads %d for %d times", lorawan_tx_bytes_reading, lorawan_consecutive_readings);
+            ESP_LOGE(TAG, "lorawan task does not appear to be making progress, tx counter reads %d for %d times", lorawan_tx_counter_reading, lorawan_consecutive_readings);
             lorawan_debug_to_log();
             lorawan_reset();
         }
@@ -138,7 +138,7 @@ void supervisor_check_lorawan()
     }
     else
     {
-        lorawan_tx_bytes_reading = lorawan_get_total_tx_bytes();
+        lorawan_tx_counter_reading = lorawan_get_tx_counter();
         lorawan_consecutive_readings = 0;
     }
 }

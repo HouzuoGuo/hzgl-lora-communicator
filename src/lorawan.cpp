@@ -106,7 +106,8 @@ void onEvent(ev_t event)
   case EV_TXCOMPLETE:
     next_tx_message.timestamp_millis = millis();
     tx_counter++;
-    ESP_LOGI(LOG_TAG, "finished transmitting a %d bytes message, tx counter is now %d", next_tx_message.len, tx_counter);
+    total_tx_bytes += next_tx_message.len;
+    ESP_LOGI(LOG_TAG, "finished transmitting message %d bytes long, tx counter is now %d", next_tx_message.len, tx_counter);
     if (LMIC.txrxFlags & TXRX_ACK)
     {
       ESP_LOGI(LOG_TAG, "received an acknowledgement of my transmitted message");
@@ -209,6 +210,11 @@ lorawan_message_buf_t lorawan_get_transmission()
 size_t lorawan_get_total_tx_bytes()
 {
   return total_tx_bytes;
+}
+
+unsigned long lorawan_get_tx_counter()
+{
+  return tx_counter;
 }
 
 size_t lorawan_get_total_rx_bytes()
@@ -411,11 +417,7 @@ void lorawan_transceive()
     lmic_tx_error_t err = LMIC_setTxData2_strict(next_tx_message.port, next_tx_message.buf, next_tx_message.len, false);
     xSemaphoreGive(mutex);
     // lorawan_debug_to_log();
-    if (err == LMIC_ERROR_SUCCESS)
-    {
-      total_tx_bytes += next_tx_message.len;
-    }
-    else
+    if (err != LMIC_ERROR_SUCCESS)
     {
       ESP_LOGW(LOG_TAG, "failed to transmit LoRaWAN message due to error code %d", err);
       lorawan_debug_to_log();

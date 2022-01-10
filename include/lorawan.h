@@ -57,6 +57,7 @@ lorawan_message_buf_t lorawan_get_transmission();
 void lorawan_reset();
 size_t lorawan_get_total_rx_bytes();
 size_t lorawan_get_total_tx_bytes();
+unsigned long lorawan_get_tx_counter();
 void lorawan_transceive();
 void lorawan_debug_to_log();
 void lorawan_reset_tx_stats();
