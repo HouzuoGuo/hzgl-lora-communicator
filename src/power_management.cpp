@@ -232,8 +232,6 @@ void power_read_status()
     status.is_batt_charging = pmu.isChargeing();
     status.batt_millivolt = pmu.getBattVoltage();
     status.usb_millivolt = pmu.getVbusVoltage();
-    // The power management chip always draws power from USB when it is available.
-    status.is_usb_power_available = pmu.getVbusCurrent() > 5;
     if (status.is_batt_charging)
     {
         status.batt_milliamp = pmu.getBattChargeCurrent();
@@ -242,13 +240,13 @@ void power_read_status()
     {
         status.batt_milliamp = -pmu.getBattDischargeCurrent();
     }
-    if (status.is_usb_power_available)
+    status.power_draw_milliamp = pmu.getVbusCurrent();
+    // The power management chip always draws power from USB when it is available.
+    // Use battery discharging current as a condition too because the VBus current occasionally reads 0.
+    status.is_usb_power_available = status.is_batt_charging || status.power_draw_milliamp > 5 || status.batt_milliamp > -5;
+    if (!status.is_usb_power_available)
     {
-        status.power_draw_milliamp = pmu.getVbusCurrent();
-    }
-    else
-    {
-        status.power_draw_milliamp = pmu.getBattDischargeCurrent();
+        status.power_draw_milliamp = -status.batt_milliamp;
     }
     if (status.power_draw_milliamp < 0)
     {
