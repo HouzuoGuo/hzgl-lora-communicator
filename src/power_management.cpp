@@ -55,7 +55,7 @@ void power_setup()
 
     // Start charging the battery if it is installed.
     pmu.setChargeControlCur(AXP1XX_CHARGE_CUR_700MA);
-    pmu.setChargingTargetVoltage(AXP202_TARGET_VOL_4_15V);
+    pmu.setChargingTargetVoltage(AXP202_TARGET_VOL_4_2V);
     pmu.enableChargeing(true);
     pmu.setChgLEDMode(AXP20X_LED_OFF);
 
@@ -132,7 +132,6 @@ void power_read_handle_lastest_irq()
     if (pmu.isPEKLongtPressIRQ())
     {
         ESP_LOGW(TAG, "shutting down");
-        oled_off();
         i2c_lock();
         pmu.setPowerOutPut(AXP192_LDO2, AXP202_OFF);  // LoRa
         pmu.setPowerOutPut(AXP192_LDO3, AXP202_OFF);  // GPS
