@@ -375,7 +375,7 @@ void lorawan_reset_tx_stats()
   {
     LMIC.bands[band].txcap = 1;
     LMIC.bands[band].txpow = power_get_config().power_dbm;
-    LMIC.bands[band].avail = ms2osticks(millis() - 1);
+    LMIC.bands[band].avail = os_getTime() - 1;
     if (LMIC.bands[band].avail < 0)
     {
       LMIC.bands[band].avail = 0;
