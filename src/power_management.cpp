@@ -28,6 +28,7 @@ void power_setup()
     }
     // The voltage levels took some inspiration from ESP32-paxcounter.
     pmu.setDCDC1Voltage(3300); // OLED
+    pmu.setDCDC2Voltage(0);    // Unused
     pmu.setLDO2Voltage(3300);  // LoRa
     pmu.setLDO3Voltage(3300);  // GPS
 
@@ -59,11 +60,11 @@ void power_setup()
     pmu.enableChargeing(true);
     pmu.setChgLEDMode(AXP20X_LED_OFF);
 
+    pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);  // OLED
+    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_OFF); // Unused
     pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);   // LoRa
     pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON);   // GPS
-    pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);  // OLED
-    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_OFF); // unused
-    pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF); // unused
+    pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF); // Unused
     i2c_unlock();
 }
 
@@ -191,22 +192,6 @@ float power_get_battery_milliamp()
     if (pmu.isChargeing())
     {
         ret = pmu.getBattChargeCurrent();
-    }
-    else
-    {
-        ret = pmu.getBattDischargeCurrent();
-    }
-    i2c_unlock();
-    return ret;
-}
-
-float power_get_power_draw_milliamp()
-{
-    float ret = 0;
-    i2c_lock();
-    if (pmu.getVbusVoltage() > 3000)
-    {
-        ret = pmu.getVbusCurrent();
     }
     else
     {

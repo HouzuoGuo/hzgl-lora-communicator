@@ -22,6 +22,16 @@ static SSD1306Wire oled(OLED_I2C_ADDR, I2C_SDA, I2C_SCL);
 
 void oled_setup()
 {
+    i2c_lock();
+    oled.init();
+    oled.clear();
+    oled.setBrightness(64);
+    oled.setContrast(0xF1, 128, 0x40);
+    oled.resetOrientation();
+    oled.flipScreenVertically();
+    oled.setTextAlignment(TEXT_ALIGN_LEFT);
+    oled.setFont(ArialMT_Plain_10);
+    i2c_unlock();
     oled_on();
     last_input_timestamp = millis();
     ESP_LOGI(LOG_TAG, "successfully initialised OLED");
@@ -330,15 +340,7 @@ void oled_on()
     }
     ESP_LOGI(LOG_TAG, "turning on OLED");
     i2c_lock();
-    oled.init();
     oled.displayOn();
-    oled.clear();
-    oled.setBrightness(64);
-    oled.setContrast(0xF1, 128, 0x40);
-    oled.resetOrientation();
-    oled.flipScreenVertically();
-    oled.setTextAlignment(TEXT_ALIGN_LEFT);
-    oled.setFont(ArialMT_Plain_10);
     i2c_unlock();
     power_led_off();
     is_oled_on = true;
@@ -352,8 +354,6 @@ void oled_off()
     }
     ESP_LOGI(LOG_TAG, "turning off OLED");
     i2c_lock();
-    oled.clear();
-    oled.setBrightness(0);
     oled.displayOff();
     i2c_unlock();
     power_led_blink();
