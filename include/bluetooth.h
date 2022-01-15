@@ -4,7 +4,7 @@
 
 #define BLUETOOTH_RSSI_FLOOR -100
 #define BLUETOOTH_SCAN_DURATION_SEC 1
-#define BLUETOOTH_SCAN_DUTY_CYCLE_PCT 20
+#define BLUETOOTH_SCAN_DUTY_CYCLE_PCT 50
 #define BLUETOOTH_TASK_LOOP_DELAY_MS 500
 
 class BTDeviceDiscoveryCallBack : public BLEAdvertisedDeviceCallbacks

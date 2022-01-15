@@ -252,31 +252,30 @@ void oled_display_page_env_sensor_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_L
 
 void oled_display_page_env_wifi_sniffer_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
-    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "WiFi monitor chan#%d", wifi_get_channel_num());
-    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Loudest sender chan#%d:", wifi_get_last_loudest_sender_channel());
+    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "WiFi 2.4GHz monitor");
+    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Scanning channel: %d", wifi_get_channel_num());
+    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Pkts (all.chan.): %d", wifi_get_total_num_pkts());
+    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Loudest RSSI %d ch#%d", wifi_get_last_loudest_sender_rssi(), wifi_get_last_loudest_sender_channel());
     uint8_t *loudest_sender_mac = wifi_get_last_loudest_sender_mac();
-    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "%02x:%02x:%02x:%02x:%02x:%02x", loudest_sender_mac[0], loudest_sender_mac[1], loudest_sender_mac[2], loudest_sender_mac[3], loudest_sender_mac[4], loudest_sender_mac[5]);
-    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Loudest RSSI: %d", wifi_get_last_loudest_sender_rssi());
-    snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Pkts (all.chan.): %d", wifi_get_total_num_pkts());
-    snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "Scan round: %lu", wifi_get_round_num());
+    snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "MAC: %02x:%02x:%02x:%02x:%02x:%02x", loudest_sender_mac[0], loudest_sender_mac[1], loudest_sender_mac[2], loudest_sender_mac[3], loudest_sender_mac[4], loudest_sender_mac[5]);
 }
 
 void oled_display_page_env_bt_sniffer_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
-    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Bluetooth monitor");
+    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Bluetooth LE monitor", bluetooth_get_round_num());
     BLEAdvertisedDevice dev = bluetooth_get_loudest_sender();
-    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Loudest RSSI: %d", dev.getRSSI());
-    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "MAC: %s", dev.getAddress().toString().c_str());
-    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Name: %s", dev.getName().c_str());
-    snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Num.devices: %d", bluetooth_get_total_num_devices());
-    snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "Scan round: %lu", bluetooth_get_round_num());
+    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Num.devices: %d", bluetooth_get_total_num_devices());
+    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Loudest RSSI %d %ddBm", dev.getRSSI(), dev.getTXPower());
+    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "MAC: %s", dev.getAddress().toString().c_str());
+    snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Name: %s", dev.haveName() ? dev.getName().c_str() : "(unnamed)");
+    snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "%s", dev.haveManufacturerData() ? dev.getManufacturerData().c_str() : "(no manufacture data)");
 }
 
 void oled_display_page_power_mgmt(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
     power_config_t conf = power_get_config();
-    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Power mode: %s", conf.mode_name.c_str());
-    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "LoRaWAN DR#%d Ch#%d", LMIC.datarate, LMIC.txChnl);
+    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "LoRaWAN DR#%d Ch#%d", LMIC.datarate, LMIC.txChnl);
+    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "RSSI %d SNR %d", LMIC.rssi, LMIC.snr);
     int sf_reading = 0;
     switch (conf.spreading_factor)
     {
@@ -287,8 +286,8 @@ void oled_display_page_power_mgmt(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_L
         sf_reading = 9;
         break;
     }
-    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "TX power: %ddBm SF: %d", conf.power_dbm, sf_reading);
-    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "TX interval: %d sec", conf.tx_internal_sec);
+    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Power mode: %s", conf.mode_name.c_str());
+    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "TX %ddBm SF %d Intv %ds", conf.power_dbm, sf_reading, conf.tx_interval_sec);
     snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Click the user button");
     snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "to change power mode.");
 }
@@ -312,10 +311,10 @@ void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LE
         // Battery is installed and it is neither charging nor discharging.
         snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Batt: %.3fv USB%.0fmA", float(power.batt_millivolt) / 1000.0, -power.power_draw_milliamp);
     }
-    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "LoRa: RSSI %d SNR %d", LMIC.rssi, LMIC.snr);
-    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Pkts: %d up %d dn", LMIC.seqnoUp, LMIC.seqnoDn);
-    snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Data: %dB up %dB dn", lorawan_get_total_tx_bytes(), lorawan_get_total_rx_bytes());
-    snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "GPS: read %luB", gps_get_chars_processed());
+    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Pkts: %d up %d dn", LMIC.seqnoUp, LMIC.seqnoDn);
+    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Data: %dB up %dB dn", lorawan_get_total_tx_bytes(), lorawan_get_total_rx_bytes());
+    snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "GPS: read %luB", gps_get_chars_processed());
+    snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "Scan: WiFi %d BT %d", wifi_get_round_num(), bluetooth_get_round_num());
 }
 
 void oled_display_going_to_sleep(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
