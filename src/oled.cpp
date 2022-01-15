@@ -379,16 +379,14 @@ void oled_off()
 void oled_display_refresh()
 {
     // Conserve power when power management is in the saver mode.
-    if (power_get_config().mode_id == POWER_SAVER)
+    if (power_get_config().mode_id == POWER_SAVER && oled_get_ms_since_last_input() > OLED_SLEEP_AFTER_INACTIVE_MS)
     {
-        if (oled_get_ms_since_last_input() < OLED_SLEEP_AFTER_INACTIVE_MS)
-        {
-            oled_on();
-        }
-        else if (oled_get_ms_since_last_input() > OLED_SLEEP_AFTER_INACTIVE_MS)
-        {
-            oled_off();
-        }
+        oled_off();
+    }
+    else
+    {
+        // The OLED never sleeps under other power modes.
+        oled_on();
     }
     if (is_oled_on)
     {
