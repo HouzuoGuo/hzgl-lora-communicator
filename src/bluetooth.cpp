@@ -23,65 +23,66 @@ void bluetooth_setup()
     bluetooth_on();
 }
 
-void BTDeviceDiscoveryCallBack::onResult(BLEAdvertisedDevice dev)
-{
-    xSemaphoreTake(mutex, portMAX_DELAY);
-    if (dev.getRSSI() > loudest_rssi)
-    {
-        loudest_sender = dev;
-        loudest_rssi = dev.getRSSI();
-    }
-    num_devices++;
-    xSemaphoreGive(mutex);
-}
-
 void bluetooth_on()
 {
+    xSemaphoreTake(mutex, portMAX_DELAY);
     if (is_powered_on)
     {
+        xSemaphoreGive(mutex);
         return;
     }
     ESP_LOGI(LOG_TAG, "turing on Bluetooth");
-    xSemaphoreTake(mutex, portMAX_DELAY);
     // The device name is not used because this scanner does not need to advertise itself.
     BLEDevice::init("hzgl-comm");
     BLEDevice::setPower(ESP_PWR_LVL_P9);
     scanner = BLEDevice::getScan();
-    scanner->setAdvertisedDeviceCallbacks(new BTDeviceDiscoveryCallBack());
     scanner->setActiveScan(true);
     scanner->setInterval(100);
     scanner->setWindow(BLUETOOTH_SCAN_DUTY_CYCLE_PCT);
-    xSemaphoreGive(mutex);
     is_powered_on = true;
+    xSemaphoreGive(mutex);
 }
 
 void bluetooth_off()
 {
+    xSemaphoreTake(mutex, portMAX_DELAY);
     if (!is_powered_on)
     {
+        xSemaphoreGive(mutex);
         return;
     }
     ESP_LOGI(LOG_TAG, "turing off Bluetooth");
-    xSemaphoreTake(mutex, portMAX_DELAY);
     btStop();
     BLEDevice::deinit();
-    xSemaphoreGive(mutex);
     is_powered_on = false;
+    xSemaphoreGive(mutex);
 }
 
 void bluetooth_scan()
 {
-    // Remember previous scanning result.
     xSemaphoreTake(mutex, portMAX_DELAY);
+    // Remember the results from the previous round of scan.
     last_loudest_sender = loudest_sender;
     last_loudest_rssi = loudest_rssi;
     last_num_devices = num_devices;
     loudest_rssi = BLUETOOTH_RSSI_FLOOR;
     loudest_sender = BLEAdvertisedDevice();
     num_devices = 0;
-    xSemaphoreGive(mutex);
-    BLEScanResults scan_results = scanner->start(BLUETOOTH_SCAN_DURATION_SEC, false);
+    scanner->clearResults();
+    scanner->start(BLUETOOTH_SCAN_DURATION_SEC, false);
+    BLEScanResults results = scanner->getResults();
+    for (size_t i = 0; i < results.getCount(); ++i)
+    {
+        BLEAdvertisedDevice dev = results.getDevice(i);
+        if (dev.getRSSI() > loudest_rssi)
+        {
+            loudest_sender = dev;
+            loudest_rssi = dev.getRSSI();
+        }
+        num_devices++;
+    }
     round_num++;
+    xSemaphoreGive(mutex);
 }
 
 void bluetooth_task_loop(void *_)

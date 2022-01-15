@@ -6,7 +6,6 @@
 #include "gp_button.h"
 #include "power_management.h"
 #include "gps.h"
-#include "i2c.h"
 #include "data_packet.h"
 #include "env_sensor.h"
 #include "wifi.h"
@@ -24,7 +23,6 @@ void setup()
   }
 
   pinMode(GENERIC_PURPOSE_BUTTON, INPUT);
-  i2c_setup();
   power_setup();
   gp_button_setup();
   oled_setup();

@@ -6,7 +6,6 @@
 #include "gp_button.h"
 #include "power_management.h"
 #include "gps.h"
-#include "i2c.h"
 #include "data_packet.h"
 #include "env_sensor.h"
 #include "wifi.h"
@@ -59,7 +58,6 @@ void supervisor_setup()
 void supervisor_reset()
 {
     ESP_LOGE(LOG_TAG, "supervisor has detected a critical condition and will now reset the microcontroller");
-    LMIC_shutdown();
     esp_restart();
 }
 

@@ -7,11 +7,6 @@
 #define BLUETOOTH_SCAN_DUTY_CYCLE_PCT 50
 #define BLUETOOTH_TASK_LOOP_DELAY_MS 500
 
-class BTDeviceDiscoveryCallBack : public BLEAdvertisedDeviceCallbacks
-{
-    void onResult(BLEAdvertisedDevice);
-};
-
 void bluetooth_setup();
 void bluetooth_on();
 void bluetooth_off();

@@ -4,7 +4,6 @@
 #include "env_sensor.h"
 #include "hardware_facts.h"
 #include "power_management.h"
-#include "i2c.h"
 
 static const char LOG_TAG[] = __FILE__;
 
@@ -14,7 +13,7 @@ struct env_data latest;
 void env_sensor_setup()
 {
     memset(&latest, 0, sizeof(latest));
-    i2c_lock();
+    power_i2c_lock();
     if (bme.begin(BME280_I2C_ADDR))
     {
         ESP_LOGI(LOG_TAG, "successfully initialised BME280 sensor");
@@ -23,17 +22,17 @@ void env_sensor_setup()
     {
         ESP_LOGW(LOG_TAG, "failed to initialise BME280 sensor");
     }
-    i2c_unlock();
+    power_i2c_unlock();
 }
 
 void env_sensor_read_decode()
 {
-    i2c_lock();
+    power_i2c_lock();
     latest.altitude_metre = bme.readAltitude(1013.25);
     latest.humidity_pct = bme.readHumidity();
     latest.pressure_hpa = bme.readPressure() / 100;
     latest.temp_celcius = bme.readTemperature();
-    i2c_unlock();
+    power_i2c_unlock();
     if (latest.humidity_pct == 0 && latest.pressure_hpa == 0 && latest.temp_celcius == 0)
     {
         // Otherwise it will read 44330m.

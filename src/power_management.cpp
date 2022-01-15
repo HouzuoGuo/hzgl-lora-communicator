@@ -2,7 +2,6 @@
 #include <esp_log.h>
 #include <esp_task_wdt.h>
 #include "hardware_facts.h"
-#include "i2c.h"
 #include "oled.h"
 #include "lorawan.h"
 #include "power_management.h"
@@ -13,11 +12,22 @@ static AXP20X_Class pmu;
 static struct power_status status;
 static bool is_conserving_power;
 static power_config_t config = power_config_regular, config_before_conserving = power_config_regular;
+static SemaphoreHandle_t i2c_mutex, pmu_mutex;
 
 void power_setup()
 {
     memset(&status, 0, sizeof(status));
-    i2c_lock();
+    i2c_mutex = xSemaphoreCreateMutex();
+    pmu_mutex = xSemaphoreCreateMutex();
+    if (Wire.begin(I2C_SDA, I2C_SCL))
+    {
+        ESP_LOGI(LOG_TAG, "successfully initialised I2C");
+    }
+    else
+    {
+        ESP_LOGW(LOG_TAG, "failed to initialise I2C");
+    }
+    power_i2c_lock();
     if (!pmu.begin(Wire, AXP192_SLAVE_ADDRESS))
     {
         ESP_LOGI(LOG_TAG, "successfully initialisex AXP power management chip");
@@ -26,7 +36,7 @@ void power_setup()
     {
         ESP_LOGW(LOG_TAG, "failed to initialise AXP power management chip");
     }
-    // The voltage levels took some inspiration from ESP32-paxcounter.
+
     pmu.setDCDC1Voltage(3300); // OLED
     pmu.setDCDC2Voltage(0);    // Unused
     pmu.setLDO2Voltage(3300);  // LoRa
@@ -65,48 +75,67 @@ void power_setup()
     pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);   // LoRa
     pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON);   // GPS
     pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF); // Unused
-    i2c_unlock();
+    power_i2c_unlock();
+}
+
+void power_i2c_lock()
+{
+    xSemaphoreTake(i2c_mutex, portMAX_DELAY);
+}
+
+void power_i2c_unlock()
+{
+    xSemaphoreGive(i2c_mutex);
 }
 
 void power_led_on()
 {
-    i2c_lock();
+    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
+    power_i2c_lock();
     pmu.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
-    i2c_unlock();
+    power_i2c_unlock();
+    xSemaphoreGive(pmu_mutex);
 }
 
 void power_led_off()
 {
-    i2c_lock();
+    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
+    power_i2c_lock();
     pmu.setChgLEDMode(AXP20X_LED_OFF);
-    i2c_unlock();
+    power_i2c_unlock();
+    xSemaphoreGive(pmu_mutex);
 }
 
 void power_led_blink()
 {
-    i2c_lock();
+    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
+    power_i2c_lock();
     pmu.setChgLEDMode(AXP20X_LED_BLINK_1HZ);
-    i2c_unlock();
+    power_i2c_unlock();
+    xSemaphoreGive(pmu_mutex);
 }
 
 int power_get_battery_millivolt()
 {
-    i2c_lock();
+    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
+    power_i2c_lock();
     int ret = (int)pmu.getBattVoltage();
-    i2c_unlock();
+    power_i2c_unlock();
+    xSemaphoreGive(pmu_mutex);
     return ret;
 }
 
 void power_read_handle_lastest_irq()
 {
-    i2c_lock();
+    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
+    power_i2c_lock();
     pmu.readIRQ();
-    i2c_unlock();
+    power_i2c_unlock();
     if (pmu.isVbusOverVoltageIRQ())
     {
-        i2c_lock();
+        power_i2c_lock();
         ESP_LOGW(TAG, "USB power supply voltage is too high (%f.3v)", pmu.getVbusVoltage() / 1000);
-        i2c_unlock();
+        power_i2c_unlock();
     }
     if (pmu.isBattPlugInIRQ())
     {
@@ -133,62 +162,74 @@ void power_read_handle_lastest_irq()
     if (pmu.isPEKLongtPressIRQ())
     {
         ESP_LOGW(TAG, "shutting down");
-        i2c_lock();
+        power_i2c_lock();
         pmu.setPowerOutPut(AXP192_LDO2, AXP202_OFF);  // LoRa
         pmu.setPowerOutPut(AXP192_LDO3, AXP202_OFF);  // GPS
         pmu.setPowerOutPut(AXP192_DCDC1, AXP202_OFF); // OLED
         pmu.setChgLEDMode(AXP20X_LED_OFF);
         pmu.shutdown();
-        i2c_unlock();
+        power_i2c_unlock();
     }
-    i2c_lock();
+    power_i2c_lock();
     pmu.clearIRQ();
-    i2c_unlock();
+    power_i2c_unlock();
+    xSemaphoreGive(pmu_mutex);
 }
 
 void power_start_conserving()
 {
+    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
     if (is_conserving_power)
     {
+        xSemaphoreGive(pmu_mutex);
         return;
     }
     ESP_LOGW(TAG, "start conserving power by switching from mode %d to power save mode, battery current reads: %+.1f", config.mode_id, status.batt_milliamp);
     config_before_conserving = config;
     config = power_config_saver;
     is_conserving_power = true;
+    xSemaphoreGive(pmu_mutex);
 }
 
 void power_stop_conserving()
 {
+    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
     if (!is_conserving_power)
     {
+        xSemaphoreGive(pmu_mutex);
         return;
     }
     ESP_LOGW(TAG, "stop conserving power and return to power mode %d", config_before_conserving.mode_id);
     config = config_before_conserving;
     is_conserving_power = false;
+    xSemaphoreGive(pmu_mutex);
 }
 
 bool power_is_battery_charging()
 {
-    i2c_lock();
+    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
+    power_i2c_lock();
     bool ret = pmu.isChargeing();
-    i2c_unlock();
+    power_i2c_unlock();
+    xSemaphoreGive(pmu_mutex);
     return ret;
 }
 
 bool power_is_supplied_by_battery()
 {
-    i2c_lock();
+    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
+    power_i2c_lock();
     bool ret = pmu.getVbusVoltage() > 3000;
-    i2c_unlock();
+    power_i2c_unlock();
+    xSemaphoreGive(pmu_mutex);
     return ret;
 }
 
 float power_get_battery_milliamp()
 {
+    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
     float ret = 0;
-    i2c_lock();
+    power_i2c_lock();
     if (pmu.isChargeing())
     {
         ret = pmu.getBattChargeCurrent();
@@ -197,7 +238,8 @@ float power_get_battery_milliamp()
     {
         ret = pmu.getBattDischargeCurrent();
     }
-    i2c_unlock();
+    power_i2c_unlock();
+    xSemaphoreGive(pmu_mutex);
     return ret;
 }
 
@@ -213,7 +255,8 @@ struct power_status power_get_status()
 
 void power_read_status()
 {
-    i2c_lock();
+    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
+    power_i2c_lock();
     status.is_batt_charging = pmu.isChargeing();
     status.batt_millivolt = pmu.getBattVoltage();
     status.usb_millivolt = pmu.getVbusVoltage();
@@ -238,7 +281,8 @@ void power_read_status()
         ESP_LOGI(TAG, "power draw reads negative (%.2f) - this should not have happened", status.power_draw_milliamp);
         status.power_draw_milliamp = 0;
     }
-    i2c_unlock();
+    xSemaphoreGive(pmu_mutex);
+    power_i2c_unlock();
 }
 
 void power_log_status()

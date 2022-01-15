@@ -26,18 +26,19 @@ static size_t last_loudest_channel = 0, loudest_channel = 0;
 
 void wifi_setup()
 {
-    mutex = xSemaphoreCreateMutex();
     memset(&channel_pkt_counter, 0, sizeof(channel_pkt_counter));
+    mutex = xSemaphoreCreateMutex();
     wifi_on();
 }
 
 void wifi_on()
 {
+    xSemaphoreTake(mutex, portMAX_DELAY);
     if (is_powered_on)
     {
+        xSemaphoreGive(mutex);
         return;
     }
-    xSemaphoreTake(mutex, portMAX_DELAY);
     ESP_LOGI(LOG_TAG, "turing on WiFi");
     wifi_init_config_t wifi_init_conf = WIFI_INIT_CONFIG_DEFAULT();
     wifi_init_conf.nvs_enable = 0;
@@ -55,25 +56,26 @@ void wifi_on()
     esp_wifi_set_promiscuous(true);
     esp_wifi_set_promiscuous_filter(&pkt_filter);
     esp_wifi_set_promiscuous_rx_cb(&wifi_sniffer_packet_handler);
-    xSemaphoreGive(mutex);
     is_powered_on = true;
+    xSemaphoreGive(mutex);
 }
 
 void wifi_off()
 {
+    xSemaphoreTake(mutex, portMAX_DELAY);
     if (!is_powered_on)
     {
+        xSemaphoreGive(mutex);
         return;
     }
-    xSemaphoreTake(mutex, portMAX_DELAY);
     ESP_LOGI(LOG_TAG, "turing off WiFi");
     esp_wifi_disconnect();
     esp_wifi_scan_stop();
     esp_wifi_set_promiscuous(false);
     esp_wifi_stop();
     esp_wifi_deinit();
-    xSemaphoreGive(mutex);
     is_powered_on = false;
+    xSemaphoreGive(mutex);
 }
 
 void wifi_task_loop(void *_)

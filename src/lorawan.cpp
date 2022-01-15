@@ -8,7 +8,6 @@
 #include "gp_button.h"
 #include "gps.h"
 #include "hardware_facts.h"
-#include "i2c.h"
 #include "lorawan.h"
 #include "wifi.h"
 #include "bluetooth.h"
@@ -392,7 +391,7 @@ bool lorawan_is_warming_up()
   }
   unsigned long since_last_tx = millis() - last_transmision_timestamp;
   // "Warm up" during the couple of seconds prior to the upcomming transmission.
-  if (since_last_tx > power_get_config().tx_internal_sec * 1000 - LORAWAN_WARM_UP_MS && since_last_tx < power_get_config().tx_internal_sec * 1000)
+  if (since_last_tx > power_get_config().tx_interval_sec * 1000 - LORAWAN_WARM_UP_MS && since_last_tx < power_get_config().tx_interval_sec * 1000)
   {
     return true;
   }
@@ -407,7 +406,7 @@ void lorawan_transceive()
   xSemaphoreGive(mutex);
   // Rate-limit transmission to observe duty cycle.
   power_config_t power_config = power_get_config();
-  if (last_transmision_timestamp == 0 || millis() - last_transmision_timestamp > power_config.tx_internal_sec * 1000)
+  if (last_transmision_timestamp == 0 || millis() - last_transmision_timestamp > power_config.tx_interval_sec * 1000)
   {
     lorawan_prepare_uplink_transmission();
     last_transmision_timestamp = millis();

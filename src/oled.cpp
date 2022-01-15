@@ -3,7 +3,6 @@
 #include "gp_button.h"
 #include "gps.h"
 #include "hardware_facts.h"
-#include "i2c.h"
 #include "lorawan.h"
 #include "oled.h"
 #include "wifi.h"
@@ -17,12 +16,14 @@ static unsigned long last_page_nav_timestamp = 0, last_gps_data_timestamp = 0;
 static struct gps_data last_gps_data;
 static bool is_oled_on = false;
 static unsigned long last_input_timestamp = 0;
+static SemaphoreHandle_t oled_mutex;
 
 static SSD1306Wire oled(OLED_I2C_ADDR, I2C_SDA, I2C_SCL);
 
 void oled_setup()
 {
-    i2c_lock();
+    oled_mutex = xSemaphoreCreateMutex();
+    power_i2c_lock();
     oled.init();
     oled.clear();
     oled.setBrightness(64);
@@ -31,7 +32,7 @@ void oled_setup()
     oled.flipScreenVertically();
     oled.setTextAlignment(TEXT_ALIGN_LEFT);
     oled.setFont(ArialMT_Plain_10);
-    i2c_unlock();
+    power_i2c_unlock();
     oled_on();
     last_input_timestamp = millis();
     ESP_LOGI(LOG_TAG, "successfully initialised OLED");
@@ -252,30 +253,37 @@ void oled_display_page_env_sensor_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_L
 
 void oled_display_page_env_wifi_sniffer_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
+    uint8_t *loudest_sender_mac = wifi_get_last_loudest_sender_mac();
     snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "WiFi 2.4GHz monitor");
     snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Scanning channel: %d", wifi_get_channel_num());
     snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Pkts (all.chan.): %d", wifi_get_total_num_pkts());
     snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Loudest RSSI %d ch#%d", wifi_get_last_loudest_sender_rssi(), wifi_get_last_loudest_sender_channel());
-    uint8_t *loudest_sender_mac = wifi_get_last_loudest_sender_mac();
     snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "MAC: %02x:%02x:%02x:%02x:%02x:%02x", loudest_sender_mac[0], loudest_sender_mac[1], loudest_sender_mac[2], loudest_sender_mac[3], loudest_sender_mac[4], loudest_sender_mac[5]);
 }
 
 void oled_display_page_env_bt_sniffer_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
-    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Bluetooth LE monitor", bluetooth_get_round_num());
     BLEAdvertisedDevice dev = bluetooth_get_loudest_sender();
+    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Bluetooth LE monitor");
     snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Num.devices: %d", bluetooth_get_total_num_devices());
     snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Loudest RSSI %d %ddBm", dev.getRSSI(), dev.getTXPower());
     snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "MAC: %s", dev.getAddress().toString().c_str());
     snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Name: %s", dev.haveName() ? dev.getName().c_str() : "(unnamed)");
-    snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "%s", dev.haveManufacturerData() ? dev.getManufacturerData().c_str() : "(no manufacture data)");
+    if (dev.haveManufacturerData())
+    {
+        char *data_hex = BLEUtils::buildHexData(nullptr, (uint8_t *)dev.getManufacturerData().data(), dev.getManufacturerData().length());
+        snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "%s", data_hex);
+        free(data_hex);
+    }
+    else
+    {
+        snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "(no manufacture data)");
+    }
 }
 
 void oled_display_page_power_mgmt(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
     power_config_t conf = power_get_config();
-    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "LoRaWAN DR#%d Ch#%d", LMIC.datarate, LMIC.txChnl);
-    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "RSSI %d SNR %d", LMIC.rssi, LMIC.snr);
     int sf_reading = 0;
     switch (conf.spreading_factor)
     {
@@ -286,8 +294,11 @@ void oled_display_page_power_mgmt(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_L
         sf_reading = 9;
         break;
     }
-    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Power mode: %s", conf.mode_name.c_str());
-    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "TX %ddBm SF %d Intv %ds", conf.power_dbm, sf_reading, conf.tx_interval_sec);
+
+    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Power mode: %s", conf.mode_name.c_str());
+    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "TX %ddBm SF %d Intv %ds", conf.power_dbm, sf_reading, conf.tx_interval_sec);
+    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "LoRaWAN DR#%d Ch#%d", LMIC.datarate, LMIC.txChnl);
+    snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "LoRa RSSI %d SNR %d", LMIC.rssi, LMIC.snr);
     snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "Click the user button");
     snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "to change power mode.");
 }
@@ -314,7 +325,7 @@ void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LE
     snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Pkts: %d up %d dn", LMIC.seqnoUp, LMIC.seqnoDn);
     snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Data: %dB up %dB dn", lorawan_get_total_tx_bytes(), lorawan_get_total_rx_bytes());
     snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "GPS: read %luB", gps_get_chars_processed());
-    snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "Scan: WiFi %d BT %d", wifi_get_round_num(), bluetooth_get_round_num());
+    snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "Scan: WiFi %lu BT %lu", wifi_get_round_num(), bluetooth_get_round_num());
 }
 
 void oled_display_going_to_sleep(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
@@ -333,30 +344,36 @@ unsigned int oled_get_ms_since_last_input()
 
 void oled_on()
 {
+    xSemaphoreTake(oled_mutex, portMAX_DELAY);
     if (is_oled_on)
     {
+        xSemaphoreGive(oled_mutex);
         return;
     }
     ESP_LOGI(LOG_TAG, "turning on OLED");
-    i2c_lock();
+    power_i2c_lock();
     oled.displayOn();
-    i2c_unlock();
+    power_i2c_unlock();
     power_led_off();
     is_oled_on = true;
+    xSemaphoreGive(oled_mutex);
 }
 
 void oled_off()
 {
+    xSemaphoreTake(oled_mutex, portMAX_DELAY);
     if (!is_oled_on)
     {
+        xSemaphoreGive(oled_mutex);
         return;
     }
     ESP_LOGI(LOG_TAG, "turning off OLED");
-    i2c_lock();
+    power_i2c_lock();
     oled.displayOff();
-    i2c_unlock();
+    power_i2c_unlock();
     power_led_blink();
     is_oled_on = false;
+    xSemaphoreGive(oled_mutex);
 }
 
 void oled_display_refresh()
@@ -422,14 +439,16 @@ void oled_display_refresh()
                 break;
             }
         }
+        xSemaphoreTake(oled_mutex, portMAX_DELAY);
         oled.clear();
         for (int i = 0; i < OLED_MAX_NUM_LINES; i++)
         {
             oled_draw_string_line(i, lines[i]);
         }
-        i2c_lock();
+        power_i2c_lock();
         oled.display();
-        i2c_unlock();
+        power_i2c_unlock();
+        xSemaphoreGive(oled_mutex);
     }
 }
 

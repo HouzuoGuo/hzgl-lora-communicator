@@ -41,6 +41,8 @@ void power_set_config(power_config_t val);
 power_config_t power_get_config();
 
 void power_setup();
+void power_i2c_lock();
+void power_i2c_unlock();
 void power_led_on();
 void power_led_off();
 void power_led_blink();
