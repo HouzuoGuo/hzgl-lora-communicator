@@ -25,6 +25,7 @@ const lmic_pinmap lmic_pins = {
 };
 
 static SemaphoreHandle_t mutex;
+static int warm_up_millisecs = 0;
 static size_t total_tx_bytes = 0, total_rx_bytes = 0;
 static lorawan_message_buf_t next_tx_message, last_rx_message;
 static unsigned long last_transmision_timestamp = 0, tx_counter = 0;
@@ -135,10 +136,30 @@ void lorawan_setup()
   memset(&last_rx_message, 0, sizeof(last_rx_message));
   memset(&next_tx_message, 0, sizeof(next_tx_message));
 
+  // Calculate the transmission "warm-up" duration.
+  if ((WIFI_MAX_CHANNEL_NUM + 1) * WIFI_TASK_LOOP_DELAY_MS > warm_up_millisecs)
+  {
+    warm_up_millisecs = (WIFI_MAX_CHANNEL_NUM + 1) * WIFI_TASK_LOOP_DELAY_MS > warm_up_millisecs;
+  }
+  if (BLUETOOTH_SCAN_DURATION_SEC * 1000 + BLUETOOTH_TASK_LOOP_DELAY_MS > warm_up_millisecs)
+  {
+    warm_up_millisecs = BLUETOOTH_SCAN_DURATION_SEC * 1000 + BLUETOOTH_TASK_LOOP_DELAY_MS;
+  }
+  if (ENV_SENSOR_TASK_LOOP_DELAY_MS > warm_up_millisecs)
+  {
+    warm_up_millisecs = ENV_SENSOR_TASK_LOOP_DELAY_MS;
+  }
+  if (GPS_TASK_LOOP_DELAY_MS > warm_up_millisecs)
+  {
+    warm_up_millisecs = GPS_TASK_LOOP_DELAY_MS;
+  }
+  // Leave some buffer, just in case.
+  warm_up_millisecs += 200;
+
   // Initialise the library's internal states.
   os_init();
   lorawan_reset();
-  ESP_LOGI(LOG_TAG, "successfully initialised LoRaWAN");
+  ESP_LOGI(LOG_TAG, "successfully initialised LoRaWAN, warm up millisecs: %d", warm_up_millisecs);
 }
 
 void lorawan_reset()
@@ -391,7 +412,7 @@ bool lorawan_is_warming_up()
   }
   unsigned long since_last_tx = millis() - last_transmision_timestamp;
   // "Warm up" during the couple of seconds prior to the upcomming transmission.
-  if (since_last_tx > power_get_config().tx_interval_sec * 1000 - LORAWAN_WARM_UP_MS && since_last_tx < power_get_config().tx_interval_sec * 1000)
+  if (since_last_tx > power_get_config().tx_interval_sec * 1000 - warm_up_millisecs && since_last_tx < power_get_config().tx_interval_sec * 1000)
   {
     return true;
   }
@@ -434,7 +455,7 @@ void lorawan_transceive()
 void lorawan_task_loop(void *_)
 {
   // Wait for environment sensor to pick up its first round of readings.
-  vTaskDelay(pdMS_TO_TICKS(ENV_SENSOR_TASK_LOOP_DELAY_MS * 1.1));
+  vTaskDelay(pdMS_TO_TICKS(warm_up_millisecs));
   while (true)
   {
     esp_task_wdt_reset();

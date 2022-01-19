@@ -371,7 +371,7 @@ void oled_off()
     power_i2c_lock();
     oled.displayOff();
     power_i2c_unlock();
-    power_led_blink();
+    power_led_off();
     is_oled_on = false;
     xSemaphoreGive(oled_mutex);
 }

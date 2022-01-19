@@ -4,6 +4,8 @@
 #include "env_sensor.h"
 #include "hardware_facts.h"
 #include "power_management.h"
+#include "lorawan.h"
+#include "oled.h"
 
 static const char LOG_TAG[] = __FILE__;
 
@@ -63,6 +65,9 @@ void env_sensor_task_loop(void *_)
     {
         esp_task_wdt_reset();
         vTaskDelay(pdMS_TO_TICKS(ENV_SENSOR_TASK_LOOP_DELAY_MS));
-        env_sensor_read_decode();
+        if (lorawan_is_warming_up() || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_ENV_SENSOR_INFO))
+        {
+            env_sensor_read_decode();
+        }
     }
 }

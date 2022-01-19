@@ -37,8 +37,8 @@ void bluetooth_on()
     BLEDevice::setPower(ESP_PWR_LVL_P9);
     scanner = BLEDevice::getScan();
     scanner->setActiveScan(true);
-    scanner->setInterval(100);
-    scanner->setWindow(BLUETOOTH_SCAN_DUTY_CYCLE_PCT);
+    scanner->setInterval(BLUETOOTH_SCAN_DURATION_SEC * 100);
+    scanner->setWindow(BLUETOOTH_SCAN_DURATION_SEC * BLUETOOTH_SCAN_DUTY_CYCLE_PCT);
     is_powered_on = true;
     xSemaphoreGive(mutex);
 }
