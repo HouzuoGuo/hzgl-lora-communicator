@@ -65,10 +65,15 @@ void power_setup()
     pmu.clearIRQ();
 
     // Start charging the battery if it is installed.
-    pmu.setChargeControlCur(AXP1XX_CHARGE_CUR_700MA);
+    pmu.setChargeControlCur(AXP1XX_CHARGE_CUR_450MA);
     pmu.setChargingTargetVoltage(AXP202_TARGET_VOL_4_2V);
     pmu.enableChargeing(true);
     pmu.setChgLEDMode(AXP20X_LED_OFF);
+
+    // Keep the on-board clock (& GPS) battery topped up.
+    pmu.setBackupChargeCurrent(AXP202_BACKUP_CURRENT_100UA);
+    pmu.setBackupChargeVoltage(AXP202_BACKUP_VOLTAGE_3V0);
+    pmu.setBackupChargeControl(true);
 
     pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);  // OLED
     pmu.setPowerOutPut(AXP192_DCDC2, AXP202_OFF); // Unused

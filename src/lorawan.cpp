@@ -139,7 +139,7 @@ void lorawan_setup()
   // Calculate the transmission "warm-up" duration.
   if ((WIFI_MAX_CHANNEL_NUM + 1) * WIFI_TASK_LOOP_DELAY_MS > warm_up_millisecs)
   {
-    warm_up_millisecs = (WIFI_MAX_CHANNEL_NUM + 1) * WIFI_TASK_LOOP_DELAY_MS > warm_up_millisecs;
+    warm_up_millisecs = (WIFI_MAX_CHANNEL_NUM + 1) * WIFI_TASK_LOOP_DELAY_MS;
   }
   if (BLUETOOTH_SCAN_DURATION_SEC * 1000 + BLUETOOTH_TASK_LOOP_DELAY_MS > warm_up_millisecs)
   {
@@ -165,6 +165,8 @@ void lorawan_setup()
 void lorawan_reset()
 {
   xSemaphoreTake(mutex, portMAX_DELAY);
+  LMIC_shutdown();
+  LMIC_clrTxData();
   LMIC_reset();
 
   // Prepare network keys for the library to use. They are defined in #include "lorawan_creds.h":
