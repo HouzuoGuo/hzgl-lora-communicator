@@ -71,6 +71,10 @@ struct gps_data gps_get_data()
         ret.longitude = gps.location.lng();
         ret.altitude_metre = gps.altitude.meters();
         ret.pos_age_sec = gps.location.age() / 1000;
+        if (ret.pos_age_sec > 999)
+        {
+            ret.pos_age_sec = 999;
+        }
         ret.heading_deg = gps.course.deg();
         ret.speed_kmh = gps.speed.kmph();
     }
