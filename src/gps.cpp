@@ -50,8 +50,14 @@ struct gps_data gps_get_data()
     }
     ret.satellites = (int)gps.satellites.value();
     ret.hdop = gps.hdop.hdop();
+    ret.valid_pos = gps.location.isValid();
+    ret.pos_age_sec = gps.location.age() / 1000;
+    if (ret.pos_age_sec > 999)
+    {
+        ret.pos_age_sec = 999;
+    }
     // gps.time.isValid() appears to always return true even when there is no GPS reception.
-    ret.valid_time = gps.date.isValid() || gps.location.isValid();
+    ret.valid_time = gps.date.isValid() || ret.valid_pos;
     if (gps_year_field.isValid())
     {
         ret.utc_year = atoi(gps_year_field.value());
@@ -64,17 +70,12 @@ struct gps_data gps_get_data()
         ret.utc_minute = gps.time.minute();
         ret.utc_second = gps.time.second();
     }
-    ret.valid_pos = gps.location.isValid();
-    if (ret.valid_pos)
+    if (ret.valid_pos && ret.hdop < 50 && ret.pos_age_sec < 120)
     {
+        // Apparently useless & stale position readings could be considered valid too.
         ret.latitude = gps.location.lat();
         ret.longitude = gps.location.lng();
         ret.altitude_metre = gps.altitude.meters();
-        ret.pos_age_sec = gps.location.age() / 1000;
-        if (ret.pos_age_sec > 999)
-        {
-            ret.pos_age_sec = 999;
-        }
         ret.heading_deg = gps.course.deg();
         ret.speed_kmh = gps.speed.kmph();
     }
