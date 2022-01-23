@@ -104,8 +104,6 @@ void onEvent(ev_t event)
   {
   case EV_TXCOMPLETE:
     next_tx_message.timestamp_millis = millis();
-    tx_counter++;
-    total_tx_bytes += next_tx_message.len;
     ESP_LOGI(LOG_TAG, "finished transmitting message %d bytes long, tx counter is now %d", next_tx_message.len, tx_counter);
     if (LMIC.txrxFlags & TXRX_ACK)
     {
@@ -181,6 +179,7 @@ void lorawan_reset()
   // The transmitter is activated by personalisation (i.e. static keys), so it has already "joined" the network.
   lorawan_handle_message(EV_JOINED);
   xSemaphoreGive(mutex);
+  lorawan_reset_tx_stats();
   ESP_LOGI(LOG_TAG, "finished resetting LoRaWAN");
 }
 
@@ -393,6 +392,7 @@ void lorawan_transceive()
   // Rate-limit transmission to observe duty cycle.
   if (power_get_may_transmit_lorawan())
   {
+    ESP_LOGI(LOG_TAG, "last timestamp: %d, interval sec: %d", power_get_last_transmission_timestamp(), power_get_config().tx_interval_sec);
     lorawan_prepare_uplink_transmission();
     power_set_last_transmission_timestamp();
     // Reset transmission power and spreading factor.
@@ -400,8 +400,13 @@ void lorawan_transceive()
     xSemaphoreTake(mutex, portMAX_DELAY);
     lmic_tx_error_t err = LMIC_setTxData2_strict(next_tx_message.port, next_tx_message.buf, next_tx_message.len, false);
     xSemaphoreGive(mutex);
-    // lorawan_debug_to_log();
-    if (err != LMIC_ERROR_SUCCESS)
+    if (err == LMIC_ERROR_SUCCESS)
+    {
+      tx_counter++;
+      total_tx_bytes += next_tx_message.len;
+      // lorawan_debug_to_log();
+    }
+    else
     {
       ESP_LOGW(LOG_TAG, "failed to transmit LoRaWAN message due to error code %d", err);
       lorawan_debug_to_log();
@@ -423,9 +428,16 @@ void lorawan_task_loop(void *_)
   while (true)
   {
     esp_task_wdt_reset();
-    // This interval must be kept extremely short, or the timing will be so off that LMIC MCCI library will be prevented from
-    // receiving downlink packets.
-    vTaskDelay(pdMS_TO_TICKS(2));
-    lorawan_transceive();
+    if (power_get_todo() & POWER_TODO_LORAWAN_TX_RX)
+    {
+      // This interval must be kept extremely short, or the timing will be so off that LMIC MCCI library will be prevented from
+      // receiving downlink packets.
+      vTaskDelay(pdMS_TO_TICKS(2));
+      lorawan_transceive();
+    }
+    else
+    {
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    }
   }
 }

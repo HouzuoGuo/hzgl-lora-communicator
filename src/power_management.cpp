@@ -135,21 +135,6 @@ bool power_get_may_transmit_lorawan()
     return last_transmision_timestamp == 0 || millis() - last_transmision_timestamp > config.tx_interval_sec * 1000;
 }
 
-bool power_is_warming_up_for_tx()
-{
-    if (last_transmision_timestamp == 0)
-    {
-        return true;
-    }
-    unsigned long since_last_tx = millis() - last_transmision_timestamp;
-    // "Warm up" during the couple of seconds prior to the upcomming transmission.
-    if (since_last_tx > config.tx_interval_sec * 1000 - warm_up_millisecs && since_last_tx < power_get_config().tx_interval_sec * 1000)
-    {
-        return true;
-    }
-    return false;
-}
-
 void power_led_on()
 {
     xSemaphoreTake(pmu_mutex, portMAX_DELAY);
@@ -313,6 +298,30 @@ int power_get_uptime_sec()
 struct power_status power_get_status()
 {
     return status;
+}
+
+int power_get_todo()
+{
+    int ret = 0;
+    // Calculate whether LoRaWAN RX/TX can/may be in progress.
+    unsigned long ms_since_last_tx = millis() - last_transmision_timestamp;
+    unsigned long sec_since_last_tx = ms_since_last_tx / 1000;
+    unsigned long sec_until_next_tx = config.tx_interval_sec - sec_since_last_tx;
+    if (last_transmision_timestamp == 0 || sec_since_last_tx < 8 || sec_until_next_tx < 1)
+    {
+        // Allow transceiving for the period between -1 sec prior to the upcoming TX and 7 seconds after the upcoming TX.
+        // 7 seconds should be long enough for both RX1 and RX2 windows.
+        // Essentially: [-1 sec, +8 sec] + time_to_tx
+        ret |= POWER_TODO_LORAWAN_TX_RX;
+    }
+
+    // Calculate whether sensors/radios should warm up and start producing readings for the upcoming TX.
+    if (last_transmision_timestamp == 0 || (ms_since_last_tx > config.tx_interval_sec * 1000 - warm_up_millisecs && ms_since_last_tx < config.tx_interval_sec * 1000))
+    {
+        // Essentially: [-warm-up ms, 0] + time_to_tx
+        ret |= POWER_TODO_WARMING_UP_FOR_TX;
+    }
+    return ret;
 }
 
 int power_get_warm_up_millisecs()

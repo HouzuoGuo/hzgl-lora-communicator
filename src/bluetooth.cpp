@@ -92,7 +92,7 @@ void bluetooth_task_loop(void *_)
         esp_task_wdt_reset();
         // The scanner runs for BLUETOOTH_SCAN_DURATION_SEC and then rests for a short period of time.
         vTaskDelay(pdMS_TO_TICKS(BLUETOOTH_TASK_LOOP_DELAY_MS));
-        if (power_is_warming_up_for_tx() || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_BT_INFO))
+        if ((power_get_todo() & POWER_TODO_WARMING_UP_FOR_TX) || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_BT_INFO))
         {
             bluetooth_on();
             bluetooth_scan();

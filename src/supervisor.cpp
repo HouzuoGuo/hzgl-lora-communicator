@@ -76,25 +76,22 @@ void supervisor_check_task_stack()
                 button_stack_free_kb = uxTaskGetStackHighWaterMark(gp_button_task) / 1024,
                 power_stack_free_kb = uxTaskGetStackHighWaterMark(power_task) / 1024,
                 supervisor_stack_free_kb = uxTaskGetStackHighWaterMark(supervisor_task) / 1024;
-    ESP_LOGI(TAG, "bluetooth task state: %d, min.free stack: %dKB", eTaskGetState(bluetooth_task), bluetooth_stack_free_kb);
-    ESP_LOGI(TAG, "wifi task state: %d, min.free stack: %dKB", eTaskGetState(wifi_task), wifi_stack_free_kb);
-    ESP_LOGI(TAG, "sensor task state: %d, min.free stack: %dKB", eTaskGetState(env_sensor_task), sensor_stack_free_kb);
-    ESP_LOGI(TAG, "gps task state: %d, min.free stack: %dKB", eTaskGetState(gps_task), gps_stack_free_kb);
-    ESP_LOGI(TAG, "lorawan task state: %d, min.free stack: %dKB", eTaskGetState(lorawan_task), lorawan_stack_free_kb);
-    ESP_LOGI(TAG, "oled task state: %d, min.free stack: %dKB", eTaskGetState(oled_task), oled_stack_free_kb);
-    ESP_LOGI(TAG, "GP button task state: %d, min.free stack: %dKB", eTaskGetState(gp_button_task), button_stack_free_kb);
-    ESP_LOGI(TAG, "power task state: %d, min.free stack: %dKB", eTaskGetState(power_task), power_stack_free_kb);
-    ESP_LOGI(TAG, "supervisor task state: %d, min.free stack: %dKB", eTaskGetState(supervisor_task), supervisor_stack_free_kb);
-    if (ESP.getMinFreeHeap() / 1024 < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB)
-    {
-        supervisor_reset();
-    }
-    if (bluetooth_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB ||
+    if (heap_min_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB ||
+        bluetooth_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB ||
         wifi_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB || sensor_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB ||
         gps_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB || lorawan_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB ||
         oled_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB || button_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB ||
         power_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB)
     {
+        ESP_LOGE(TAG, "bluetooth task state: %d, min.free stack: %dKB", eTaskGetState(bluetooth_task), bluetooth_stack_free_kb);
+        ESP_LOGE(TAG, "wifi task state: %d, min.free stack: %dKB", eTaskGetState(wifi_task), wifi_stack_free_kb);
+        ESP_LOGE(TAG, "sensor task state: %d, min.free stack: %dKB", eTaskGetState(env_sensor_task), sensor_stack_free_kb);
+        ESP_LOGE(TAG, "gps task state: %d, min.free stack: %dKB", eTaskGetState(gps_task), gps_stack_free_kb);
+        ESP_LOGE(TAG, "lorawan task state: %d, min.free stack: %dKB", eTaskGetState(lorawan_task), lorawan_stack_free_kb);
+        ESP_LOGE(TAG, "oled task state: %d, min.free stack: %dKB", eTaskGetState(oled_task), oled_stack_free_kb);
+        ESP_LOGE(TAG, "GP button task state: %d, min.free stack: %dKB", eTaskGetState(gp_button_task), button_stack_free_kb);
+        ESP_LOGE(TAG, "power task state: %d, min.free stack: %dKB", eTaskGetState(power_task), power_stack_free_kb);
+        ESP_LOGE(TAG, "supervisor task state: %d, min.free stack: %dKB", eTaskGetState(supervisor_task), supervisor_stack_free_kb);
         supervisor_reset();
     }
 }

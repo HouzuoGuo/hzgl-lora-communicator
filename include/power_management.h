@@ -8,6 +8,11 @@
 // POWER_TASK_READ_STATUS_DELAY_MS is the interval between two readings of the latest power status.
 #define POWER_TASK_READ_STATUS_DELAY_MS (POWER_TASK_LOOP_DELAY_MS * 5)
 
+// POWER_TODO_WARMING_UP_FOR_TX is a bit field that tells the caller of power_get_todo to start producing sensor readings.
+#define POWER_TODO_WARMING_UP_FOR_TX (1 << 1)
+// POWER_TODO_WARMING_UP_FOR_TX is a bit field that tells the caller of power_get_todo to proceed with LoRa RX and TX.
+#define POWER_TODO_LORAWAN_TX_RX (1 << 2)
+
 struct power_status
 {
     int batt_millivolt, usb_millivolt;
@@ -52,8 +57,8 @@ int power_get_uptime_sec();
 unsigned long power_get_last_transmission_timestamp();
 void power_set_last_transmission_timestamp();
 bool power_get_may_transmit_lorawan();
-bool power_is_warming_up_for_tx();
 int power_get_warm_up_millisecs();
+int power_get_todo();
 struct power_status power_get_status();
 void power_set_config(power_config_t val);
 power_config_t power_get_config();
