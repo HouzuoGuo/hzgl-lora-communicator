@@ -15,11 +15,7 @@ void env_sensor_setup()
 {
     memset(&latest, 0, sizeof(latest));
     power_i2c_lock();
-    if (bme.begin(BME280_I2C_ADDR))
-    {
-        ESP_LOGI(LOG_TAG, "successfully initialised BME280 sensor");
-    }
-    else
+    if (!bme.begin(BME280_I2C_ADDR))
     {
         ESP_LOGW(LOG_TAG, "failed to initialise BME280 sensor");
     }

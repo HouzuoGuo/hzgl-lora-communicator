@@ -32,6 +32,7 @@ void bluetooth_on()
         return;
     }
     ESP_LOGI(LOG_TAG, "turing on Bluetooth");
+    power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     // The device name is not used because this scanner does not need to advertise itself.
     BLEDevice::init("hzgl-comm");
     BLEDevice::setPower(ESP_PWR_LVL_P9);
@@ -56,6 +57,11 @@ void bluetooth_off()
     BLEDevice::deinit();
     is_powered_on = false;
     xSemaphoreGive(mutex);
+}
+
+bool bluetooth_get_state()
+{
+    return is_powered_on;
 }
 
 void bluetooth_scan()

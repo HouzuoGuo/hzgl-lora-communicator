@@ -21,10 +21,6 @@ void setup()
   // Keey an eye on the setup itself too.
   ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
   Serial.begin(115200);
-  if (!setCpuFrequencyMhz(80))
-  {
-    ESP_LOGW(LOG_TAG, "failed to set CPU frequency for power savings");
-  }
   pinMode(GENERIC_PURPOSE_BUTTON, INPUT);
   power_setup();
   gp_button_setup();
@@ -44,5 +40,4 @@ void loop()
   // The loop is not used at all. Just yield to all other tasks.
   esp_task_wdt_reset();
   vTaskDelay(pdMS_TO_TICKS(SUPERVISOR_TASK_LOOP_DELAY_MS));
-  power_log_status();
 }

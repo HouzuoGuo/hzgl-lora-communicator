@@ -135,7 +135,6 @@ void lorawan_setup()
   // Initialise the library's internal states.
   os_init();
   lorawan_reset();
-  ESP_LOGI(LOG_TAG, "successfully initialised LoRaWAN");
 }
 
 void lorawan_reset()
@@ -385,6 +384,7 @@ void lorawan_reset_tx_stats()
 
 void lorawan_transceive()
 {
+  power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
   // Give the LoRaWAN library a chance to do its work.
   xSemaphoreTake(mutex, portMAX_DELAY);
   os_runloop_once();

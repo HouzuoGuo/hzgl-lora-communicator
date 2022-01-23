@@ -8,10 +8,21 @@
 // POWER_TASK_READ_STATUS_DELAY_MS is the interval between two readings of the latest power status.
 #define POWER_TASK_READ_STATUS_DELAY_MS (POWER_TASK_LOOP_DELAY_MS * 5)
 
+// POWER_TASK_LOG_STATUS_DELAY_MS is the internal of logging the latest power consumption stats to serial.
+#define POWER_TASK_LOG_STATUS_DELAY_MS (30 * 1000)
+
+// POWER_DEFAULT_CPU_FREQ_MHZ is the regular CPU speed required for running this program.
+// It is slower than the default CPU speed of ESP32, which is 240MHz.
+#define POWER_DEFAULT_CPU_FREQ_MHZ 80
+// POWER_LOWEST_CPU_FREQ_MHZ is the lowest CPU speed required to keep the program running, though insufficient for radio activities.
+#define POWER_LOWEST_CPU_FREQ_MHZ 20
+
 // POWER_TODO_WARMING_UP_FOR_TX is a bit field that tells the caller of power_get_todo to start producing sensor readings.
 #define POWER_TODO_WARMING_UP_FOR_TX (1 << 1)
 // POWER_TODO_WARMING_UP_FOR_TX is a bit field that tells the caller of power_get_todo to proceed with LoRa RX and TX.
 #define POWER_TODO_LORAWAN_TX_RX (1 << 2)
+// POWER_TODO_WARMING_UP_FOR_TX is a bit field that tells the caller of power_get_todo to reduce CPU frequency as a power saving measure.
+#define POWER_TODO_REDUCE_CPU_FREQ (1 << 3)
 
 struct power_status
 {
@@ -53,6 +64,7 @@ void power_led_off();
 void power_led_blink();
 void power_start_conserving();
 void power_stop_conserving();
+void power_set_cpu_freq_mhz(int);
 int power_get_uptime_sec();
 unsigned long power_get_last_transmission_timestamp();
 void power_set_last_transmission_timestamp();

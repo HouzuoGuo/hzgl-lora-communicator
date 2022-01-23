@@ -35,7 +35,6 @@ void oled_setup()
     power_i2c_unlock();
     oled_on();
     last_input_timestamp = millis();
-    ESP_LOGI(LOG_TAG, "successfully initialised OLED");
 }
 
 bool oled_reset_last_input_timestamp()

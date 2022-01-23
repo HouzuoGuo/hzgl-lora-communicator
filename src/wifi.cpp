@@ -40,6 +40,7 @@ void wifi_on()
         return;
     }
     ESP_LOGI(LOG_TAG, "turing on WiFi");
+    power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     wifi_init_config_t wifi_init_conf = WIFI_INIT_CONFIG_DEFAULT();
     wifi_init_conf.nvs_enable = 0;
     // Core 1 is already occupied by a great number of tasks, see setup.
@@ -76,6 +77,11 @@ void wifi_off()
     esp_wifi_deinit();
     is_powered_on = false;
     xSemaphoreGive(mutex);
+}
+
+bool wifi_get_state()
+{
+    return is_powered_on;
 }
 
 void wifi_task_loop(void *_)

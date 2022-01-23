@@ -24,7 +24,6 @@ void gps_setup()
 {
     // Be aware of the reversed polarity noted on seller's pinout diagram.
     gps_serial.begin(9600, SERIAL_8N1, GPS_SERIAL_TX, GPS_SERIAL_RX);
-    ESP_LOGI(LOG_TAG, "successfully initialised GPS");
 }
 
 void gps_read_decode()

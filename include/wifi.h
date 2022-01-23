@@ -28,6 +28,7 @@ typedef struct
 void wifi_setup();
 void wifi_on();
 void wifi_off();
+bool wifi_get_state();
 void wifi_task_loop(void *_);
 void wifi_next_channel();
 size_t wifi_get_total_num_pkts();

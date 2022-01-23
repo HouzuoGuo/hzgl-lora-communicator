@@ -10,6 +10,7 @@
 void bluetooth_setup();
 void bluetooth_on();
 void bluetooth_off();
+bool bluetooth_get_state();
 void bluetooth_scan();
 void bluetooth_task_loop(void *_);
 unsigned long bluetooth_get_round_num();

@@ -19,26 +19,19 @@ static int warm_up_millisecs = 0;
 static power_config_t config = power_config_regular, config_before_conserving = power_config_regular;
 static SemaphoreHandle_t i2c_mutex, pmu_mutex;
 static unsigned long last_transmision_timestamp = 0;
+static int last_cpu_freq_mhz = 240;
 
 void power_setup()
 {
     memset(&status, 0, sizeof(status));
     i2c_mutex = xSemaphoreCreateMutex();
     pmu_mutex = xSemaphoreCreateMutex();
-    if (Wire.begin(I2C_SDA, I2C_SCL))
-    {
-        ESP_LOGI(LOG_TAG, "successfully initialised I2C");
-    }
-    else
+    if (!Wire.begin(I2C_SDA, I2C_SCL))
     {
         ESP_LOGW(LOG_TAG, "failed to initialise I2C");
     }
     power_i2c_lock();
-    if (!pmu.begin(Wire, AXP192_SLAVE_ADDRESS))
-    {
-        ESP_LOGI(LOG_TAG, "successfully initialisex AXP power management chip");
-    }
-    else
+    if (pmu.begin(Wire, AXP192_SLAVE_ADDRESS) != AXP_PASS)
     {
         ESP_LOGW(LOG_TAG, "failed to initialise AXP power management chip");
     }
@@ -108,6 +101,7 @@ void power_setup()
     // Leave some buffer, just in case.
     warm_up_millisecs += 200;
     ESP_LOGI(LOG_TAG, "warm up period before LoRaWAN transmissions: %d milliseconds", warm_up_millisecs);
+    power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
 }
 
 void power_i2c_lock()
@@ -321,6 +315,12 @@ int power_get_todo()
         // Essentially: [-warm-up ms, 0] + time_to_tx
         ret |= POWER_TODO_WARMING_UP_FOR_TX;
     }
+
+    // If there is no radio activity going on then ask caller to reduce CPU speed.
+    if (ret == 0 && oled_get_ms_since_last_input() > 1000 && !wifi_get_state() && !bluetooth_get_state())
+    {
+        ret |= POWER_TODO_REDUCE_CPU_FREQ;
+    }
     return ret;
 }
 
@@ -378,6 +378,21 @@ power_config_t power_get_config()
     return config;
 }
 
+void power_set_cpu_freq_mhz(int new_mhz)
+{
+    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
+    if (last_cpu_freq_mhz != new_mhz)
+    {
+        ESP_LOGI(TAG, "setting CPU frequency to %d MHz", new_mhz);
+        if (!setCpuFrequencyMhz(new_mhz))
+        {
+            ESP_LOGW(LOG_TAG, "failed to set CPU frequency to %d MHz", new_mhz);
+        }
+    }
+    last_cpu_freq_mhz = new_mhz;
+    xSemaphoreGive(pmu_mutex);
+}
+
 void power_task_loop(void *_)
 {
     unsigned long rounds = 0;
@@ -385,9 +400,10 @@ void power_task_loop(void *_)
     {
         esp_task_wdt_reset();
         vTaskDelay(pdMS_TO_TICKS(POWER_TASK_LOOP_DELAY_MS));
-        if ((rounds++) % (POWER_TASK_READ_STATUS_DELAY_MS / POWER_TASK_LOOP_DELAY_MS) == 0)
+        if (rounds % (POWER_TASK_READ_STATUS_DELAY_MS / POWER_TASK_LOOP_DELAY_MS) == 0)
         {
             power_read_status();
+            // Act upon the latest power status readings.
             if (status.batt_milliamp < -10)
             {
                 power_start_conserving();
@@ -396,7 +412,20 @@ void power_task_loop(void *_)
             {
                 power_stop_conserving();
             }
+            if (power_get_todo() & POWER_TODO_REDUCE_CPU_FREQ)
+            {
+                power_set_cpu_freq_mhz(POWER_LOWEST_CPU_FREQ_MHZ);
+            }
+            else
+            {
+                power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
+            }
+        }
+        if (rounds % (POWER_TASK_LOG_STATUS_DELAY_MS / POWER_TASK_LOOP_DELAY_MS) == 0)
+        {
+            power_log_status();
         }
         power_read_handle_lastest_irq();
+        ++rounds;
     }
 }
