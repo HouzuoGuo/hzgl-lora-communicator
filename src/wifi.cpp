@@ -5,7 +5,7 @@
 #include <esp_task_wdt.h>
 
 #include "oled.h"
-#include "lorawan.h"
+#include "power_management.h"
 
 static const char LOG_TAG[] = __FILE__;
 
@@ -84,7 +84,7 @@ void wifi_task_loop(void *_)
     {
         esp_task_wdt_reset();
         vTaskDelay(pdMS_TO_TICKS(WIFI_TASK_LOOP_DELAY_MS));
-        if (lorawan_is_warming_up() || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_WIFI_INFO))
+        if (power_is_warming_up_for_tx() || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_WIFI_INFO))
         {
             wifi_on();
             wifi_next_channel();

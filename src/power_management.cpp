@@ -5,14 +5,20 @@
 #include "oled.h"
 #include "lorawan.h"
 #include "power_management.h"
+#include "wifi.h"
+#include "bluetooth.h"
+#include "gps.h"
+#include "env_sensor.h"
 
 static const char LOG_TAG[] = __FILE__;
 
 static AXP20X_Class pmu;
 static struct power_status status;
 static bool is_conserving_power;
+static int warm_up_millisecs = 0;
 static power_config_t config = power_config_regular, config_before_conserving = power_config_regular;
 static SemaphoreHandle_t i2c_mutex, pmu_mutex;
+static unsigned long last_transmision_timestamp = 0;
 
 void power_setup()
 {
@@ -81,6 +87,27 @@ void power_setup()
     pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON);   // GPS
     pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF); // Unused
     power_i2c_unlock();
+
+    // Calculate the transmission "warm-up" duration.
+    if ((WIFI_MAX_CHANNEL_NUM + 1) * WIFI_TASK_LOOP_DELAY_MS > warm_up_millisecs)
+    {
+        warm_up_millisecs = (WIFI_MAX_CHANNEL_NUM + 1) * WIFI_TASK_LOOP_DELAY_MS;
+    }
+    if (BLUETOOTH_SCAN_DURATION_SEC * 1000 + BLUETOOTH_TASK_LOOP_DELAY_MS > warm_up_millisecs)
+    {
+        warm_up_millisecs = BLUETOOTH_SCAN_DURATION_SEC * 1000 + BLUETOOTH_TASK_LOOP_DELAY_MS;
+    }
+    if (ENV_SENSOR_TASK_LOOP_DELAY_MS > warm_up_millisecs)
+    {
+        warm_up_millisecs = ENV_SENSOR_TASK_LOOP_DELAY_MS;
+    }
+    if (GPS_TASK_LOOP_DELAY_MS > warm_up_millisecs)
+    {
+        warm_up_millisecs = GPS_TASK_LOOP_DELAY_MS;
+    }
+    // Leave some buffer, just in case.
+    warm_up_millisecs += 200;
+    ESP_LOGI(LOG_TAG, "warm up period before LoRaWAN transmissions: %d milliseconds", warm_up_millisecs);
 }
 
 void power_i2c_lock()
@@ -91,6 +118,36 @@ void power_i2c_lock()
 void power_i2c_unlock()
 {
     xSemaphoreGive(i2c_mutex);
+}
+
+unsigned long power_get_last_transmission_timestamp()
+{
+    return last_transmision_timestamp;
+}
+
+void power_set_last_transmission_timestamp()
+{
+    last_transmision_timestamp = millis();
+}
+
+bool power_get_may_transmit_lorawan()
+{
+    return last_transmision_timestamp == 0 || millis() - last_transmision_timestamp > config.tx_interval_sec * 1000;
+}
+
+bool power_is_warming_up_for_tx()
+{
+    if (last_transmision_timestamp == 0)
+    {
+        return true;
+    }
+    unsigned long since_last_tx = millis() - last_transmision_timestamp;
+    // "Warm up" during the couple of seconds prior to the upcomming transmission.
+    if (since_last_tx > config.tx_interval_sec * 1000 - warm_up_millisecs && since_last_tx < power_get_config().tx_interval_sec * 1000)
+    {
+        return true;
+    }
+    return false;
 }
 
 void power_led_on()
@@ -256,6 +313,11 @@ int power_get_uptime_sec()
 struct power_status power_get_status()
 {
     return status;
+}
+
+int power_get_warm_up_millisecs()
+{
+    return warm_up_millisecs;
 }
 
 void power_read_status()

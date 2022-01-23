@@ -16,12 +16,15 @@ static const char LOG_TAG[] = __FILE__;
 
 void setup()
 {
+  // Automatically panic and reset when a task gets stuck for over 30 seconds.
+  ESP_ERROR_CHECK(esp_task_wdt_init(SUPERVISOR_WATCHDOG_TIMEOUT_SEC, true));
+  // Keey an eye on the setup itself too.
+  ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
   Serial.begin(115200);
   if (!setCpuFrequencyMhz(80))
   {
     ESP_LOGW(LOG_TAG, "failed to set CPU frequency for power savings");
   }
-
   pinMode(GENERIC_PURPOSE_BUTTON, INPUT);
   power_setup();
   gp_button_setup();
@@ -31,10 +34,6 @@ void setup()
   env_sensor_setup();
   wifi_setup();
   bluetooth_setup();
-  // Automatically panic and reset when a task gets stuck for over 30 seconds.
-  ESP_ERROR_CHECK(esp_task_wdt_init(SUPERVISOR_WATCHDOG_TIMEOUT_SEC, true));
-  // Keey an eye on the setup itself too.
-  ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
   // The supervisor starts all essential tasks.
   supervisor_setup();
   ESP_LOGI(LOG_TAG, "setup completed");
