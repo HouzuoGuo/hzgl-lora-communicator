@@ -26,6 +26,11 @@
 // LORAWAN_TX_INTERVAL_MS is the interval to wait in between two routine uplink transmissions.
 #define LORAWAN_TX_INTERVAL_MS 20000
 
+#define LORAWAN_TX_KINDS 3
+#define LORAWAN_TX_KIND_ENV 0
+#define LORAWAN_TX_KIND_POS 1
+#define LORAWAN_TX_KIND_TEXT 2
+
 // LORAWAN_MAX_MESSAGE_LEN is the length never exceeded by a message received from or transmitted to The Things Network.
 static const size_t LORAWAN_MAX_MESSAGE_LEN = 256;
 

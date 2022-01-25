@@ -290,8 +290,8 @@ void gp_button_task_loop(void *_)
   while (true)
   {
     esp_task_wdt_reset();
-    vTaskDelay(pdMS_TO_TICKS(GP_BUTTON_TASK_LOOP_DELAY_MS));
     gp_button_read();
+    vTaskDelay(pdMS_TO_TICKS(GP_BUTTON_TASK_LOOP_DELAY_MS));
   }
 }
 

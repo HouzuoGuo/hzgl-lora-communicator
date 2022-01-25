@@ -28,7 +28,6 @@ void wifi_setup()
 {
     memset(&channel_pkt_counter, 0, sizeof(channel_pkt_counter));
     mutex = xSemaphoreCreateMutex();
-    wifi_on();
 }
 
 void wifi_on()
@@ -89,8 +88,7 @@ void wifi_task_loop(void *_)
     while (true)
     {
         esp_task_wdt_reset();
-        vTaskDelay(pdMS_TO_TICKS(WIFI_TASK_LOOP_DELAY_MS));
-        if ((power_get_todo() & POWER_TODO_WARMING_UP_FOR_TX) || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_WIFI_INFO))
+        if ((power_get_todo() & POWER_TODO_TURN_ON_WIFI) || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_WIFI_INFO))
         {
             wifi_on();
             wifi_next_channel();
@@ -99,6 +97,7 @@ void wifi_task_loop(void *_)
         {
             wifi_off();
         }
+        vTaskDelay(pdMS_TO_TICKS(WIFI_TASK_LOOP_DELAY_MS));
     }
 }
 

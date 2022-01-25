@@ -118,7 +118,7 @@ void supervisor_check_gps()
 
 void supervisor_check_lorawan()
 {
-    if (lorawan_get_tx_counter() == lorawan_tx_counter_reading)
+    if (power_get_lorawan_tx_counter() == lorawan_tx_counter_reading)
     {
         if (++lorawan_consecutive_readings > 2)
         {
@@ -133,7 +133,7 @@ void supervisor_check_lorawan()
     }
     else
     {
-        lorawan_tx_counter_reading = lorawan_get_tx_counter();
+        lorawan_tx_counter_reading = power_get_lorawan_tx_counter();
         lorawan_consecutive_readings = 0;
     }
 }
@@ -183,11 +183,11 @@ void supervisor_task_loop(void *_)
     while (true)
     {
         esp_task_wdt_reset();
-        vTaskDelay(pdMS_TO_TICKS(SUPERVISOR_TASK_LOOP_DELAY_MS));
         supervisor_check_task_stack();
         supervisor_check_gps();
         supervisor_check_lorawan();
         supervisor_check_wifi();
         supervisor_check_bluetooth();
+        vTaskDelay(pdMS_TO_TICKS(SUPERVISOR_TASK_LOOP_DELAY_MS));
     }
 }

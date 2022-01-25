@@ -59,10 +59,10 @@ void env_sensor_task_loop(void *_)
     while (true)
     {
         esp_task_wdt_reset();
-        vTaskDelay(pdMS_TO_TICKS(ENV_SENSOR_TASK_LOOP_DELAY_MS));
-        if ((power_get_todo() & POWER_TODO_WARMING_UP_FOR_TX) || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_ENV_SENSOR_INFO))
+        if ((power_get_todo() & POWER_TODO_READ_ENV_SENSOR) || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_ENV_SENSOR_INFO))
         {
             env_sensor_read_decode();
         }
+        vTaskDelay(pdMS_TO_TICKS(ENV_SENSOR_TASK_LOOP_DELAY_MS));
     }
 }

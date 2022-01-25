@@ -15,11 +15,15 @@ static const char LOG_TAG[] = __FILE__;
 static AXP20X_Class pmu;
 static struct power_status status;
 static bool is_conserving_power;
-static int warm_up_millisecs = 0;
 static power_config_t config = power_config_regular, config_before_conserving = power_config_regular;
 static SemaphoreHandle_t i2c_mutex, pmu_mutex;
 static unsigned long last_transmision_timestamp = 0;
 static int last_cpu_freq_mhz = 240;
+static int lorawan_tx_counter = 0;
+
+static const int bt_prep_duration_ms = BLUETOOTH_SCAN_DURATION_SEC * 1000 + (BLUETOOTH_TASK_LOOP_DELAY_MS * 2) + 1000;
+static const int wifi_prep_duration_ms = (WIFI_TASK_LOOP_DELAY_MS * WIFI_MAX_CHANNEL_NUM) + (WIFI_TASK_LOOP_DELAY_MS * 2) + 1000;
+static const int env_sensor_prep_duration_ms = ENV_SENSOR_TASK_LOOP_DELAY_MS + 500;
 
 void power_setup()
 {
@@ -81,26 +85,6 @@ void power_setup()
     pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF); // Unused
     power_i2c_unlock();
 
-    // Calculate the transmission "warm-up" duration.
-    if ((WIFI_MAX_CHANNEL_NUM + 1) * WIFI_TASK_LOOP_DELAY_MS > warm_up_millisecs)
-    {
-        warm_up_millisecs = (WIFI_MAX_CHANNEL_NUM + 1) * WIFI_TASK_LOOP_DELAY_MS;
-    }
-    if (BLUETOOTH_SCAN_DURATION_SEC * 1000 + BLUETOOTH_TASK_LOOP_DELAY_MS > warm_up_millisecs)
-    {
-        warm_up_millisecs = BLUETOOTH_SCAN_DURATION_SEC * 1000 + BLUETOOTH_TASK_LOOP_DELAY_MS;
-    }
-    if (ENV_SENSOR_TASK_LOOP_DELAY_MS > warm_up_millisecs)
-    {
-        warm_up_millisecs = ENV_SENSOR_TASK_LOOP_DELAY_MS;
-    }
-    if (GPS_TASK_LOOP_DELAY_MS > warm_up_millisecs)
-    {
-        warm_up_millisecs = GPS_TASK_LOOP_DELAY_MS;
-    }
-    // Leave some buffer, just in case.
-    warm_up_millisecs += 200;
-    ESP_LOGI(LOG_TAG, "warm up period before LoRaWAN transmissions: %d milliseconds", warm_up_millisecs);
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
 }
 
@@ -301,32 +285,55 @@ int power_get_todo()
     unsigned long ms_since_last_tx = millis() - last_transmision_timestamp;
     unsigned long sec_since_last_tx = ms_since_last_tx / 1000;
     unsigned long sec_until_next_tx = config.tx_interval_sec - sec_since_last_tx;
-    if (last_transmision_timestamp == 0 || sec_since_last_tx < 8 || sec_until_next_tx < 1)
+    if (lorawan_tx_counter > 0 && (sec_since_last_tx < 8 || sec_until_next_tx < 1))
     {
         // Allow transceiving for the period between -1 sec prior to the upcoming TX and 7 seconds after the upcoming TX.
         // 7 seconds should be long enough for both RX1 and RX2 windows.
         // Essentially: [-1 sec, +8 sec] + time_to_tx
         ret |= POWER_TODO_LORAWAN_TX_RX;
     }
-
-    // Calculate whether sensors/radios should warm up and start producing readings for the upcoming TX.
-    if (last_transmision_timestamp == 0 || (ms_since_last_tx > config.tx_interval_sec * 1000 - warm_up_millisecs && ms_since_last_tx < config.tx_interval_sec * 1000))
+    else if (lorawan_tx_counter == 0 && ms_since_last_tx > env_sensor_prep_duration_ms)
     {
-        // Essentially: [-warm-up ms, 0] + time_to_tx
-        ret |= POWER_TODO_WARMING_UP_FOR_TX;
+        // The first transmission needs to wait until the environment sensor is read for the first time.
+        ret |= POWER_TODO_LORAWAN_TX_RX;
     }
 
-    // If there is no radio activity going on then ask caller to reduce CPU speed.
-    if (ret == 0 && oled_get_ms_since_last_input() > 1000 && !wifi_get_state() && !bluetooth_get_state())
+    // Ask bluetooth and wifi to be turned on shortly before the next TX.
+    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
+        (ms_since_last_tx > config.tx_interval_sec * 1000 - bt_prep_duration_ms && ms_since_last_tx < config.tx_interval_sec * 1000))
+    {
+        ret |= POWER_TODO_TURN_ON_BLUETOOTH;
+    }
+    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
+        (ms_since_last_tx > config.tx_interval_sec * 1000 - wifi_prep_duration_ms && ms_since_last_tx < config.tx_interval_sec * 1000))
+    {
+        ret |= POWER_TODO_TURN_ON_WIFI;
+    }
+    // The sensor readings need to be taken for the first TX since boot as well as shortly before next TX.
+    if (lorawan_tx_counter == 0 ||
+        (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_ENV &&
+         (ms_since_last_tx > config.tx_interval_sec * 1000 - env_sensor_prep_duration_ms && ms_since_last_tx < config.tx_interval_sec * 1000)))
+    {
+        ret |= POWER_TODO_READ_ENV_SENSOR;
+    }
+
+    // If there is no power-related task to do and no user input, then ask caller to reduce CPU speed to conserve power.
+    // Be aware that if user is looking at WiFi/BT scanner then CPU speed must not be reduced or WiFi/BT will cause a panic.
+    if (ret == 0 && oled_get_ms_since_last_input() > wifi_prep_duration_ms + bt_prep_duration_ms && !wifi_get_state() && !bluetooth_get_state())
     {
         ret |= POWER_TODO_REDUCE_CPU_FREQ;
     }
     return ret;
 }
 
-int power_get_warm_up_millisecs()
+int power_get_lorawan_tx_counter()
 {
-    return warm_up_millisecs;
+    return lorawan_tx_counter;
+}
+
+void power_inc_lorawan_tx_counter()
+{
+    lorawan_tx_counter++;
 }
 
 void power_read_status()
@@ -399,7 +406,6 @@ void power_task_loop(void *_)
     while (true)
     {
         esp_task_wdt_reset();
-        vTaskDelay(pdMS_TO_TICKS(POWER_TASK_LOOP_DELAY_MS));
         if (rounds % (POWER_TASK_READ_STATUS_DELAY_MS / POWER_TASK_LOOP_DELAY_MS) == 0)
         {
             power_read_status();
@@ -427,5 +433,6 @@ void power_task_loop(void *_)
         }
         power_read_handle_lastest_irq();
         ++rounds;
+        vTaskDelay(pdMS_TO_TICKS(POWER_TASK_LOOP_DELAY_MS));
     }
 }

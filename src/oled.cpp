@@ -454,7 +454,7 @@ void oled_task_loop(void *_)
     while (true)
     {
         esp_task_wdt_reset();
-        vTaskDelay(pdMS_TO_TICKS(OLED_TASK_LOOP_DELAY_MS));
         oled_display_refresh();
+        vTaskDelay(pdMS_TO_TICKS(OLED_TASK_LOOP_DELAY_MS));
     }
 }

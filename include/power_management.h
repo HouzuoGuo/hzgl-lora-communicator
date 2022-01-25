@@ -17,12 +17,16 @@
 // POWER_LOWEST_CPU_FREQ_MHZ is the lowest CPU speed required to keep the program running, though insufficient for radio activities.
 #define POWER_LOWEST_CPU_FREQ_MHZ 20
 
-// POWER_TODO_WARMING_UP_FOR_TX is a bit field that tells the caller of power_get_todo to start producing sensor readings.
-#define POWER_TODO_WARMING_UP_FOR_TX (1 << 1)
-// POWER_TODO_WARMING_UP_FOR_TX is a bit field that tells the caller of power_get_todo to proceed with LoRa RX and TX.
-#define POWER_TODO_LORAWAN_TX_RX (1 << 2)
-// POWER_TODO_WARMING_UP_FOR_TX is a bit field that tells the caller of power_get_todo to reduce CPU frequency as a power saving measure.
-#define POWER_TODO_REDUCE_CPU_FREQ (1 << 3)
+// POWER_TODO_LORAWAN_TX_RX bit field tells the caller of power_get_todo to proceed with LoRa RX and TX.
+#define POWER_TODO_LORAWAN_TX_RX (1 << 1)
+// POWER_TODO_REDUCE_CPU_FREQ bit field tells the caller of power_get_todo to reduce CPU frequency as a power saving measure.
+#define POWER_TODO_REDUCE_CPU_FREQ (1 << 2)
+// POWER_TODO_TURN_ON_BLUETOOTH bit field tells the caller of power_get_todo to turn on bluetooth and start scanning.
+#define POWER_TODO_TURN_ON_BLUETOOTH (1 << 3)
+// POWER_TODO_TURN_ON_WIFI bit field tells the caller of power_get_todo to turn on wifi and start scanning.
+#define POWER_TODO_TURN_ON_WIFI (1 << 4)
+// POWER_TODO_READ_ENV_SENSOR bit field tells the caller of power_get_todo to start reading environment sensor data.
+#define POWER_TODO_READ_ENV_SENSOR (1 << 5)
 
 struct power_status
 {
@@ -66,6 +70,8 @@ void power_start_conserving();
 void power_stop_conserving();
 void power_set_cpu_freq_mhz(int);
 int power_get_uptime_sec();
+void power_inc_lorawan_tx_counter();
+int power_get_lorawan_tx_counter();
 unsigned long power_get_last_transmission_timestamp();
 void power_set_last_transmission_timestamp();
 bool power_get_may_transmit_lorawan();

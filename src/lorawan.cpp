@@ -27,7 +27,6 @@ const lmic_pinmap lmic_pins = {
 static SemaphoreHandle_t mutex;
 static size_t total_tx_bytes = 0, total_rx_bytes = 0;
 static lorawan_message_buf_t next_tx_message, last_rx_message;
-static unsigned long tx_counter = 0;
 
 // os_getArtEui is referenced by "engineUpdate" symbol defined by the "MCCI LoRaWAN LMIC" library.
 void os_getArtEui(u1_t *buf) {}
@@ -104,7 +103,7 @@ void onEvent(ev_t event)
   {
   case EV_TXCOMPLETE:
     next_tx_message.timestamp_millis = millis();
-    ESP_LOGI(LOG_TAG, "finished transmitting message %d bytes long, tx counter is now %d", next_tx_message.len, tx_counter);
+    ESP_LOGI(LOG_TAG, "finished transmitting message %d bytes long, tx counter is now %d", next_tx_message.len, power_get_lorawan_tx_counter());
     if (LMIC.txrxFlags & TXRX_ACK)
     {
       ESP_LOGI(LOG_TAG, "received an acknowledgement of my transmitted message");
@@ -210,11 +209,6 @@ size_t lorawan_get_total_tx_bytes()
   return total_tx_bytes;
 }
 
-unsigned long lorawan_get_tx_counter()
-{
-  return tx_counter;
-}
-
 size_t lorawan_get_total_rx_bytes()
 {
   return total_rx_bytes;
@@ -222,8 +216,8 @@ size_t lorawan_get_total_rx_bytes()
 
 void lorawan_prepare_uplink_transmission()
 {
-  int message_kind = tx_counter % 3;
-  if (message_kind == 0)
+  int message_kind = power_get_lorawan_tx_counter() % 3;
+  if (message_kind == LORAWAN_TX_KIND_ENV)
   {
     DataPacket pkt(LORAWAN_MAX_MESSAGE_LEN);
     // Byte 0, 1 - number of seconds since the reception of last downlink message (0 - 65535).
@@ -257,7 +251,7 @@ void lorawan_prepare_uplink_transmission()
     lorawan_set_next_transmission(pkt.content, pkt.cursor, LORAWAN_PORT_STATUS_SENSOR);
     ESP_LOGI(LOG_TAG, "going to transmit status and sensor info in %d bytes", pkt.cursor);
   }
-  else if (message_kind == 1)
+  else if (message_kind == LORAWAN_TX_KIND_POS)
   {
     DataPacket pkt(LORAWAN_MAX_MESSAGE_LEN);
     // Byte 0, 1, 2, 3 - GPS latitude.
@@ -327,7 +321,7 @@ void lorawan_prepare_uplink_transmission()
     lorawan_set_next_transmission(pkt.content, pkt.cursor, LORAWAN_PORT_GPS_WIFI);
     ESP_LOGI(LOG_TAG, "going to transmit GPS, wifi, and bluetooth info in %d bytes", pkt.cursor);
   }
-  else if (message_kind == 2)
+  else if (message_kind == LORAWAN_TX_KIND_TEXT)
   {
     String morse_message = gp_button_get_morse_message_buf();
     uint8_t buf[LORAWAN_MAX_MESSAGE_LEN] = {0};
@@ -402,7 +396,7 @@ void lorawan_transceive()
     xSemaphoreGive(mutex);
     if (err == LMIC_ERROR_SUCCESS)
     {
-      tx_counter++;
+      power_inc_lorawan_tx_counter();
       total_tx_bytes += next_tx_message.len;
       // lorawan_debug_to_log();
     }
@@ -423,8 +417,6 @@ void lorawan_transceive()
 
 void lorawan_task_loop(void *_)
 {
-  // Wait for environment sensor to pick up its first round of readings.
-  vTaskDelay(pdMS_TO_TICKS(power_get_warm_up_millisecs()));
   while (true)
   {
     esp_task_wdt_reset();
@@ -432,8 +424,8 @@ void lorawan_task_loop(void *_)
     {
       // This interval must be kept extremely short, or the timing will be so off that LMIC MCCI library will be prevented from
       // receiving downlink packets.
-      vTaskDelay(pdMS_TO_TICKS(2));
       lorawan_transceive();
+      vTaskDelay(pdMS_TO_TICKS(2));
     }
     else
     {
