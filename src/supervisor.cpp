@@ -100,7 +100,7 @@ void supervisor_check_gps()
 {
     if (gps_get_chars_processed() == gps_chars_processed_reading)
     {
-        if (++gps_consecutive_readings > 2)
+        if (++gps_consecutive_readings > SUPERVISOR_STUCK_PROGRESS_THRESHOLD / 2)
         {
             ESP_LOGE(TAG, "gps task does not appear to be making progress, chars processed reads %lu for %d times", gps_chars_processed_reading, gps_consecutive_readings);
         }
@@ -120,7 +120,7 @@ void supervisor_check_lorawan()
 {
     if (power_get_lorawan_tx_counter() == lorawan_tx_counter_reading)
     {
-        if (++lorawan_consecutive_readings > 2)
+        if (++lorawan_consecutive_readings > SUPERVISOR_STUCK_PROGRESS_THRESHOLD / 2)
         {
             ESP_LOGE(TAG, "lorawan task does not appear to be making progress, tx counter reads %d for %d times", lorawan_tx_counter_reading, lorawan_consecutive_readings);
             lorawan_debug_to_log();
@@ -142,7 +142,7 @@ void supervisor_check_wifi()
 {
     if (wifi_get_round_num() == wifi_rounds_reading)
     {
-        if (++wifi_consecutive_readings > 2)
+        if (++wifi_consecutive_readings > SUPERVISOR_STUCK_PROGRESS_THRESHOLD / 2)
         {
             ESP_LOGE(TAG, "wifi task does not appear to be making progress, total number of rounds reads %d for %d times", wifi_rounds_reading, wifi_consecutive_readings);
         }
@@ -162,7 +162,7 @@ void supervisor_check_bluetooth()
 {
     if (bluetooth_get_round_num() == bluetooth_rounds_reading)
     {
-        if (++bluetooth_consecutive_readings > 2)
+        if (++bluetooth_consecutive_readings > SUPERVISOR_STUCK_PROGRESS_THRESHOLD / 2)
         {
             ESP_LOGE(TAG, "bluetooth task does not appear to be making progress, total number of rounds reads %d for %d times", bluetooth_rounds_reading, bluetooth_consecutive_readings);
         }
