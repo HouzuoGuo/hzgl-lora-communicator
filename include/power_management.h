@@ -61,7 +61,7 @@ typedef struct
 // Whereas the data rate drops to "3" when a transmission uses SF9.
 const static power_config_t power_config_boost = {.mode_id = POWER_BOOST, .power_dbm = 22, .spreading_factor = DR_SF9, .tx_interval_sec = 20, .intermittent_gps = false, .mode_name = "boost"};
 const static power_config_t power_config_regular = {.mode_id = POWER_REGULAR, .power_dbm = 18, .spreading_factor = DR_SF7, .tx_interval_sec = 60, .intermittent_gps = false, .mode_name = "regular"};
-const static power_config_t power_config_saver = {.mode_id = POWER_SAVER, .power_dbm = 14, .spreading_factor = DR_SF7, .tx_interval_sec = 60, .intermittent_gps = true, .mode_name = "saver"};
+const static power_config_t power_config_saver = {.mode_id = POWER_SAVER, .power_dbm = 14, .spreading_factor = DR_SF7, .tx_interval_sec = 90, .intermittent_gps = true, .mode_name = "saver"};
 
 void power_set_config(power_config_t val);
 power_config_t power_get_config();
