@@ -110,9 +110,9 @@ struct gps_data gps_get_data()
     ret.hdop = gps.hdop.hdop();
     ret.valid_pos = gps.location.isValid();
     ret.pos_age_sec = gps.location.age() / 1000;
-    if (ret.pos_age_sec > 999)
+    if (ret.pos_age_sec > POWER_GPS_RUN_SLEEP_INTERVAL_SEC * 2)
     {
-        ret.pos_age_sec = 999;
+        ret.pos_age_sec = POWER_GPS_RUN_SLEEP_INTERVAL_SEC * 2;
     }
     // gps.time.isValid() appears to always return true even when there is no GPS reception.
     ret.valid_time = gps.date.isValid() || ret.valid_pos;
@@ -128,7 +128,7 @@ struct gps_data gps_get_data()
         ret.utc_minute = gps.time.minute();
         ret.utc_second = gps.time.second();
     }
-    if (ret.valid_pos && ret.hdop < 50 && ret.pos_age_sec < 120)
+    if (ret.valid_pos && ret.hdop < 50 && ret.pos_age_sec < POWER_GPS_RUN_SLEEP_INTERVAL_SEC)
     {
         // Apparently useless & stale position readings could be considered valid too.
         ret.latitude = gps.location.lat();
