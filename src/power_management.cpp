@@ -88,6 +88,13 @@ void power_setup()
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
 }
 
+void power_set_power_output(uint8_t ch, bool on)
+{
+    xSemaphoreTake(i2c_mutex, portMAX_DELAY);
+    pmu.setPowerOutPut(ch, on ? AXP202_ON : AXP202_OFF);
+    xSemaphoreGive(i2c_mutex);
+}
+
 void power_i2c_lock()
 {
     xSemaphoreTake(i2c_mutex, portMAX_DELAY);
@@ -188,9 +195,6 @@ void power_read_handle_lastest_irq()
     {
         ESP_LOGW(TAG, "shutting down");
         power_i2c_lock();
-        pmu.setPowerOutPut(AXP192_LDO2, AXP202_OFF);  // LoRa
-        pmu.setPowerOutPut(AXP192_LDO3, AXP202_OFF);  // GPS
-        pmu.setPowerOutPut(AXP192_DCDC1, AXP202_OFF); // OLED
         pmu.setChgLEDMode(AXP20X_LED_OFF);
         pmu.shutdown();
         power_i2c_unlock();
@@ -285,11 +289,11 @@ int power_get_todo()
     unsigned long ms_since_last_tx = millis() - last_transmision_timestamp;
     unsigned long sec_since_last_tx = ms_since_last_tx / 1000;
     unsigned long sec_until_next_tx = config.tx_interval_sec - sec_since_last_tx;
+    // Allow transceiving for the period between -1 sec prior to the upcoming TX and 7 seconds after the upcoming TX.
+    // 7 seconds should be long enough for both RX1 and RX2 windows.
+    // Essentially: [-1 sec, +8 sec] + time_to_tx
     if (lorawan_tx_counter > 0 && (sec_since_last_tx < 8 || sec_until_next_tx < 1))
     {
-        // Allow transceiving for the period between -1 sec prior to the upcoming TX and 7 seconds after the upcoming TX.
-        // 7 seconds should be long enough for both RX1 and RX2 windows.
-        // Essentially: [-1 sec, +8 sec] + time_to_tx
         ret |= POWER_TODO_LORAWAN_TX_RX;
     }
     else if (lorawan_tx_counter == 0 && ms_since_last_tx > env_sensor_prep_duration_ms)
@@ -315,6 +319,21 @@ int power_get_todo()
          (ms_since_last_tx > config.tx_interval_sec * 1000 - env_sensor_prep_duration_ms && ms_since_last_tx < config.tx_interval_sec * 1000)))
     {
         ret |= POWER_TODO_READ_ENV_SENSOR;
+    }
+
+    // When in power saver config, GPS is turned on for 5 min and then off for 5 min.
+    // Otherwise GPS is always on.
+    if (power_get_config().intermittent_gps)
+    {
+        int sec = millis() / 1000;
+        if (sec % (POWER_GPS_RUN_SLEEP_INTERVAL_SEC * 2) < POWER_GPS_RUN_SLEEP_INTERVAL_SEC)
+        {
+            ret |= POWER_TODO_TURN_ON_GPS;
+        }
+    }
+    else
+    {
+        ret |= POWER_TODO_TURN_ON_GPS;
     }
 
     // If there is no power-related task to do and no user input, then ask caller to reduce CPU speed to conserve power.

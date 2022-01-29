@@ -1,5 +1,7 @@
 #pragma once
 
+#include <axp20x.h>
+
 // There are a few sources that describe the hardware capabilities and configuration:
 // - https://doc.riot-os.org/group__boards__esp32__ttgo-t-beam.html
 // - https://github.com/lnlp/pinout-diagrams/blob/main/LoRa%20development%20boards/TTGO%20T-Beam%20V1.1%20Pinout.pdf
@@ -28,6 +30,8 @@
 // GPS_SERIAL_RX is described on schematic as: UART_DEV(1):TxD GPIO34 GPS
 // Be aware of the curious remark made by seller's pin diagram that noted "ESP32(RX)".
 #define GPS_SERIAL_TX 34
+
+#define GPS_POWER_CHANNEL AXP192_LDO3
 
 // I2C_SCL is described on schematic as: I2C_DEV(0):SCL - GPIO22
 #define I2C_SCL 22

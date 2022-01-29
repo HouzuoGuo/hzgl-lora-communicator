@@ -2,28 +2,89 @@
 #include <HardwareSerial.h>
 #include <TinyGPS++.h>
 #include <esp_task_wdt.h>
+#include <axp20x.h>
+#include <SparkFun_u-blox_GNSS_Arduino_Library.h>
 #include "gps.h"
+#include "oled.h"
 #include "hardware_facts.h"
+#include "power_management.h"
 
 static const char LOG_TAG[] = __FILE__;
 
+static SemaphoreHandle_t mutex;
+static bool is_powered_on = false;
 static unsigned long num_decoded_bytes = 0;
 static HardwareSerial gps_serial(1);
+// gps interprets NMEA output.
 static TinyGPSPlus gps;
+// ublox configures the GPS chip.
+static SFE_UBLOX_GNSS ublox;
+
 // $--ZDA,hhmmss.ss,xx,xx,xxxx,xx,xx (http://aprs.gids.nl/nmea/#zda).
 static TinyGPSCustom gps_time_field(gps, "GPZDA", 1);
 static TinyGPSCustom gps_day_field(gps, "GPZDA", 2);
 static TinyGPSCustom gps_month_field(gps, "GPZDA", 3);
 static TinyGPSCustom gps_year_field(gps, "GPZDA", 4);
 
-// https://www.u-blox.com/sites/default/files/products/documents/u-blox6_ReceiverDescrProtSpec_%28GPS.G6-SW-10018%29_Public.pdf
-// GPQ - Poll message - Supported on u-blox 6 from firmware version 6.00 up to version 7.03. Polls a standard NMEA message.
-static const String poll_date_time_request = "$EIGPQ,ZDA*39\r\n";
-
 void gps_setup()
 {
-    // Be aware of the reversed polarity noted on seller's pinout diagram.
+    mutex = xSemaphoreCreateMutex();
+    gps_on();
+    // Change serial output content type to NMEA.
+    ublox.setUART1Output(COM_TYPE_NMEA);
+    // Disable unused NMEA sentences.
+    ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1);
+    ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
+    ublox.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
+    ublox.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1);
+    ublox.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
+    // GGA - position fix, ZDA - date and time.
+    ublox.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
+    ublox.enableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_UART1);
+    if (!ublox.saveConfiguration())
+    {
+        ESP_LOGI(LOG_TAG, "failed to save GPS chip configuration - this may not matter");
+    }
+}
+
+void gps_on()
+{
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    if (is_powered_on)
+    {
+        xSemaphoreGive(mutex);
+        return;
+    }
+    ESP_LOGI(LOG_TAG, "turing on GPS");
+    power_set_power_output(GPS_POWER_CHANNEL, true);
+    // Be aware of the reversed polarity noted on the seller's pinout diagram.
     gps_serial.begin(9600, SERIAL_8N1, GPS_SERIAL_TX, GPS_SERIAL_RX);
+    for (int i = 0; i < 30; i++)
+    {
+        if (ublox.begin(gps_serial))
+        {
+            break;
+        }
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+    is_powered_on = true;
+    xSemaphoreGive(mutex);
+}
+
+void gps_off()
+{
+    xSemaphoreTake(mutex, portMAX_DELAY);
+    if (!is_powered_on)
+    {
+        xSemaphoreGive(mutex);
+        return;
+    }
+    ESP_LOGI(LOG_TAG, "turing off GPS");
+    ublox.end();
+    gps_serial.end();
+    power_set_power_output(GPS_POWER_CHANNEL, false);
+    is_powered_on = false;
+    xSemaphoreGive(mutex);
 }
 
 void gps_read_decode()
@@ -34,8 +95,6 @@ void gps_read_decode()
         gps.encode(b);
         ++num_decoded_bytes;
     }
-    // Explicitly ask the GPS chip for date & time output, which will be read when this function is invoked again.
-    gps_serial.print(poll_date_time_request);
 }
 
 struct gps_data gps_get_data()
@@ -87,7 +146,15 @@ void gps_task_loop(void *_)
     while (true)
     {
         esp_task_wdt_reset();
-        gps_read_decode();
+        if ((power_get_todo() & POWER_TODO_TURN_ON_GPS) || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_GPS_INFO))
+        {
+            gps_on();
+            gps_read_decode();
+        }
+        else
+        {
+            gps_off();
+        }
         vTaskDelay(pdMS_TO_TICKS(GPS_TASK_LOOP_DELAY_MS));
     }
 }
