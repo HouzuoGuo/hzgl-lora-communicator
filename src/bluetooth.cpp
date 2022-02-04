@@ -88,6 +88,7 @@ void bluetooth_scan()
     }
     round_num++;
     xSemaphoreGive(mutex);
+    ESP_LOGI(LOG_TAG, "just finished a round of scan");
 }
 
 void bluetooth_task_loop(void *_)

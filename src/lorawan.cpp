@@ -216,10 +216,10 @@ size_t lorawan_get_total_rx_bytes()
 
 void lorawan_prepare_uplink_transmission()
 {
-  int message_kind = power_get_lorawan_tx_counter() % 3;
+  DataPacket pkt(LORAWAN_MAX_MESSAGE_LEN);
+  int message_kind = power_get_lorawan_tx_counter() % LORAWAN_TX_KINDS;
   if (message_kind == LORAWAN_TX_KIND_ENV)
   {
-    DataPacket pkt(LORAWAN_MAX_MESSAGE_LEN);
     // Byte 0, 1 - number of seconds since the reception of last downlink message (0 - 65535).
     lorawan_message_buf_t last_reception = lorawan_get_last_reception();
     unsigned long last_rx = (millis() - last_reception.timestamp_millis) / 1000;
@@ -253,7 +253,6 @@ void lorawan_prepare_uplink_transmission()
   }
   else if (message_kind == LORAWAN_TX_KIND_POS)
   {
-    DataPacket pkt(LORAWAN_MAX_MESSAGE_LEN);
     // Byte 0, 1, 2, 3 - GPS latitude.
     struct gps_data gps = gps_get_data();
     pkt.write32BitDouble(gps.latitude);

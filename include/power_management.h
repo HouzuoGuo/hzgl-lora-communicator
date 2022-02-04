@@ -32,6 +32,8 @@
 
 // POWER_GPS_RUN_SLEEP_INTERVAL_SEC is the run & sleep duration of GPS in power saver configuration.
 #define POWER_GPS_RUN_SLEEP_INTERVAL_SEC (5 * 60)
+// POWER_SLOWEST_TX_INTERVAL_SEC is the slowest LoRaWAN transmission interval used in a power mode.
+#define POWER_SLOWEST_TX_INTERVAL_SEC 90
 
 struct power_status
 {
@@ -61,7 +63,7 @@ typedef struct
 // Whereas the data rate drops to "3" when a transmission uses SF9.
 const static power_config_t power_config_boost = {.mode_id = POWER_BOOST, .power_dbm = 22, .spreading_factor = DR_SF9, .tx_interval_sec = 20, .intermittent_gps = false, .mode_name = "boost"};
 const static power_config_t power_config_regular = {.mode_id = POWER_REGULAR, .power_dbm = 18, .spreading_factor = DR_SF7, .tx_interval_sec = 60, .intermittent_gps = false, .mode_name = "regular"};
-const static power_config_t power_config_saver = {.mode_id = POWER_SAVER, .power_dbm = 14, .spreading_factor = DR_SF7, .tx_interval_sec = 90, .intermittent_gps = true, .mode_name = "saver"};
+const static power_config_t power_config_saver = {.mode_id = POWER_SAVER, .power_dbm = 14, .spreading_factor = DR_SF7, .tx_interval_sec = POWER_SLOWEST_TX_INTERVAL_SEC, .intermittent_gps = true, .mode_name = "saver"};
 
 void power_set_config(power_config_t val);
 power_config_t power_get_config();
@@ -71,11 +73,11 @@ void power_i2c_lock();
 void power_i2c_unlock();
 void power_led_on();
 void power_led_off();
-void power_led_blink();
 void power_start_conserving();
 void power_stop_conserving();
 void power_set_cpu_freq_mhz(int);
 int power_get_uptime_sec();
+double power_get_sum_curr_draw_readings();
 void power_inc_lorawan_tx_counter();
 int power_get_lorawan_tx_counter();
 unsigned long power_get_last_transmission_timestamp();

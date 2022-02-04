@@ -8,8 +8,9 @@
 
 static const char LOG_TAG[] = __FILE__;
 
-Adafruit_BME280 bme;
-struct env_data latest;
+static Adafruit_BME280 bme;
+static struct env_data latest;
+static double sum_temp_readings = 0.0;
 
 void env_sensor_setup()
 {
@@ -47,11 +48,18 @@ void env_sensor_read_decode()
             latest.temp_celcius += TEMP_OFFSET_CELCIUS_BATT;
         }
     }
+    sum_temp_readings += latest.temp_celcius;
+    ESP_LOGI(LOG_TAG, "just took a round of readings");
 }
 
 struct env_data env_sensor_get_data()
 {
     return latest;
+}
+
+double env_sensor_get_sum_temp_readings()
+{
+    return sum_temp_readings;
 }
 
 void env_sensor_task_loop(void *_)

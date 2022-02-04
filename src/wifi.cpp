@@ -118,6 +118,7 @@ void wifi_next_channel()
         loudest_rssi = WIFI_RSSI_FLOOR;
         loudest_channel = 0;
         memset(loudest_sender, 0, sizeof(loudest_sender));
+        ESP_LOGI(LOG_TAG, "just finished a round of scan");
     }
     esp_wifi_set_channel(channel_num, WIFI_SECOND_CHAN_NONE);
     channel_pkt_counter[channel_num] = 0;

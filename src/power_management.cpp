@@ -20,10 +20,12 @@ static SemaphoreHandle_t i2c_mutex, pmu_mutex;
 static unsigned long last_transmision_timestamp = 0;
 static int last_cpu_freq_mhz = 240;
 static int lorawan_tx_counter = 0;
+static double sum_curr_draw_readings = 0.0;
 
+// Leave 1500 ms of buffer because the CPU can be very busy during the preparation period.
 static const int bt_prep_duration_ms = BLUETOOTH_SCAN_DURATION_SEC * 1000 + (BLUETOOTH_TASK_LOOP_DELAY_MS * 2) + 1000;
-static const int wifi_prep_duration_ms = (WIFI_TASK_LOOP_DELAY_MS * WIFI_MAX_CHANNEL_NUM) + (WIFI_TASK_LOOP_DELAY_MS * 2) + 1000;
-static const int env_sensor_prep_duration_ms = ENV_SENSOR_TASK_LOOP_DELAY_MS + 500;
+static const int wifi_prep_duration_ms = WIFI_TASK_LOOP_DELAY_MS * WIFI_MAX_CHANNEL_NUM + (WIFI_TASK_LOOP_DELAY_MS * 2) + 1000;
+static const int env_sensor_prep_duration_ms = ENV_SENSOR_TASK_LOOP_DELAY_MS + 1000;
 
 void power_setup()
 {
@@ -137,23 +139,9 @@ void power_led_off()
     xSemaphoreGive(pmu_mutex);
 }
 
-void power_led_blink()
+double power_get_sum_curr_draw_readings()
 {
-    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
-    power_i2c_lock();
-    pmu.setChgLEDMode(AXP20X_LED_BLINK_1HZ);
-    power_i2c_unlock();
-    xSemaphoreGive(pmu_mutex);
-}
-
-int power_get_battery_millivolt()
-{
-    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
-    power_i2c_lock();
-    int ret = (int)pmu.getBattVoltage();
-    power_i2c_unlock();
-    xSemaphoreGive(pmu_mutex);
-    return ret;
+    return sum_curr_draw_readings;
 }
 
 void power_read_handle_lastest_irq()
@@ -257,9 +245,10 @@ int power_get_todo()
     {
         ret |= POWER_TODO_LORAWAN_TX_RX;
     }
-    else if (lorawan_tx_counter == 0 && ms_since_last_tx > env_sensor_prep_duration_ms)
+    else if (lorawan_tx_counter == 0 && ms_since_last_tx > env_sensor_prep_duration_ms * 2)
     {
         // The first transmission needs to wait until the environment sensor is read for the first time.
+        // The first readings take an unusually long time. I do not yet fully understand why.
         ret |= POWER_TODO_LORAWAN_TX_RX;
     }
 
@@ -346,6 +335,7 @@ void power_read_status()
     }
     power_i2c_unlock();
     xSemaphoreGive(pmu_mutex);
+    sum_curr_draw_readings += status.power_draw_milliamp;
 }
 
 void power_log_status()

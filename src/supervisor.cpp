@@ -28,6 +28,12 @@ static int wifi_consecutive_readings = 0;
 static unsigned long bluetooth_rounds_reading = 0;
 static int bluetooth_consecutive_readings = 0;
 
+static double env_sensor_sum_temp_readings = 0;
+static int env_sensor_consecutive_readings = 0;
+
+static double power_sum_curr_draw_readings = 0;
+static int power_consecutive_readings = 0;
+
 void supervisor_setup()
 {
     unsigned long priority = tskIDLE_PRIORITY;
@@ -178,16 +184,58 @@ void supervisor_check_bluetooth()
     }
 }
 
+void supervisor_check_env_sensor()
+{
+    if (env_sensor_get_sum_temp_readings() == env_sensor_sum_temp_readings)
+    {
+        if (++env_sensor_consecutive_readings > SUPERVISOR_STUCK_PROGRESS_THRESHOLD / 2)
+        {
+            ESP_LOGE(TAG, "env sensor task does not appear to be making progress, temp sum reads %f for %d times", env_sensor_sum_temp_readings, env_sensor_consecutive_readings);
+        }
+        if (env_sensor_consecutive_readings >= SUPERVISOR_STUCK_PROGRESS_THRESHOLD)
+        {
+            supervisor_reset();
+        }
+    }
+    else
+    {
+        env_sensor_sum_temp_readings = env_sensor_get_sum_temp_readings();
+        env_sensor_consecutive_readings = 0;
+    }
+}
+
+void supervisor_check_power()
+{
+    if (power_get_sum_curr_draw_readings() == power_sum_curr_draw_readings)
+    {
+        if (++power_consecutive_readings > SUPERVISOR_STUCK_PROGRESS_THRESHOLD / 2)
+        {
+            ESP_LOGE(TAG, "power management task does not appear to be making progress, total number of rounds reads %f for %d times", power_sum_curr_draw_readings, power_consecutive_readings);
+        }
+        if (power_consecutive_readings >= SUPERVISOR_STUCK_PROGRESS_THRESHOLD)
+        {
+            supervisor_reset();
+        }
+    }
+    else
+    {
+        power_sum_curr_draw_readings = power_get_sum_curr_draw_readings();
+        power_consecutive_readings = 0;
+    }
+}
+
 void supervisor_task_loop(void *_)
 {
     while (true)
     {
         esp_task_wdt_reset();
         supervisor_check_task_stack();
-        supervisor_check_gps();
+        supervisor_check_power();
         supervisor_check_lorawan();
+        supervisor_check_env_sensor();
         supervisor_check_wifi();
         supervisor_check_bluetooth();
+        supervisor_check_gps();
         vTaskDelay(pdMS_TO_TICKS(SUPERVISOR_TASK_LOOP_DELAY_MS));
     }
 }
