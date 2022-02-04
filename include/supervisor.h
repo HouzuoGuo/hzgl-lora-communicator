@@ -6,7 +6,7 @@
 #define SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB 2
 // SUPERVISOR_STUCK_PROGRESS_THRESHOLD is the max number of consecutive readings the supervisor may see from a critical parameter before it reboots.
 // It must be sufficiently high in order to accomodate the sleeping periods of individual tasks, e.g. the sleeping period of GPS.
-#define SUPERVISOR_STUCK_PROGRESS_THRESHOLD 12
+#define SUPERVISOR_STUCK_PROGRESS_THRESHOLD 15
 
 void supervisor_setup();
 void supervisor_reset();

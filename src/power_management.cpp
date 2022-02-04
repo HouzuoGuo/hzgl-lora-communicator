@@ -30,6 +30,7 @@ void power_setup()
     memset(&status, 0, sizeof(status));
     i2c_mutex = xSemaphoreCreateMutex();
     pmu_mutex = xSemaphoreCreateMutex();
+    power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     if (!Wire.begin(I2C_SDA, I2C_SCL))
     {
         ESP_LOGW(LOG_TAG, "failed to initialise I2C");
@@ -84,8 +85,6 @@ void power_setup()
     pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON);   // GPS
     pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF); // Unused
     power_i2c_unlock();
-
-    power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
 }
 
 void power_set_power_output(uint8_t ch, bool on)
@@ -234,44 +233,6 @@ void power_stop_conserving()
     xSemaphoreGive(pmu_mutex);
 }
 
-bool power_is_battery_charging()
-{
-    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
-    power_i2c_lock();
-    bool ret = pmu.isChargeing();
-    power_i2c_unlock();
-    xSemaphoreGive(pmu_mutex);
-    return ret;
-}
-
-bool power_is_supplied_by_battery()
-{
-    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
-    power_i2c_lock();
-    bool ret = pmu.getVbusVoltage() > 3000;
-    power_i2c_unlock();
-    xSemaphoreGive(pmu_mutex);
-    return ret;
-}
-
-float power_get_battery_milliamp()
-{
-    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
-    float ret = 0;
-    power_i2c_lock();
-    if (pmu.isChargeing())
-    {
-        ret = pmu.getBattChargeCurrent();
-    }
-    else
-    {
-        ret = pmu.getBattDischargeCurrent();
-    }
-    power_i2c_unlock();
-    xSemaphoreGive(pmu_mutex);
-    return ret;
-}
-
 int power_get_uptime_sec()
 {
     return (esp_timer_get_time() / 1000000);
@@ -383,8 +344,8 @@ void power_read_status()
         ESP_LOGI(TAG, "power draw reads negative (%.2f) - this should not have happened", status.power_draw_milliamp);
         status.power_draw_milliamp = 0;
     }
-    xSemaphoreGive(pmu_mutex);
     power_i2c_unlock();
+    xSemaphoreGive(pmu_mutex);
 }
 
 void power_log_status()
@@ -414,8 +375,8 @@ void power_set_cpu_freq_mhz(int new_mhz)
         {
             ESP_LOGW(LOG_TAG, "failed to set CPU frequency to %d MHz", new_mhz);
         }
+        last_cpu_freq_mhz = new_mhz;
     }
-    last_cpu_freq_mhz = new_mhz;
     xSemaphoreGive(pmu_mutex);
 }
 
