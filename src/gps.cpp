@@ -45,6 +45,7 @@ void gps_setup()
     {
         ESP_LOGI(LOG_TAG, "failed to save GPS chip configuration - this may not matter");
     }
+    ublox.end();
 }
 
 void gps_on()
@@ -80,7 +81,6 @@ void gps_off()
         return;
     }
     ESP_LOGI(LOG_TAG, "turing off GPS");
-    ublox.end();
     gps_serial.end();
     power_set_power_output(GPS_POWER_CHANNEL, false);
     is_powered_on = false;

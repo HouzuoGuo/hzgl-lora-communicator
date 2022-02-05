@@ -16,21 +16,22 @@ static AXP20X_Class pmu;
 static struct power_status status;
 static bool is_conserving_power;
 static power_config_t config = power_config_regular, config_before_conserving = power_config_regular;
-static SemaphoreHandle_t i2c_mutex, pmu_mutex;
+static SemaphoreHandle_t i2c_mutex, wifi_bt_mutex, pmu_mutex;
 static unsigned long last_transmision_timestamp = 0;
 static int last_cpu_freq_mhz = 240;
 static int lorawan_tx_counter = 0;
 static double sum_curr_draw_readings = 0.0;
 
-// Leave 1500 ms of buffer because the CPU can be very busy during the preparation period.
-static const int bt_prep_duration_ms = BLUETOOTH_SCAN_DURATION_SEC * 1000 + (BLUETOOTH_TASK_LOOP_DELAY_MS * 2) + 1000;
-static const int wifi_prep_duration_ms = WIFI_TASK_LOOP_DELAY_MS * WIFI_MAX_CHANNEL_NUM + (WIFI_TASK_LOOP_DELAY_MS * 2) + 1000;
-static const int env_sensor_prep_duration_ms = ENV_SENSOR_TASK_LOOP_DELAY_MS + 1000;
+// Bluetooth needs a longer buffer (1500ms) as it is much slower than WiFi.
+static const int bt_prep_duration_ms = BLUETOOTH_SCAN_DURATION_SEC * 1000 + (BLUETOOTH_TASK_LOOP_DELAY_MS * 2) + 1500;
+static const int wifi_prep_duration_ms = WIFI_TASK_LOOP_DELAY_MS * (WIFI_MAX_CHANNEL_NUM + 1) + 1000;
+static const int env_sensor_prep_duration_ms = ENV_SENSOR_TASK_LOOP_DELAY_MS + 500;
 
 void power_setup()
 {
     memset(&status, 0, sizeof(status));
     i2c_mutex = xSemaphoreCreateMutex();
+    wifi_bt_mutex = xSemaphoreCreateMutex();
     pmu_mutex = xSemaphoreCreateMutex();
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     if (!Wire.begin(I2C_SDA, I2C_SCL))
@@ -104,6 +105,16 @@ void power_i2c_lock()
 void power_i2c_unlock()
 {
     xSemaphoreGive(i2c_mutex);
+}
+
+void power_wifi_bt_lock()
+{
+    xSemaphoreTake(wifi_bt_mutex, portMAX_DELAY);
+}
+
+void power_wifi_bt_unlock()
+{
+    xSemaphoreGive(wifi_bt_mutex);
 }
 
 unsigned long power_get_last_transmission_timestamp()

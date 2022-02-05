@@ -9,7 +9,7 @@
 #define POWER_TASK_READ_STATUS_DELAY_MS (POWER_TASK_LOOP_DELAY_MS * 5)
 
 // POWER_TASK_LOG_STATUS_DELAY_MS is the internal of logging the latest power consumption stats to serial.
-#define POWER_TASK_LOG_STATUS_DELAY_MS (30 * 1000)
+#define POWER_TASK_LOG_STATUS_DELAY_MS (15 * 1000)
 
 // POWER_DEFAULT_CPU_FREQ_MHZ is the regular CPU speed required for running this program.
 // It is slower than the default CPU speed of ESP32, which is 240MHz.
@@ -71,6 +71,8 @@ power_config_t power_get_config();
 void power_setup();
 void power_i2c_lock();
 void power_i2c_unlock();
+void power_wifi_bt_lock();
+void power_wifi_bt_unlock();
 void power_led_on();
 void power_led_off();
 void power_start_conserving();

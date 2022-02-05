@@ -33,12 +33,14 @@ void bluetooth_on()
     ESP_LOGI(LOG_TAG, "turing on Bluetooth");
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     // The device name is not used because this scanner does not need to advertise itself.
+    power_wifi_bt_lock();
     BLEDevice::init("hzgl-comm");
     BLEDevice::setPower(ESP_PWR_LVL_P9);
     scanner = BLEDevice::getScan();
     scanner->setActiveScan(true);
     scanner->setInterval(BLUETOOTH_SCAN_DURATION_SEC * 100);
     scanner->setWindow(BLUETOOTH_SCAN_DURATION_SEC * BLUETOOTH_SCAN_DUTY_CYCLE_PCT);
+    power_wifi_bt_unlock();
     is_powered_on = true;
     xSemaphoreGive(mutex);
 }
@@ -52,8 +54,10 @@ void bluetooth_off()
         return;
     }
     ESP_LOGI(LOG_TAG, "turing off Bluetooth");
+    power_wifi_bt_lock();
     btStop();
     BLEDevice::deinit();
+    power_wifi_bt_unlock();
     is_powered_on = false;
     xSemaphoreGive(mutex);
 }

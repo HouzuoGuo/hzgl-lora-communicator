@@ -18,7 +18,7 @@ static size_t channel_num = 1;
 static size_t pkt_counter = 0;
 static size_t channel_pkt_counter[WIFI_MAX_CHANNEL_NUM];
 static const wifi_promiscuous_filter_t pkt_filter = {.filter_mask = WIFI_PROMIS_FILTER_MASK_MGMT | WIFI_PROMIS_FILTER_MASK_DATA};
-static wifi_country_t wifi_country_params = {"EU", 1, WIFI_MAX_CHANNEL_NUM, 100, WIFI_COUNTRY_POLICY_MANUAL};
+static wifi_country_t wifi_country_params = {"IE", 1, WIFI_MAX_CHANNEL_NUM, 100, WIFI_COUNTRY_POLICY_MANUAL};
 
 static uint8_t last_loudest_sender[6], loudest_sender[6];
 static int last_loudest_rssi = WIFI_RSSI_FLOOR, loudest_rssi = WIFI_RSSI_FLOOR;
@@ -44,6 +44,7 @@ void wifi_on()
     wifi_init_conf.nvs_enable = 0;
     // Core 1 is already occupied by a great number of tasks, see setup.
     wifi_init_conf.wifi_task_core_id = 0;
+    power_wifi_bt_lock();
     esp_wifi_init(&wifi_init_conf);
     esp_wifi_set_country(&wifi_country_params);
     esp_wifi_set_storage(WIFI_STORAGE_RAM);
@@ -53,9 +54,10 @@ void wifi_on()
     esp_wifi_start();
     esp_wifi_set_channel(channel_num, WIFI_SECOND_CHAN_NONE);
 
-    esp_wifi_set_promiscuous(true);
     esp_wifi_set_promiscuous_filter(&pkt_filter);
     esp_wifi_set_promiscuous_rx_cb(&wifi_sniffer_packet_handler);
+    esp_wifi_set_promiscuous(true);
+    power_wifi_bt_unlock();
     is_powered_on = true;
     xSemaphoreGive(mutex);
 }
@@ -69,11 +71,13 @@ void wifi_off()
         return;
     }
     ESP_LOGI(LOG_TAG, "turing off WiFi");
+    power_wifi_bt_lock();
     esp_wifi_disconnect();
     esp_wifi_scan_stop();
     esp_wifi_set_promiscuous(false);
     esp_wifi_stop();
     esp_wifi_deinit();
+    power_wifi_bt_unlock();
     is_powered_on = false;
     xSemaphoreGive(mutex);
 }
