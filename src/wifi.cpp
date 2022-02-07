@@ -9,8 +9,6 @@
 
 static const char LOG_TAG[] = __FILE__;
 
-static SemaphoreHandle_t mutex;
-
 static bool is_powered_on = false;
 
 static unsigned long round_num = 0;
@@ -27,15 +25,14 @@ static size_t last_loudest_channel = 0, loudest_channel = 0;
 void wifi_setup()
 {
     memset(&channel_pkt_counter, 0, sizeof(channel_pkt_counter));
-    mutex = xSemaphoreCreateMutex();
 }
 
 void wifi_on()
 {
-    xSemaphoreTake(mutex, portMAX_DELAY);
+    power_wifi_bt_lock();
     if (is_powered_on)
     {
-        xSemaphoreGive(mutex);
+        power_wifi_bt_unlock();
         return;
     }
     ESP_LOGI(LOG_TAG, "turing on WiFi");
@@ -44,7 +41,6 @@ void wifi_on()
     wifi_init_conf.nvs_enable = 0;
     // Core 1 is already occupied by a great number of tasks, see setup.
     wifi_init_conf.wifi_task_core_id = 0;
-    power_wifi_bt_lock();
     esp_wifi_init(&wifi_init_conf);
     esp_wifi_set_country(&wifi_country_params);
     esp_wifi_set_storage(WIFI_STORAGE_RAM);
@@ -57,29 +53,30 @@ void wifi_on()
     esp_wifi_set_promiscuous_filter(&pkt_filter);
     esp_wifi_set_promiscuous_rx_cb(&wifi_sniffer_packet_handler);
     esp_wifi_set_promiscuous(true);
-    power_wifi_bt_unlock();
     is_powered_on = true;
-    xSemaphoreGive(mutex);
+    power_wifi_bt_unlock();
 }
 
 void wifi_off()
 {
-    xSemaphoreTake(mutex, portMAX_DELAY);
+    power_wifi_bt_lock();
     if (!is_powered_on)
     {
-        xSemaphoreGive(mutex);
+        power_wifi_bt_unlock();
         return;
     }
     ESP_LOGI(LOG_TAG, "turing off WiFi");
-    power_wifi_bt_lock();
     esp_wifi_disconnect();
+    vTaskDelay(pdMS_TO_TICKS(5));
     esp_wifi_scan_stop();
+    vTaskDelay(pdMS_TO_TICKS(5));
     esp_wifi_set_promiscuous(false);
+    vTaskDelay(pdMS_TO_TICKS(5));
     esp_wifi_stop();
+    vTaskDelay(pdMS_TO_TICKS(5));
     esp_wifi_deinit();
-    power_wifi_bt_unlock();
     is_powered_on = false;
-    xSemaphoreGive(mutex);
+    power_wifi_bt_unlock();
 }
 
 bool wifi_get_state()
@@ -107,7 +104,7 @@ void wifi_task_loop(void *_)
 
 void wifi_next_channel()
 {
-    xSemaphoreTake(mutex, portMAX_DELAY);
+    power_wifi_bt_lock();
     channel_pkt_counter[channel_num - 1] = pkt_counter;
     pkt_counter = 0;
     if (++channel_num > WIFI_MAX_CHANNEL_NUM)
@@ -126,7 +123,7 @@ void wifi_next_channel()
     }
     esp_wifi_set_channel(channel_num, WIFI_SECOND_CHAN_NONE);
     channel_pkt_counter[channel_num] = 0;
-    xSemaphoreGive(mutex);
+    power_wifi_bt_unlock();
 }
 
 int wifi_get_last_loudest_sender_rssi()
@@ -166,19 +163,20 @@ unsigned long wifi_get_round_num()
 
 void wifi_sniffer_packet_handler(void *buff, wifi_promiscuous_pkt_type_t type)
 {
+    // Do not obtain a mutex in this function, or WiFi task loop will have a chance to get stuck.
+    // I suspect that if wifi_off and wifi_sniffer_packet_handler run simultaneously there will be a deadlock.
     if (type != WIFI_PKT_MGMT)
+    {
         return;
-
+    }
     const wifi_promiscuous_pkt_t *pkt = (wifi_promiscuous_pkt_t *)buff;
     const wifi_ieee80211_packet_t *payload = (wifi_ieee80211_packet_t *)pkt->payload;
     const wifi_ieee80211_mac_hdr_t *header = &payload->hdr;
     pkt_counter++;
     if (pkt->rx_ctrl.rssi > loudest_rssi)
     {
-        xSemaphoreTake(mutex, portMAX_DELAY);
         loudest_rssi = pkt->rx_ctrl.rssi;
         loudest_channel = pkt->rx_ctrl.channel;
         memcpy(loudest_sender, header->addr2, sizeof(uint8_t) * 6);
-        xSemaphoreGive(mutex);
     }
 }

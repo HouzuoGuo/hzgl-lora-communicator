@@ -15,7 +15,7 @@
 // It is slower than the default CPU speed of ESP32, which is 240MHz.
 #define POWER_DEFAULT_CPU_FREQ_MHZ 80
 // POWER_LOWEST_CPU_FREQ_MHZ is the lowest CPU speed required to keep the program running, though insufficient for radio activities.
-#define POWER_LOWEST_CPU_FREQ_MHZ 20
+#define POWER_LOWEST_CPU_FREQ_MHZ 40
 
 // POWER_TODO_LORAWAN_TX_RX bit field tells the caller of power_get_todo to proceed with LoRa RX and TX.
 #define POWER_TODO_LORAWAN_TX_RX (1 << 1)
@@ -34,6 +34,9 @@
 #define POWER_GPS_RUN_SLEEP_INTERVAL_SEC (5 * 60)
 // POWER_SLOWEST_TX_INTERVAL_SEC is the slowest LoRaWAN transmission interval used in a power mode.
 #define POWER_SLOWEST_TX_INTERVAL_SEC 90
+
+// MUTEX_LOCK_TIMEOUT_MS is the timeout in milliseconds used for obtaining a lock of bus/radio feature.
+#define MUTEX_LOCK_TIMEOUT_MS 19876
 
 struct power_status
 {

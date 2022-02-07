@@ -16,13 +16,11 @@ static unsigned long last_page_nav_timestamp = 0, last_gps_data_timestamp = 0;
 static struct gps_data last_gps_data;
 static bool is_oled_on = false;
 static unsigned long last_input_timestamp = 0;
-static SemaphoreHandle_t oled_mutex;
 
 static SSD1306Wire oled(OLED_I2C_ADDR, I2C_SDA, I2C_SCL);
 
 void oled_setup()
 {
-    oled_mutex = xSemaphoreCreateMutex();
     power_i2c_lock();
     oled.init();
     oled.clear();
@@ -343,36 +341,30 @@ unsigned int oled_get_ms_since_last_input()
 
 void oled_on()
 {
-    xSemaphoreTake(oled_mutex, portMAX_DELAY);
+    power_i2c_lock();
     if (is_oled_on)
     {
-        xSemaphoreGive(oled_mutex);
+        power_i2c_unlock();
         return;
     }
     ESP_LOGI(LOG_TAG, "turning on OLED");
-    power_i2c_lock();
     oled.displayOn();
-    power_i2c_unlock();
-    power_led_off();
     is_oled_on = true;
-    xSemaphoreGive(oled_mutex);
+    power_i2c_unlock();
 }
 
 void oled_off()
 {
-    xSemaphoreTake(oled_mutex, portMAX_DELAY);
+    power_i2c_lock();
     if (!is_oled_on)
     {
-        xSemaphoreGive(oled_mutex);
+        power_i2c_unlock();
         return;
     }
     ESP_LOGI(LOG_TAG, "turning off OLED");
-    power_i2c_lock();
     oled.displayOff();
-    power_i2c_unlock();
-    power_led_off();
     is_oled_on = false;
-    xSemaphoreGive(oled_mutex);
+    power_i2c_unlock();
 }
 
 void oled_display_refresh()
@@ -436,16 +428,14 @@ void oled_display_refresh()
                 break;
             }
         }
-        xSemaphoreTake(oled_mutex, portMAX_DELAY);
+        power_i2c_lock();
         oled.clear();
         for (int i = 0; i < OLED_MAX_NUM_LINES; i++)
         {
             oled_draw_string_line(i, lines[i]);
         }
-        power_i2c_lock();
         oled.display();
         power_i2c_unlock();
-        xSemaphoreGive(oled_mutex);
     }
 }
 

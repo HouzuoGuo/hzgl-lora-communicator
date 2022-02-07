@@ -19,6 +19,7 @@ struct gps_data gps_get_data();
 
 void gps_setup();
 void gps_on();
+void gps_configure();
 void gps_off();
 void gps_read_decode();
 void gps_task_loop(void *_);

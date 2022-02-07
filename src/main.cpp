@@ -26,8 +26,8 @@ void setup()
   gp_button_setup();
   oled_setup();
   lorawan_setup();
-  gps_setup();
   env_sensor_setup();
+  gps_setup();
   wifi_setup();
   bluetooth_setup();
   // The supervisor starts all essential tasks.

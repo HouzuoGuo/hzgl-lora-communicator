@@ -8,7 +8,6 @@
 
 static const char LOG_TAG[] = __FILE__;
 
-static SemaphoreHandle_t mutex;
 static bool is_powered_on = false;
 
 static unsigned long round_num = 0;
@@ -19,47 +18,43 @@ static int last_num_devices = 0, num_devices = 0;
 
 void bluetooth_setup()
 {
-    mutex = xSemaphoreCreateMutex();
+    // There is nothing to set up.
 }
 
 void bluetooth_on()
 {
-    xSemaphoreTake(mutex, portMAX_DELAY);
+    power_wifi_bt_lock();
     if (is_powered_on)
     {
-        xSemaphoreGive(mutex);
+        power_wifi_bt_unlock();
         return;
     }
     ESP_LOGI(LOG_TAG, "turing on Bluetooth");
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     // The device name is not used because this scanner does not need to advertise itself.
-    power_wifi_bt_lock();
     BLEDevice::init("hzgl-comm");
     BLEDevice::setPower(ESP_PWR_LVL_P9);
     scanner = BLEDevice::getScan();
     scanner->setActiveScan(true);
     scanner->setInterval(BLUETOOTH_SCAN_DURATION_SEC * 100);
     scanner->setWindow(BLUETOOTH_SCAN_DURATION_SEC * BLUETOOTH_SCAN_DUTY_CYCLE_PCT);
-    power_wifi_bt_unlock();
     is_powered_on = true;
-    xSemaphoreGive(mutex);
+    power_wifi_bt_unlock();
 }
 
 void bluetooth_off()
 {
-    xSemaphoreTake(mutex, portMAX_DELAY);
+    power_wifi_bt_lock();
     if (!is_powered_on)
     {
-        xSemaphoreGive(mutex);
+        power_wifi_bt_unlock();
         return;
     }
     ESP_LOGI(LOG_TAG, "turing off Bluetooth");
-    power_wifi_bt_lock();
     btStop();
     BLEDevice::deinit();
-    power_wifi_bt_unlock();
     is_powered_on = false;
-    xSemaphoreGive(mutex);
+    power_wifi_bt_unlock();
 }
 
 bool bluetooth_get_state()
@@ -69,7 +64,7 @@ bool bluetooth_get_state()
 
 void bluetooth_scan()
 {
-    xSemaphoreTake(mutex, portMAX_DELAY);
+    power_wifi_bt_lock();
     // Remember the results from the previous round of scan.
     last_loudest_sender = loudest_sender;
     last_loudest_rssi = loudest_rssi;
@@ -91,7 +86,7 @@ void bluetooth_scan()
         num_devices++;
     }
     round_num++;
-    xSemaphoreGive(mutex);
+    power_wifi_bt_unlock();
     ESP_LOGI(LOG_TAG, "just finished a round of scan");
 }
 
@@ -122,9 +117,9 @@ unsigned long bluetooth_get_round_num()
 BLEAdvertisedDevice bluetooth_get_loudest_sender()
 {
     BLEAdvertisedDevice ret;
-    xSemaphoreTake(mutex, portMAX_DELAY);
+    power_wifi_bt_lock();
     ret = last_loudest_sender;
-    xSemaphoreGive(mutex);
+    power_wifi_bt_unlock();
     return ret;
 }
 

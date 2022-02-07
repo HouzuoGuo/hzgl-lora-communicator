@@ -29,23 +29,36 @@ static TinyGPSCustom gps_year_field(gps, "GPZDA", 4);
 void gps_setup()
 {
     mutex = xSemaphoreCreateMutex();
-    gps_on();
-    // Change serial output content type to NMEA.
-    ublox.setUART1Output(COM_TYPE_NMEA);
-    // Disable unused NMEA sentences.
-    ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1);
-    ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
-    ublox.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
-    ublox.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1);
-    ublox.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
-    // GGA - position fix, ZDA - date and time.
-    ublox.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
-    ublox.enableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_UART1);
-    if (!ublox.saveConfiguration())
+}
+
+void gps_configure()
+{
+    for (int i = 0; i < 30; i++)
     {
-        ESP_LOGI(LOG_TAG, "failed to save GPS chip configuration - this may not matter");
+        if (ublox.begin(gps_serial))
+        {
+            // Change serial output content type to NMEA.
+            ublox.setUART1Output(COM_TYPE_NMEA);
+            // Disable unused NMEA sentences.
+            ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1);
+            ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
+            ublox.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
+            ublox.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1);
+            ublox.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
+            // GGA - position fix, ZDA - date and time.
+            ublox.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
+            ublox.enableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_UART1);
+            if (!ublox.saveConfiguration())
+            {
+                ESP_LOGI(LOG_TAG, "failed to save GPS chip configuration - this may not matter");
+            }
+            vTaskDelay(pdMS_TO_TICKS(10)); // TODO: remove this if it does not help resolving the rare HardwareSerial panic.
+            ublox.end();
+            vTaskDelay(pdMS_TO_TICKS(10)); // TODO: remove this if it does not help resolving the rare HardwareSerial panic.
+            return;
+        }
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
-    ublox.end();
 }
 
 void gps_on()
@@ -59,14 +72,14 @@ void gps_on()
     ESP_LOGI(LOG_TAG, "turing on GPS");
     power_set_power_output(GPS_POWER_CHANNEL, true);
     // Be aware of the reversed polarity noted on the seller's pinout diagram.
+    vTaskDelay(pdMS_TO_TICKS(10)); // TODO: remove this if it does not help resolving the rare HardwareSerial panic.
     gps_serial.begin(9600, SERIAL_8N1, GPS_SERIAL_TX, GPS_SERIAL_RX);
-    for (int i = 0; i < 30; i++)
+    vTaskDelay(pdMS_TO_TICKS(10)); // TODO: remove this if it does not help resolving the rare HardwareSerial panic.
+    ESP_LOGI(LOG_TAG, "gps serial started");
+    if (num_decoded_bytes == 0)
     {
-        if (ublox.begin(gps_serial))
-        {
-            break;
-        }
-        vTaskDelay(pdMS_TO_TICKS(100));
+        gps_configure();
+        ESP_LOGI(LOG_TAG, "configured");
     }
     is_powered_on = true;
     xSemaphoreGive(mutex);
@@ -81,6 +94,9 @@ void gps_off()
         return;
     }
     ESP_LOGI(LOG_TAG, "turing off GPS");
+    vTaskDelay(pdMS_TO_TICKS(10));
+    gps_serial.flush();
+    vTaskDelay(pdMS_TO_TICKS(10));
     gps_serial.end();
     power_set_power_output(GPS_POWER_CHANNEL, false);
     is_powered_on = false;

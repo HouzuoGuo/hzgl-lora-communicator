@@ -44,10 +44,10 @@ void supervisor_setup()
     ESP_ERROR_CHECK(esp_task_wdt_add(bluetooth_task));
     xTaskCreatePinnedToCore(wifi_task_loop, "wifi_task_loop", 8 * 1024, NULL, priority++, &wifi_task, 1);
     ESP_ERROR_CHECK(esp_task_wdt_add(wifi_task));
-    xTaskCreatePinnedToCore(env_sensor_task_loop, "env_sensor_task_loop", 8 * 1024, NULL, priority++, &env_sensor_task, 1);
-    ESP_ERROR_CHECK(esp_task_wdt_add(env_sensor_task));
     xTaskCreatePinnedToCore(gps_task_loop, "gps_task_loop", 8 * 1024, NULL, priority++, &gps_task, 1);
     ESP_ERROR_CHECK(esp_task_wdt_add(gps_task));
+    xTaskCreatePinnedToCore(env_sensor_task_loop, "env_sensor_task_loop", 8 * 1024, NULL, priority++, &env_sensor_task, 1);
+    ESP_ERROR_CHECK(esp_task_wdt_add(env_sensor_task));
     xTaskCreatePinnedToCore(lorawan_task_loop, "lorawan_task_loop", 16 * 1024, NULL, priority++, &lorawan_task, 1);
     ESP_ERROR_CHECK(esp_task_wdt_add(lorawan_task));
     xTaskCreatePinnedToCore(oled_task_loop, "oled_task_loop", 16 * 1024, NULL, priority++, &oled_task, 1);
@@ -91,8 +91,8 @@ void supervisor_check_task_stack()
     {
         ESP_LOGE(TAG, "bluetooth task state: %d, min.free stack: %dKB", eTaskGetState(bluetooth_task), bluetooth_stack_free_kb);
         ESP_LOGE(TAG, "wifi task state: %d, min.free stack: %dKB", eTaskGetState(wifi_task), wifi_stack_free_kb);
-        ESP_LOGE(TAG, "sensor task state: %d, min.free stack: %dKB", eTaskGetState(env_sensor_task), sensor_stack_free_kb);
         ESP_LOGE(TAG, "gps task state: %d, min.free stack: %dKB", eTaskGetState(gps_task), gps_stack_free_kb);
+        ESP_LOGE(TAG, "sensor task state: %d, min.free stack: %dKB", eTaskGetState(env_sensor_task), sensor_stack_free_kb);
         ESP_LOGE(TAG, "lorawan task state: %d, min.free stack: %dKB", eTaskGetState(lorawan_task), lorawan_stack_free_kb);
         ESP_LOGE(TAG, "oled task state: %d, min.free stack: %dKB", eTaskGetState(oled_task), oled_stack_free_kb);
         ESP_LOGE(TAG, "GP button task state: %d, min.free stack: %dKB", eTaskGetState(gp_button_task), button_stack_free_kb);
@@ -233,9 +233,9 @@ void supervisor_task_loop(void *_)
         supervisor_check_power();
         supervisor_check_lorawan();
         supervisor_check_env_sensor();
+        supervisor_check_gps();
         supervisor_check_wifi();
         supervisor_check_bluetooth();
-        supervisor_check_gps();
         vTaskDelay(pdMS_TO_TICKS(SUPERVISOR_TASK_LOOP_DELAY_MS));
     }
 }

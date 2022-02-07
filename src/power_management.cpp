@@ -16,7 +16,7 @@ static AXP20X_Class pmu;
 static struct power_status status;
 static bool is_conserving_power;
 static power_config_t config = power_config_regular, config_before_conserving = power_config_regular;
-static SemaphoreHandle_t i2c_mutex, wifi_bt_mutex, pmu_mutex;
+static SemaphoreHandle_t i2c_mutex, wifi_bt_mutex;
 static unsigned long last_transmision_timestamp = 0;
 static int last_cpu_freq_mhz = 240;
 static int lorawan_tx_counter = 0;
@@ -32,7 +32,6 @@ void power_setup()
     memset(&status, 0, sizeof(status));
     i2c_mutex = xSemaphoreCreateMutex();
     wifi_bt_mutex = xSemaphoreCreateMutex();
-    pmu_mutex = xSemaphoreCreateMutex();
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     if (!Wire.begin(I2C_SDA, I2C_SCL))
     {
@@ -44,10 +43,17 @@ void power_setup()
         ESP_LOGW(LOG_TAG, "failed to initialise AXP power management chip");
     }
 
+    // https://www.solomon-systech.com/product/ssd1306/
+    // "– VDD= 1.65V – 3.3V, <VBAT for IC Logic"
+    // "– VBAT= 3.3V – 4.2V for charge pump regulator circuit"
     pmu.setDCDC1Voltage(3300); // OLED
     pmu.setDCDC2Voltage(0);    // Unused
-    pmu.setLDO2Voltage(3300);  // LoRa
-    pmu.setLDO3Voltage(3300);  // GPS
+    // https://cdn-shop.adafruit.com/product-files/3179/sx1276_77_78_79.pdf
+    // "Supply voltage = 3.3 V"
+    pmu.setLDO2Voltage(3300); // LoRa
+    // https://www.u-blox.com/sites/default/files/products/documents/NEO-6_DataSheet_(GPS.G6-HW-09005).pdf
+    // "NEO-6Q/M NEO-6P/V/T Min: 2.7, Typ: 3.0, Max: 3.6"
+    pmu.setLDO3Voltage(3000); // GPS
 
     pmu.setVWarningLevel1(3600);
     pmu.setVWarningLevel2(3800);
@@ -72,7 +78,7 @@ void power_setup()
     pmu.clearIRQ();
 
     // Start charging the battery if it is installed.
-    pmu.setChargeControlCur(AXP1XX_CHARGE_CUR_450MA);
+    pmu.setChargeControlCur(AXP1XX_CHARGE_CUR_700MA);
     pmu.setChargingTargetVoltage(AXP202_TARGET_VOL_4_2V);
     pmu.enableChargeing(true);
     pmu.setChgLEDMode(AXP20X_LED_OFF);
@@ -82,24 +88,28 @@ void power_setup()
     pmu.setBackupChargeVoltage(AXP202_BACKUP_VOLTAGE_3V0);
     pmu.setBackupChargeControl(true);
 
-    pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);  // OLED
-    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_OFF); // Unused
-    pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);   // LoRa
-    pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON);   // GPS
-    pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF); // Unused
+    pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);       // OLED
+    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_OFF);      // Unused
+    pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);        // LoRa
+    pmu.setPowerOutPut(GPS_POWER_CHANNEL, AXP202_OFF); // GPS, gps_on and gps_off will switch this power channel on/off.
+    pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF);      // Unused
     power_i2c_unlock();
 }
 
 void power_set_power_output(uint8_t ch, bool on)
 {
-    xSemaphoreTake(i2c_mutex, portMAX_DELAY);
+    power_i2c_lock();
     pmu.setPowerOutPut(ch, on ? AXP202_ON : AXP202_OFF);
-    xSemaphoreGive(i2c_mutex);
+    power_i2c_unlock();
 }
 
 void power_i2c_lock()
 {
-    xSemaphoreTake(i2c_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(i2c_mutex, MUTEX_LOCK_TIMEOUT_MS) == pdFALSE)
+    {
+        ESP_LOGE(TAG, "failed to obtain i2c_mutex lock");
+        assert(false);
+    }
 }
 
 void power_i2c_unlock()
@@ -109,7 +119,11 @@ void power_i2c_unlock()
 
 void power_wifi_bt_lock()
 {
-    xSemaphoreTake(wifi_bt_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(wifi_bt_mutex, MUTEX_LOCK_TIMEOUT_MS) == pdFALSE)
+    {
+        ESP_LOGE(TAG, "failed to obtain wifi_bt_mutex lock");
+        assert(false);
+    }
 }
 
 void power_wifi_bt_unlock()
@@ -134,20 +148,16 @@ bool power_get_may_transmit_lorawan()
 
 void power_led_on()
 {
-    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
     power_i2c_lock();
     pmu.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
     power_i2c_unlock();
-    xSemaphoreGive(pmu_mutex);
 }
 
 void power_led_off()
 {
-    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
     power_i2c_lock();
     pmu.setChgLEDMode(AXP20X_LED_OFF);
     power_i2c_unlock();
-    xSemaphoreGive(pmu_mutex);
 }
 
 double power_get_sum_curr_draw_readings()
@@ -157,15 +167,11 @@ double power_get_sum_curr_draw_readings()
 
 void power_read_handle_lastest_irq()
 {
-    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
     power_i2c_lock();
     pmu.readIRQ();
-    power_i2c_unlock();
     if (pmu.isVbusOverVoltageIRQ())
     {
-        power_i2c_lock();
         ESP_LOGW(TAG, "USB power supply voltage is too high (%f.3v)", pmu.getVbusVoltage() / 1000);
-        power_i2c_unlock();
     }
     if (pmu.isBattPlugInIRQ())
     {
@@ -192,44 +198,40 @@ void power_read_handle_lastest_irq()
     if (pmu.isPEKLongtPressIRQ())
     {
         ESP_LOGW(TAG, "shutting down");
-        power_i2c_lock();
         pmu.setChgLEDMode(AXP20X_LED_OFF);
         pmu.shutdown();
-        power_i2c_unlock();
     }
-    power_i2c_lock();
     pmu.clearIRQ();
     power_i2c_unlock();
-    xSemaphoreGive(pmu_mutex);
 }
 
 void power_start_conserving()
 {
-    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
+    power_i2c_lock();
     if (is_conserving_power)
     {
-        xSemaphoreGive(pmu_mutex);
+        power_i2c_unlock();
         return;
     }
     ESP_LOGW(TAG, "start conserving power by switching from mode %d to power save mode, battery current reads: %+.1f", config.mode_id, status.batt_milliamp);
     config_before_conserving = config;
     config = power_config_saver;
     is_conserving_power = true;
-    xSemaphoreGive(pmu_mutex);
+    power_i2c_unlock();
 }
 
 void power_stop_conserving()
 {
-    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
+    power_i2c_lock();
     if (!is_conserving_power)
     {
-        xSemaphoreGive(pmu_mutex);
+        power_i2c_unlock();
         return;
     }
     ESP_LOGW(TAG, "stop conserving power and return to power mode %d", config_before_conserving.mode_id);
     config = config_before_conserving;
     is_conserving_power = false;
-    xSemaphoreGive(pmu_mutex);
+    power_i2c_unlock();
 }
 
 int power_get_uptime_sec()
@@ -256,10 +258,10 @@ int power_get_todo()
     {
         ret |= POWER_TODO_LORAWAN_TX_RX;
     }
-    else if (lorawan_tx_counter == 0 && ms_since_last_tx > env_sensor_prep_duration_ms * 2)
+    else if (lorawan_tx_counter == 0 && ms_since_last_tx > 5000)
     {
         // The first transmission needs to wait until the environment sensor is read for the first time.
-        // The first readings take an unusually long time. I do not yet fully understand why.
+        // The CPU is quite busy for the brief time period just after starting up, it takes a couple of seconds to get the first sensor readings.
         ret |= POWER_TODO_LORAWAN_TX_RX;
     }
 
@@ -318,7 +320,6 @@ void power_inc_lorawan_tx_counter()
 
 void power_read_status()
 {
-    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
     power_i2c_lock();
     status.is_batt_charging = pmu.isChargeing();
     status.batt_millivolt = pmu.getBattVoltage();
@@ -344,9 +345,8 @@ void power_read_status()
         ESP_LOGI(TAG, "power draw reads negative (%.2f) - this should not have happened", status.power_draw_milliamp);
         status.power_draw_milliamp = 0;
     }
-    power_i2c_unlock();
-    xSemaphoreGive(pmu_mutex);
     sum_curr_draw_readings += status.power_draw_milliamp;
+    power_i2c_unlock();
 }
 
 void power_log_status()
@@ -368,7 +368,7 @@ power_config_t power_get_config()
 
 void power_set_cpu_freq_mhz(int new_mhz)
 {
-    xSemaphoreTake(pmu_mutex, portMAX_DELAY);
+    power_i2c_lock();
     if (last_cpu_freq_mhz != new_mhz)
     {
         ESP_LOGI(TAG, "setting CPU frequency to %d MHz", new_mhz);
@@ -378,7 +378,7 @@ void power_set_cpu_freq_mhz(int new_mhz)
         }
         last_cpu_freq_mhz = new_mhz;
     }
-    xSemaphoreGive(pmu_mutex);
+    power_i2c_unlock();
 }
 
 void power_task_loop(void *_)
