@@ -33,7 +33,8 @@ void power_setup()
     i2c_mutex = xSemaphoreCreateMutex();
     wifi_bt_mutex = xSemaphoreCreateMutex();
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
-    if (!Wire.begin(I2C_SDA, I2C_SCL))
+    // 100KHz is supported by all ESP32 CPU speeds, including lower CPU speed such as 40MHz.
+    if (!Wire.begin(I2C_SDA, I2C_SCL, 100000))
     {
         ESP_LOGW(LOG_TAG, "failed to initialise I2C");
     }
