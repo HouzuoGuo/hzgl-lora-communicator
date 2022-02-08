@@ -323,6 +323,11 @@ void power_read_status()
     power_i2c_lock();
     status.is_batt_charging = pmu.isChargeing();
     status.batt_millivolt = pmu.getBattVoltage();
+    if (status.batt_millivolt < 500)
+    {
+        // The AXP chip occasionally produces erranous and exceedingly low battery voltage readings even without a battery installed.
+        status.batt_millivolt = 0;
+    }
     status.usb_millivolt = pmu.getVbusVoltage();
     if (status.is_batt_charging)
     {
@@ -335,7 +340,7 @@ void power_read_status()
     status.power_draw_milliamp = pmu.getVbusCurrent();
     // The power management chip always draws power from USB when it is available.
     // Use battery discharging current as a condition too because the VBus current occasionally reads 0.
-    status.is_usb_power_available = status.is_batt_charging || status.power_draw_milliamp > 5 || status.batt_milliamp > -5;
+    status.is_usb_power_available = status.is_batt_charging || status.batt_millivolt < 2000;
     if (!status.is_usb_power_available)
     {
         status.power_draw_milliamp = -status.batt_milliamp;

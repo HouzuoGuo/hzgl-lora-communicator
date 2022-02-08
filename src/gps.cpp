@@ -52,9 +52,10 @@ void gps_configure()
             {
                 ESP_LOGI(LOG_TAG, "failed to save GPS chip configuration - this may not matter");
             }
-            vTaskDelay(pdMS_TO_TICKS(10)); // TODO: remove this if it does not help resolving the rare HardwareSerial panic.
+            // The seemingly random delays help reducing the likelihood of a seemingly random panic in HardwareSerial.
+            vTaskDelay(pdMS_TO_TICKS(10));
             ublox.end();
-            vTaskDelay(pdMS_TO_TICKS(10)); // TODO: remove this if it does not help resolving the rare HardwareSerial panic.
+            vTaskDelay(pdMS_TO_TICKS(10));
             return;
         }
         vTaskDelay(pdMS_TO_TICKS(100));
@@ -72,9 +73,10 @@ void gps_on()
     ESP_LOGI(LOG_TAG, "turing on GPS");
     power_set_power_output(GPS_POWER_CHANNEL, true);
     // Be aware of the reversed polarity noted on the seller's pinout diagram.
-    vTaskDelay(pdMS_TO_TICKS(10)); // TODO: remove this if it does not help resolving the rare HardwareSerial panic.
+    // The seemingly random delays help reducing the likelihood of a seemingly random panic in HardwareSerial.
+    vTaskDelay(pdMS_TO_TICKS(10));
     gps_serial.begin(9600, SERIAL_8N1, GPS_SERIAL_TX, GPS_SERIAL_RX);
-    vTaskDelay(pdMS_TO_TICKS(10)); // TODO: remove this if it does not help resolving the rare HardwareSerial panic.
+    vTaskDelay(pdMS_TO_TICKS(10));
     ESP_LOGI(LOG_TAG, "gps serial started");
     if (num_decoded_bytes == 0)
     {
