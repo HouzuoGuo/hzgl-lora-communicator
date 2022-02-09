@@ -20,7 +20,7 @@ void setup()
   ESP_ERROR_CHECK(esp_task_wdt_init(SUPERVISOR_WATCHDOG_TIMEOUT_SEC, true));
   // Keey an eye on the setup itself too.
   ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
-  Serial.begin(115200);
+  Serial.begin(9600);
   pinMode(GENERIC_PURPOSE_BUTTON, INPUT);
   power_setup();
   gp_button_setup();
