@@ -309,7 +309,7 @@ void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LE
         // Battery is installed and it is charging/discharging.
         snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Batt: %.3fv %+.0fmA", float(power.batt_millivolt) / 1000.0, power.batt_milliamp);
     }
-    else if (power.batt_millivolt < 100)
+    else if (power.batt_millivolt < 500)
     {
         // Battery is not installed.
         snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "USB: %.3fv %.0fmA", float(power.usb_millivolt) / 1000.0, -power.power_draw_milliamp);

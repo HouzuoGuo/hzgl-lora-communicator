@@ -340,7 +340,7 @@ void power_read_status()
     status.power_draw_milliamp = pmu.getVbusCurrent();
     // The power management chip always draws power from USB when it is available.
     // Use battery discharging current as a condition too because the VBus current occasionally reads 0.
-    status.is_usb_power_available = status.is_batt_charging || status.batt_millivolt < 2000;
+    status.is_usb_power_available = status.is_batt_charging || status.batt_milliamp > 3 || status.batt_millivolt < 3000 || status.power_draw_milliamp > 3 || pmu.getVbusVoltage() > 4000;
     if (!status.is_usb_power_available)
     {
         status.power_draw_milliamp = -status.batt_milliamp;
