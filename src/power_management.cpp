@@ -33,11 +33,11 @@ void power_setup()
     i2c_mutex = xSemaphoreCreateMutex();
     wifi_bt_mutex = xSemaphoreCreateMutex();
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
+    power_i2c_lock();
     if (!Wire.begin(I2C_SDA, I2C_SCL))
     {
         ESP_LOGW(LOG_TAG, "failed to initialise I2C");
     }
-    power_i2c_lock();
     if (pmu.begin(Wire, AXP192_SLAVE_ADDRESS) != AXP_PASS)
     {
         ESP_LOGW(LOG_TAG, "failed to initialise AXP power management chip");
@@ -88,21 +88,13 @@ void power_setup()
     pmu.setBackupChargeVoltage(AXP202_BACKUP_VOLTAGE_3V0);
     pmu.setBackupChargeControl(true);
 
-    pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);       // OLED
-    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_OFF);      // Unused
-    pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);        // LoRa
-    pmu.setPowerOutPut(GPS_POWER_CHANNEL, AXP202_OFF); // GPS, gps_on and gps_off will switch this power channel on/off.
-    pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF);      // Unused
+    pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);  // OLED
+    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_OFF); // Unused
+    pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);   // LoRa
+    pmu.setPowerOutPut(GPS_POWER_CHANNEL, AXP202_ON); // GPS
+    pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF); // Unused
     power_i2c_unlock();
 }
-
-void power_set_power_output(uint8_t ch, bool on)
-{
-    power_i2c_lock();
-    pmu.setPowerOutPut(ch, on ? AXP202_ON : AXP202_OFF);
-    power_i2c_unlock();
-}
-
 void power_i2c_lock()
 {
     if (xSemaphoreTake(i2c_mutex, MUTEX_LOCK_TIMEOUT_MS) == pdFALSE)

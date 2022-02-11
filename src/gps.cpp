@@ -29,16 +29,13 @@ static TinyGPSCustom gps_year_field(gps, "GPZDA", 4);
 void gps_setup()
 {
     mutex = xSemaphoreCreateMutex();
-}
-
-void gps_configure()
-{
+    gps_serial.begin(9600, SERIAL_8N1, GPS_SERIAL_TX, GPS_SERIAL_RX);
     for (int i = 0; i < 30; i++)
     {
         if (ublox.begin(gps_serial))
         {
             // Change serial output content type to NMEA.
-            ublox.setUART1Output(COM_TYPE_NMEA);
+            ESP_LOGI(LOG_TAG, "demand NMEA output: %d", ublox.setUART1Output(COM_TYPE_NMEA));
             // Disable unused NMEA sentences.
             ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1);
             ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
@@ -46,16 +43,8 @@ void gps_configure()
             ublox.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1);
             ublox.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
             // GGA - position fix, ZDA - date and time.
-            ublox.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1);
-            ublox.enableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_UART1);
-            if (!ublox.saveConfiguration())
-            {
-                ESP_LOGI(LOG_TAG, "failed to save GPS chip configuration - this may not matter");
-            }
-            // The seemingly random delays help reducing the likelihood of a seemingly random panic in HardwareSerial.
-            vTaskDelay(pdMS_TO_TICKS(10));
-            ublox.end();
-            vTaskDelay(pdMS_TO_TICKS(10));
+            ESP_LOGI(LOG_TAG, "enable GGA: %d, enable ZDA: %d", ublox.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1), ublox.enableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_UART1));
+            ESP_LOGI(LOG_TAG, "save config: %d", ublox.saveConfiguration());
             return;
         }
         vTaskDelay(pdMS_TO_TICKS(100));
@@ -70,19 +59,8 @@ void gps_on()
         xSemaphoreGive(mutex);
         return;
     }
-    ESP_LOGI(LOG_TAG, "turing on GPS");
-    power_set_power_output(GPS_POWER_CHANNEL, true);
-    // Be aware of the reversed polarity noted on the seller's pinout diagram.
-    // The seemingly random delays help reducing the likelihood of a seemingly random panic in HardwareSerial.
-    vTaskDelay(pdMS_TO_TICKS(10));
-    gps_serial.begin(9600, SERIAL_8N1, GPS_SERIAL_TX, GPS_SERIAL_RX);
-    vTaskDelay(pdMS_TO_TICKS(10));
-    ESP_LOGI(LOG_TAG, "gps serial started");
-    if (num_decoded_bytes == 0)
-    {
-        gps_configure();
-        ESP_LOGI(LOG_TAG, "configured");
-    }
+    // According to the library, sending an info query wakes the GPS up.
+    ESP_LOGI(LOG_TAG, "turing on GPS - time %d:%d lat %d long %d", ublox.getMinute(), ublox.getSecond(), ublox.getLatitude(), ublox.getLongitude());
     is_powered_on = true;
     xSemaphoreGive(mutex);
 }
@@ -95,12 +73,8 @@ void gps_off()
         xSemaphoreGive(mutex);
         return;
     }
-    ESP_LOGI(LOG_TAG, "turing off GPS");
-    vTaskDelay(pdMS_TO_TICKS(10));
-    gps_serial.flush();
-    vTaskDelay(pdMS_TO_TICKS(10));
-    gps_serial.end();
-    power_set_power_output(GPS_POWER_CHANNEL, false);
+    // The off duration does not really matter as gps_on wakes the GPS up when needed.
+    ESP_LOGI(LOG_TAG, "turing off GPS - cmd result: %d", ublox.powerOff(3600 * 1000));
     is_powered_on = false;
     xSemaphoreGive(mutex);
 }

@@ -15,8 +15,7 @@
 // It is slower than the default CPU speed of ESP32, which is 240MHz.
 #define POWER_DEFAULT_CPU_FREQ_MHZ 80
 // POWER_LOWEST_CPU_FREQ_MHZ is the lowest CPU speed required to keep the program running, though insufficient for radio activities.
-// Avoid going lower than 40 MHz or HardwareSerial (used by GPS) will have a high likelihood of running into panic.
-#define POWER_LOWEST_CPU_FREQ_MHZ 40
+#define POWER_LOWEST_CPU_FREQ_MHZ 10
 
 // POWER_TODO_LORAWAN_TX_RX bit field tells the caller of power_get_todo to proceed with LoRa RX and TX.
 #define POWER_TODO_LORAWAN_TX_RX (1 << 1)
@@ -90,7 +89,6 @@ unsigned long power_get_last_transmission_timestamp();
 void power_set_last_transmission_timestamp();
 bool power_get_may_transmit_lorawan();
 int power_get_todo();
-void power_set_power_output(uint8_t ch, bool on);
 struct power_status power_get_status();
 void power_set_config(power_config_t val);
 power_config_t power_get_config();
