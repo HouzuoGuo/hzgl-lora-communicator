@@ -33,6 +33,12 @@ function decodeUplink(input) {
         // Byte 22, 23, 24, 25 - pressure altitude in meters.
         data.ambient_altitude_metre = decode_double(buf[i], buf[i + 1], buf[i + 2], buf[i + 3]);
         i += 4;
+        // Byte 26 - CPU core 0's reset reason.
+        data.cpu0_reset_reason = buf[i++];
+        // Byte 27 - CPU core 1's reset reason.
+        data.cpu1_reset_reason = buf[i++];
+        // Byte 28 - CPU's wake-up cause.
+        data.cpu_wake_up_cause = buf[i++];
     } else if (input.fPort == 120) {
         // Byte 0, 1, 2, 3 - GPS latitude.
         data.latitude = decode_double(buf[i], buf[i + 1], buf[i + 2], buf[i + 3]);
