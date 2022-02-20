@@ -17,7 +17,7 @@ static struct power_status status;
 static bool is_conserving_power;
 static power_config_t config = power_config_regular, config_before_conserving = power_config_regular;
 static SemaphoreHandle_t i2c_mutex, wifi_bt_mutex;
-static unsigned long last_transmision_timestamp = 0;
+static unsigned long last_transmision_timestamp = 0, last_stop_conserve_power_timestamp = 0;
 static int last_cpu_freq_mhz = 240;
 static int lorawan_tx_counter = 0;
 static double sum_curr_draw_readings = 0.0;
@@ -88,11 +88,11 @@ void power_setup()
     pmu.setBackupChargeVoltage(AXP202_BACKUP_VOLTAGE_3V0);
     pmu.setBackupChargeControl(true);
 
-    pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);  // OLED
-    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_OFF); // Unused
-    pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);   // LoRa
+    pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);      // OLED
+    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_OFF);     // Unused
+    pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);       // LoRa
     pmu.setPowerOutPut(GPS_POWER_CHANNEL, AXP202_ON); // GPS
-    pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF); // Unused
+    pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF);     // Unused
     power_i2c_unlock();
 }
 void power_i2c_lock()
@@ -215,7 +215,7 @@ void power_start_conserving()
 void power_stop_conserving()
 {
     power_i2c_lock();
-    if (!is_conserving_power)
+    if (!is_conserving_power || ((millis() - last_stop_conserve_power_timestamp) / 1000) <= POWER_MIN_CONSERVATION_PERIOD_SEC)
     {
         power_i2c_unlock();
         return;
@@ -223,6 +223,7 @@ void power_stop_conserving()
     ESP_LOGW(TAG, "stop conserving power and return to power mode %d", config_before_conserving.mode_id);
     config = config_before_conserving;
     is_conserving_power = false;
+    last_stop_conserve_power_timestamp = millis();
     power_i2c_unlock();
 }
 

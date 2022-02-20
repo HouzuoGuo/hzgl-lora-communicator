@@ -35,6 +35,11 @@
 // POWER_SLOWEST_TX_INTERVAL_SEC is the slowest LoRaWAN transmission interval used in a power mode.
 #define POWER_SLOWEST_TX_INTERVAL_SEC 90
 
+// POWER_MIN_CONSERVATION_PERIOD_SEC is the minimum duration to wait before exiting from power conservation a second time.
+// This interval helps to prevent rapidly switching between power saver config and reuglar config under unstable USB power.
+// E.g. when USB power is supplied by solar panel.
+#define POWER_MIN_CONSERVATION_PERIOD_SEC (10 * 60)
+
 // MUTEX_LOCK_TIMEOUT_MS is the timeout in milliseconds used for obtaining a lock of bus/radio feature.
 #define MUTEX_LOCK_TIMEOUT_MS 19876
 
