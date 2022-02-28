@@ -78,7 +78,7 @@ void power_setup()
     pmu.clearIRQ();
 
     // Start charging the battery if it is installed.
-    pmu.setChargeControlCur(AXP1XX_CHARGE_CUR_700MA);
+    pmu.setChargeControlCur(AXP1XX_CHARGE_CUR_1000MA);
     pmu.setChargingTargetVoltage(AXP202_TARGET_VOL_4_2V);
     pmu.enableChargeing(true);
     pmu.setChgLEDMode(AXP20X_LED_OFF);
