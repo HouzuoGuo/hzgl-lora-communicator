@@ -49,7 +49,7 @@ Then check out wiki article [Usage](https://github.com/HouzuoGuo/hzgl-lora-commu
 
 ## Copyright
 
-Copyright (C) 2021 Google Inc. All rights reserved.
+Copyright (C) 2021-2022 Google Inc. All rights reserved.
 
 This program is free software subject to the terms of GNU Public License, v 3.0.
 You may find the license text in the [LICENSE file](https://github.com/HouzuoGuo/hzgl-lora-communicator/blob/master/LICENSE).
