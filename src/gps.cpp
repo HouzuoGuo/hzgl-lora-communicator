@@ -11,8 +11,8 @@
 
 static const char LOG_TAG[] = __FILE__;
 
-static SemaphoreHandle_t mutex;
-static bool is_powered_on = false;
+static SemaphoreHandle_t mutex = xSemaphoreCreateMutex();
+static bool is_powered_on = false, is_initialised = false;
 static unsigned long num_decoded_bytes = 0;
 static HardwareSerial gps_serial(1);
 // gps interprets NMEA output.
@@ -26,31 +26,6 @@ static TinyGPSCustom gps_day_field(gps, "GPZDA", 2);
 static TinyGPSCustom gps_month_field(gps, "GPZDA", 3);
 static TinyGPSCustom gps_year_field(gps, "GPZDA", 4);
 
-void gps_setup()
-{
-    mutex = xSemaphoreCreateMutex();
-    gps_serial.begin(9600, SERIAL_8N1, GPS_SERIAL_TX, GPS_SERIAL_RX);
-    for (int i = 0; i < 30; i++)
-    {
-        if (ublox.begin(gps_serial))
-        {
-            // Change serial output content type to NMEA.
-            ESP_LOGI(LOG_TAG, "demand NMEA output: %d", ublox.setUART1Output(COM_TYPE_NMEA));
-            // Disable unused NMEA sentences.
-            ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1);
-            ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
-            ublox.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
-            ublox.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1);
-            ublox.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
-            // GGA - position fix, ZDA - date and time.
-            ESP_LOGI(LOG_TAG, "enable GGA: %d, enable ZDA: %d", ublox.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1), ublox.enableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_UART1));
-            ESP_LOGI(LOG_TAG, "save config: %d", ublox.saveConfiguration());
-            return;
-        }
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
-}
-
 void gps_on()
 {
     xSemaphoreTake(mutex, portMAX_DELAY);
@@ -59,7 +34,31 @@ void gps_on()
         xSemaphoreGive(mutex);
         return;
     }
-    // According to the library, sending an info query wakes the GPS up.
+    if (!is_initialised)
+    {
+        gps_serial.begin(9600, SERIAL_8N1, GPS_SERIAL_TX, GPS_SERIAL_RX);
+        for (int i = 0; i < 30; i++)
+        {
+            if (ublox.begin(gps_serial))
+            {
+                // Change serial output content type to NMEA.
+                ESP_LOGI(LOG_TAG, "demand NMEA output: %d", ublox.setUART1Output(COM_TYPE_NMEA));
+                // Disable unused NMEA sentences.
+                ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1);
+                ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
+                ublox.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
+                ublox.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1);
+                ublox.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
+                // GGA - position fix, ZDA - date and time.
+                ESP_LOGI(LOG_TAG, "enable GGA: %d, enable ZDA: %d", ublox.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1), ublox.enableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_UART1));
+                ESP_LOGI(LOG_TAG, "save config: %d", ublox.saveConfiguration());
+                break;
+            }
+            vTaskDelay(pdMS_TO_TICKS(100));
+        }
+        is_initialised = true;
+    }
+    // According to the ublox library, sending an info query wakes the GPS up.
     ESP_LOGI(LOG_TAG, "turing on GPS - time %d:%d lat %d long %d", ublox.getMinute(), ublox.getSecond(), ublox.getLatitude(), ublox.getLongitude());
     is_powered_on = true;
     xSemaphoreGive(mutex);

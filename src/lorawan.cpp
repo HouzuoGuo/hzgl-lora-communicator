@@ -25,7 +25,7 @@ const lmic_pinmap lmic_pins = {
     .dio = {LORA_DIO0_GPIO, LORA_DIO1_GPIO, LORA_DIO2_GPIO},
 };
 
-static SemaphoreHandle_t mutex;
+static SemaphoreHandle_t mutex = xSemaphoreCreateMutex();
 static size_t total_tx_bytes = 0, total_rx_bytes = 0;
 static lorawan_message_buf_t next_tx_message, last_rx_message;
 
@@ -128,7 +128,6 @@ void onEvent(ev_t event)
 
 void lorawan_setup()
 {
-  mutex = xSemaphoreCreateMutex();
   SPI.begin(SPI_SCK_GPIO, SPI_MISO_GPIO, SPI_MOSI_GPIO, SPI_NSS_GPIO);
   memset(&last_rx_message, 0, sizeof(last_rx_message));
   memset(&next_tx_message, 0, sizeof(next_tx_message));

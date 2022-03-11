@@ -23,13 +23,8 @@ void setup()
   Serial.begin(9600);
   pinMode(GENERIC_PURPOSE_BUTTON, INPUT);
   power_setup();
-  gp_button_setup();
-  oled_setup();
   lorawan_setup();
   env_sensor_setup();
-  gps_setup();
-  wifi_setup();
-  bluetooth_setup();
   // The supervisor starts all essential tasks.
   supervisor_setup();
   ESP_LOGI(LOG_TAG, "setup completed");

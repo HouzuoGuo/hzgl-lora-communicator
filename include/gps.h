@@ -17,7 +17,6 @@ struct gps_data
 // gps_get_data returns the latest coordinates and clock time read from GPS.
 struct gps_data gps_get_data();
 
-void gps_setup();
 void gps_on();
 void gps_configure();
 void gps_off();

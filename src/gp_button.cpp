@@ -7,7 +7,7 @@
 
 static const char LOG_TAG[] = __FILE__;
 
-static SemaphoreHandle_t mutex;
+static SemaphoreHandle_t mutex = xSemaphoreCreateMutex();
 static bool is_button_down = false, is_lower_case = true;
 static unsigned long pushed_down_timestamp = 0;
 static unsigned long last_click_timestamp = 0;
@@ -15,11 +15,6 @@ static String morse_signals_buf = "";
 static String morse_message_buf = "";
 static String morse_edit_hint = "";
 static bool morse_space_inserted_after_word = false;
-
-void gp_button_setup()
-{
-  mutex = xSemaphoreCreateMutex();
-}
 
 unsigned long gp_button_get_last_click_timestamp()
 {

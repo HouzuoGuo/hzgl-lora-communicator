@@ -36,6 +36,39 @@ static int power_consecutive_readings = 0;
 
 void supervisor_setup()
 {
+    esp_sleep_wakeup_cause_t wakeup_reason;
+    wakeup_reason = esp_sleep_get_wakeup_cause();
+    switch (wakeup_reason)
+    {
+    case ESP_SLEEP_WAKEUP_UNDEFINED:
+        ESP_LOGI(LOG_TAG, "wake-up reason is undefined");
+        break;
+    case ESP_SLEEP_WAKEUP_EXT0:
+        ESP_LOGI(LOG_TAG, "wake-up from RTC_IO (EXT0)");
+        break;
+    case ESP_SLEEP_WAKEUP_EXT1:
+        ESP_LOGI(LOG_TAG, "wake-up from RTC_CNT (EXT1)");
+        break;
+    case ESP_SLEEP_WAKEUP_TIMER:
+        ESP_LOGI(LOG_TAG, "wake-up from timer");
+        break;
+    case ESP_SLEEP_WAKEUP_TOUCHPAD:
+        ESP_LOGI(LOG_TAG, "wake-up from touch pad");
+        break;
+    case ESP_SLEEP_WAKEUP_ULP:
+        ESP_LOGI(LOG_TAG, "wake-up from ULP");
+        break;
+    case ESP_SLEEP_WAKEUP_GPIO:
+        ESP_LOGI(LOG_TAG, "wake-up from GPIO");
+        break;
+    case ESP_SLEEP_WAKEUP_UART:
+        ESP_LOGI(LOG_TAG, "wake-up from UART");
+        break;
+    default:
+        ESP_LOGI(LOG_TAG, "wake-up reason is %d", wakeup_reason);
+        break;
+    }
+
     unsigned long priority = tskIDLE_PRIORITY;
     // ESP32 uses the first core (core 0) to handle wifi and BT radio, leaving the second core available for other tasks.
     // The higher the priority number, the higher the task priority.

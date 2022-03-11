@@ -25,7 +25,6 @@ typedef struct
     uint8_t payload[0];
 } wifi_ieee80211_packet_t;
 
-void wifi_setup();
 void wifi_on();
 void wifi_off();
 bool wifi_get_state();

@@ -22,11 +22,6 @@ static uint8_t last_loudest_sender[6], loudest_sender[6];
 static int last_loudest_rssi = WIFI_RSSI_FLOOR, loudest_rssi = WIFI_RSSI_FLOOR;
 static size_t last_loudest_channel = 0, loudest_channel = 0;
 
-void wifi_setup()
-{
-    memset(&channel_pkt_counter, 0, sizeof(channel_pkt_counter));
-}
-
 void wifi_on()
 {
     power_wifi_bt_lock();
@@ -36,6 +31,7 @@ void wifi_on()
         return;
     }
     ESP_LOGI(LOG_TAG, "turing on WiFi");
+    memset(&channel_pkt_counter, 0, sizeof(channel_pkt_counter));
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     wifi_init_config_t wifi_init_conf = WIFI_INIT_CONFIG_DEFAULT();
     wifi_init_conf.nvs_enable = 0;

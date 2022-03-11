@@ -16,11 +16,6 @@ static BLEAdvertisedDevice last_loudest_sender, loudest_sender;
 static int last_loudest_rssi = BLUETOOTH_RSSI_FLOOR, loudest_rssi = BLUETOOTH_RSSI_FLOOR;
 static int last_num_devices = 0, num_devices = 0;
 
-void bluetooth_setup()
-{
-    // There is nothing to set up.
-}
-
 void bluetooth_on()
 {
     power_wifi_bt_lock();

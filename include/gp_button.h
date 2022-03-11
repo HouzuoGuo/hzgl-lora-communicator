@@ -24,7 +24,6 @@
 // GP_BUTTON_TASK_LOOP_DELAY_MS is the sleep interval of the GP button task loop.
 #define GP_BUTTON_TASK_LOOP_DELAY_MS (MORSE_DOT_PRESS_DURATION_MS / 5)
 
-void gp_button_setup();
 void gp_button_read();
 char gp_button_decode_morse(String);
 void gp_button_decode_morse_and_clear();

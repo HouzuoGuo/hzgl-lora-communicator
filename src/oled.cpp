@@ -14,26 +14,10 @@ static const char LOG_TAG[] = __FILE__;
 static int curr_page_num = 0, last_morse_input_page_num = 0;
 static unsigned long last_page_nav_timestamp = 0, last_gps_data_timestamp = 0;
 static struct gps_data last_gps_data;
-static bool is_oled_on = false;
+static bool is_oled_on = false, is_initialised = false;
 static unsigned long last_input_timestamp = 0;
 
 static SSD1306Wire oled(OLED_I2C_ADDR, I2C_SDA, I2C_SCL);
-
-void oled_setup()
-{
-    power_i2c_lock();
-    oled.init();
-    oled.clear();
-    oled.setBrightness(64);
-    oled.setContrast(0xF1, 128, 0x40);
-    oled.resetOrientation();
-    oled.flipScreenVertically();
-    oled.setTextAlignment(TEXT_ALIGN_LEFT);
-    oled.setFont(ArialMT_Plain_10);
-    power_i2c_unlock();
-    oled_on();
-    last_input_timestamp = millis();
-}
 
 bool oled_reset_last_input_timestamp()
 {
@@ -346,6 +330,20 @@ void oled_on()
     {
         power_i2c_unlock();
         return;
+    }
+    if (!is_initialised)
+    {
+        ESP_LOGI(LOG_TAG, "initialising OLED");
+        oled.init();
+        oled.clear();
+        oled.setBrightness(64);
+        oled.setContrast(0xF1, 128, 0x40);
+        oled.resetOrientation();
+        oled.flipScreenVertically();
+        oled.setTextAlignment(TEXT_ALIGN_LEFT);
+        oled.setFont(ArialMT_Plain_10);
+        is_initialised = true;
+        last_input_timestamp = millis();
     }
     ESP_LOGI(LOG_TAG, "turning on OLED");
     oled.displayOn();
