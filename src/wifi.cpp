@@ -85,7 +85,7 @@ void wifi_task_loop(void *_)
     while (true)
     {
         esp_task_wdt_reset();
-        if ((power_get_todo() & POWER_TODO_TURN_ON_WIFI) || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_WIFI_INFO))
+        if ((power_get_todo() & POWER_TODO_TURN_ON_WIFI) || (oled_get_state() && oled_get_page_number() == OLED_PAGE_WIFI_INFO))
         {
             wifi_on();
             wifi_next_channel();

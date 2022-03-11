@@ -5,8 +5,8 @@
 // SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB is the min. number of free KB any task may have in its stack before the supervisor reboots.
 #define SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB 2
 // SUPERVISOR_STUCK_PROGRESS_THRESHOLD is the max number of consecutive readings the supervisor may observe from a critical parameter before it reboots.
-// It must be sufficiently high in order to accomodate the sleeping periods of individual tasks, e.g. the sleeping period of GPS.
-#define SUPERVISOR_STUCK_PROGRESS_THRESHOLD ((POWER_GPS_RUN_SLEEP_INTERVAL_SEC + LORAWAN_TX_KINDS * POWER_SLOWEST_TX_INTERVAL_SEC) * 1000 / SUPERVISOR_TASK_LOOP_DELAY_MS + 2)
+// It must be sufficiently high in order to accomodate the sleeping periods of individual tasks.
+#define SUPERVISOR_STUCK_PROGRESS_THRESHOLD ((2 * LORAWAN_TX_KINDS * POWER_SLOWEST_TX_INTERVAL_SEC * 1000) / SUPERVISOR_TASK_LOOP_DELAY_MS + 2)
 
 void supervisor_setup();
 void supervisor_reset();

@@ -26,7 +26,7 @@ bool oled_reset_last_input_timestamp()
     return ret;
 }
 
-bool oled_is_awake()
+bool oled_get_state()
 {
     return is_oled_on;
 }

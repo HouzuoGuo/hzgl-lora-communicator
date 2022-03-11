@@ -64,6 +64,11 @@ void gps_on()
     xSemaphoreGive(mutex);
 }
 
+bool gps_get_state()
+{
+    return is_powered_on;
+}
+
 void gps_off()
 {
     xSemaphoreTake(mutex, portMAX_DELAY);
@@ -101,9 +106,9 @@ struct gps_data gps_get_data()
     ret.hdop = gps.hdop.hdop();
     ret.valid_pos = gps.location.isValid();
     ret.pos_age_sec = gps.location.age() / 1000;
-    if (ret.pos_age_sec > POWER_GPS_RUN_SLEEP_INTERVAL_SEC * 2)
+    if (ret.pos_age_sec > 600)
     {
-        ret.pos_age_sec = POWER_GPS_RUN_SLEEP_INTERVAL_SEC * 2;
+        ret.pos_age_sec = 600;
     }
     // gps.time.isValid() appears to always return true even when there is no GPS reception.
     ret.valid_time = gps.date.isValid() || ret.valid_pos;
@@ -119,7 +124,7 @@ struct gps_data gps_get_data()
         ret.utc_minute = gps.time.minute();
         ret.utc_second = gps.time.second();
     }
-    if (ret.valid_pos && ret.hdop < 50 && ret.pos_age_sec < POWER_GPS_RUN_SLEEP_INTERVAL_SEC)
+    if (ret.valid_pos && ret.hdop < 50 && ret.pos_age_sec < 600)
     {
         // Apparently useless & stale position readings could be considered valid too.
         ret.latitude = gps.location.lat();
@@ -137,7 +142,7 @@ void gps_task_loop(void *_)
     while (true)
     {
         esp_task_wdt_reset();
-        if ((power_get_todo() & POWER_TODO_TURN_ON_GPS) || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_GPS_INFO))
+        if ((power_get_todo() & POWER_TODO_TURN_ON_GPS) || (oled_get_state() && oled_get_page_number() == OLED_PAGE_GPS_INFO))
         {
             gps_on();
             gps_read_decode();

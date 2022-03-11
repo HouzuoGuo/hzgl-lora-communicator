@@ -246,15 +246,15 @@ void gp_button_read()
           // regular (default) -> boost -> saver
           if (conf.mode_id == POWER_REGULAR)
           {
-            power_set_config(power_config_boost);
+            power_set_config(POWER_BOOST);
           }
           else if (conf.mode_id == POWER_BOOST)
           {
-            power_set_config(power_config_saver);
+            power_set_config(POWER_SAVER);
           }
           else
           {
-            power_set_config(power_config_regular);
+            power_set_config(POWER_REGULAR);
           }
         }
       }

@@ -27,9 +27,11 @@
 #define LORAWAN_TX_INTERVAL_MS 20000
 
 #define LORAWAN_TX_KINDS 3
+// System status & environment sensor readings are immediately available after booting up.
 #define LORAWAN_TX_KIND_ENV 0
-#define LORAWAN_TX_KIND_POS 1
-#define LORAWAN_TX_KIND_TEXT 2
+#define LORAWAN_TX_KIND_TEXT 1
+// It can take a couple of minutes for GPS to obtain a location fix, hence transmit it in the third round.
+#define LORAWAN_TX_KIND_POS 2
 
 // LORAWAN_MAX_MESSAGE_LEN is the length never exceeded by a message received from or transmitted to The Things Network.
 static const size_t LORAWAN_MAX_MESSAGE_LEN = 256;

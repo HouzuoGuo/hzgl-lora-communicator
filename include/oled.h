@@ -35,7 +35,7 @@ void oled_draw_string_line(int line_number, String text);
 
 void oled_on();
 void oled_off();
-bool oled_is_awake();
+bool oled_get_state();
 bool oled_reset_last_input_timestamp();
 unsigned int oled_get_ms_since_last_input();
 int oled_get_page_number();

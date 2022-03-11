@@ -21,13 +21,15 @@ static double sum_curr_draw_readings = 0.0;
 
 RTC_DATA_ATTR static struct power_status status;
 RTC_DATA_ATTR static bool is_conserving_power;
-RTC_DATA_ATTR static power_config_t config = power_config_regular, config_before_conserving = power_config_regular;
+RTC_DATA_ATTR static int config_mode_id = POWER_REGULAR;
+RTC_DATA_ATTR static int config_mode_id_before_conserving = config_mode_id;
 RTC_DATA_ATTR static unsigned long last_stop_conserve_power_timestamp = 0;
 
-// Bluetooth needs a longer buffer (1500ms) as it is much slower than WiFi.
-static const int bt_prep_duration_ms = BLUETOOTH_SCAN_DURATION_SEC * 1000 + (BLUETOOTH_TASK_LOOP_DELAY_MS * 2) + 1500;
-static const int wifi_prep_duration_ms = WIFI_TASK_LOOP_DELAY_MS * (WIFI_MAX_CHANNEL_NUM + 1) + 1000;
-static const int env_sensor_prep_duration_ms = ENV_SENSOR_TASK_LOOP_DELAY_MS + 500;
+// The durations must be sufficient for taking a round of readings - preferrably with a generous amount of time buffer.
+// They are largely magic numbers determined by inspecting the serial output.
+static const int bt_prep_duration_ms = 3500;
+static const int wifi_prep_duration_ms = 5000;
+static const int env_sensor_prep_duration_ms = 2000;
 
 void power_setup()
 {
@@ -135,7 +137,7 @@ void power_set_last_transmission_timestamp()
 
 bool power_get_may_transmit_lorawan()
 {
-    return last_transmision_timestamp == 0 || millis() - last_transmision_timestamp > config.tx_interval_sec * 1000;
+    return last_transmision_timestamp == 0 || millis() - last_transmision_timestamp > power_get_config().tx_interval_sec * 1000;
 }
 
 void power_led_on()
@@ -205,9 +207,9 @@ void power_start_conserving()
         power_i2c_unlock();
         return;
     }
-    ESP_LOGW(TAG, "start conserving power by switching from mode %d to power save mode, battery current reads: %+.1f", config.mode_id, status.batt_milliamp);
-    config_before_conserving = config;
-    config = power_config_saver;
+    ESP_LOGW(TAG, "start conserving power by switching from mode %d to power save mode, battery current reads: %+.1f", config_mode_id, status.batt_milliamp);
+    config_mode_id_before_conserving = config_mode_id;
+    config_mode_id = POWER_SAVER;
     is_conserving_power = true;
     power_i2c_unlock();
 }
@@ -220,8 +222,8 @@ void power_stop_conserving()
         power_i2c_unlock();
         return;
     }
-    ESP_LOGW(TAG, "stop conserving power and return to power mode %d", config_before_conserving.mode_id);
-    config = config_before_conserving;
+    ESP_LOGW(TAG, "stop conserving power and return to power mode %d", config_mode_id_before_conserving);
+    config_mode_id = config_mode_id_before_conserving;
     is_conserving_power = false;
     last_stop_conserve_power_timestamp = millis();
     power_i2c_unlock();
@@ -237,9 +239,27 @@ struct power_status power_get_status()
     return status;
 }
 
+// The returned TODO flag bits will instruct peripherals' task loops to turn their power off (or stop collecting
+// samples) when they are not in-use, hence conserving power.
+// The general rule is to turn on peripherals required for the upcoming LoRaWAN transmission shortly before the transmission.
 int power_get_todo()
 {
+    power_config_t config = power_get_config();
     int ret = 0;
+    int uptime_sec = millis() / 1000;
+    int deep_sleep_start_sec = power_get_config().deep_sleep_start_sec;
+    // Do not enter deep sleep if user has made recent button inputs.
+    if (deep_sleep_start_sec > 0 && uptime_sec >= deep_sleep_start_sec && oled_get_ms_since_last_input() > OLED_SLEEP_AFTER_INACTIVE_MS)
+    {
+        return POWER_TODO_ENTER_DEEP_SLEEP;
+        // There's no need to ask caller to turn on anything else. The CPUs will be powered off entirely during deep sleep.
+    }
+    else
+    {
+        // Leave GPS turned on while not sleeping. It takes many minutes to obtain a GPS location fix.
+        ret |= POWER_TODO_TURN_ON_GPS;
+    }
+
     // Calculate whether LoRaWAN RX/TX can/may be in progress.
     unsigned long ms_since_last_tx = millis() - last_transmision_timestamp;
     unsigned long sec_since_last_tx = ms_since_last_tx / 1000;
@@ -277,27 +297,14 @@ int power_get_todo()
         ret |= POWER_TODO_READ_ENV_SENSOR;
     }
 
-    // When in power saver config, GPS is turned on for 5 min and then off for 5 min.
-    // Otherwise GPS is always on.
-    if (power_get_config().intermittent_gps)
-    {
-        int sec = millis() / 1000;
-        if (sec % (POWER_GPS_RUN_SLEEP_INTERVAL_SEC * 2) < POWER_GPS_RUN_SLEEP_INTERVAL_SEC)
-        {
-            ret |= POWER_TODO_TURN_ON_GPS;
-        }
-    }
-    else
-    {
-        ret |= POWER_TODO_TURN_ON_GPS;
-    }
-
     // If there is no power-related task to do and no user input, then ask caller to reduce CPU speed to conserve power.
     // Be aware that if user is looking at WiFi/BT scanner then CPU speed must not be reduced or WiFi/BT will cause a panic.
-    if (ret == 0 && oled_get_ms_since_last_input() > wifi_prep_duration_ms + bt_prep_duration_ms && !wifi_get_state() && !bluetooth_get_state())
+    // The lower CPU clock speed is sufficient for GPS though.
+    if (ret == POWER_TODO_TURN_ON_GPS && oled_get_ms_since_last_input() > wifi_prep_duration_ms + bt_prep_duration_ms && !wifi_get_state() && !bluetooth_get_state())
     {
         ret |= POWER_TODO_REDUCE_CPU_FREQ;
     }
+
     return ret;
 }
 
@@ -349,19 +356,34 @@ void power_read_status()
 
 void power_log_status()
 {
-    ESP_LOGI(LOG_TAG, "mode: %d, is_batt_charging: %d, is_usb_power_available: %d, usb_millivolt: %d, batt_millivolt: %d, batt_milliamp: %.2f, power_draw_milliamp: %.2f",
-             config.mode_id, status.is_batt_charging, status.is_usb_power_available, status.usb_millivolt, status.batt_millivolt, status.batt_milliamp, status.power_draw_milliamp);
+    ESP_LOGI(LOG_TAG, "mode: %d, wifi? %d, bt? %d, gps? %d, oled? %d, is_batt_charging: %d, is_usb_power_available: %d, usb_millivolt: %d, batt_millivolt: %d, batt_milliamp: %.2f, power_draw_milliamp: %.2f",
+             config_mode_id,
+             wifi_get_state(), bluetooth_get_state(), gps_get_state(), oled_get_state(),
+             status.is_batt_charging, status.is_usb_power_available, status.usb_millivolt, status.batt_millivolt, status.batt_milliamp, status.power_draw_milliamp);
 }
 
-void power_set_config(power_config_t val)
+void power_set_config(int new_mode_id)
 {
-    ESP_LOGI(TAG, "setting power mode to %d", val.mode_id);
-    config = val;
+    ESP_LOGI(TAG, "setting power mode to %d", new_mode_id);
+    config_mode_id = new_mode_id;
 }
 
 power_config_t power_get_config()
 {
-    return config;
+    switch (config_mode_id)
+    {
+    case POWER_BOOST:
+        return power_config_boost;
+        break;
+    case POWER_REGULAR:
+        return power_config_regular;
+        break;
+    case POWER_SAVER:
+        return power_config_saver;
+        break;
+    default:
+        return power_config_regular;
+    }
 }
 
 void power_set_cpu_freq_mhz(int new_mhz)
@@ -381,12 +403,14 @@ void power_set_cpu_freq_mhz(int new_mhz)
 
 void power_enter_deep_sleep()
 {
+    ESP_LOGW(LOG_TAG, "preparing to enter deep sleep");
     bluetooth_off();
     wifi_off();
     gps_off();
     oled_off();
     power_led_off();
-    esp_sleep_enable_timer_wakeup(5 * 1000 * 1000);
+    esp_sleep_enable_timer_wakeup(power_get_config().deep_sleep_duration_sec * 1000 * 1000);
+    ESP_LOGW(LOG_TAG, "entering deep sleep now");
     esp_deep_sleep_start();
 }
 
@@ -396,6 +420,11 @@ void power_task_loop(void *_)
     while (true)
     {
         esp_task_wdt_reset();
+        if (power_get_todo() & POWER_TODO_ENTER_DEEP_SLEEP)
+        {
+            power_enter_deep_sleep();
+            return; // Not reachable, the CPUs shut down during deep sleep.
+        }
         if (rounds % (POWER_TASK_READ_STATUS_DELAY_MS / POWER_TASK_LOOP_DELAY_MS) == 0)
         {
             power_read_status();

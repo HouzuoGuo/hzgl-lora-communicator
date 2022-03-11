@@ -67,7 +67,7 @@ void env_sensor_task_loop(void *_)
     while (true)
     {
         esp_task_wdt_reset();
-        if ((power_get_todo() & POWER_TODO_READ_ENV_SENSOR) || (oled_is_awake() && oled_get_page_number() == OLED_PAGE_ENV_SENSOR_INFO))
+        if ((power_get_todo() & POWER_TODO_READ_ENV_SENSOR) || (oled_get_state() && oled_get_page_number() == OLED_PAGE_ENV_SENSOR_INFO))
         {
             env_sensor_read_decode();
         }
