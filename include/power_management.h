@@ -69,7 +69,8 @@ typedef struct
     String mode_name;
 } power_config_t;
 
-// Make two rounds of transmission before entering deep sleep (570 seconds =~ 10 minutes).
+// Make two rounds of transmission before entering deep sleep, which takes about =~570 seconds.
+// Leave 5 seconds of buffer for each transmission - it usually takes ~2 seconds maximum to complete a transmission without waiting for RX.
 #define POWER_SAVER_WAKE_DURATION_SEC (2 * LORAWAN_TX_KINDS * (POWER_SLOWEST_TX_INTERVAL_SEC + 5))
 
 // The combo of ​​SF7​​ and bandwidth 125khz is often referred to as "DR5" (data rate 5): https://avbentem.github.io/airtime-calculator/ttn/eu868/
