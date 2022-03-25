@@ -264,6 +264,11 @@ int power_get_todo()
     unsigned long ms_since_last_tx = millis() - last_transmision_timestamp;
     unsigned long sec_since_last_tx = ms_since_last_tx / 1000;
     unsigned long sec_until_next_tx = config.tx_interval_sec - sec_since_last_tx;
+    if (sec_since_last_tx > config.tx_interval_sec)
+    {
+        // Missed the previous LoRaWAN transmission according to the schedule, caller should transmit ASAP.
+        sec_until_next_tx = 0;
+    }
     // Allow transceiving for the period between -1 sec prior to the upcoming TX and 7 seconds after the upcoming TX.
     // 7 seconds should be long enough for both RX1 and RX2 windows.
     // Essentially: [-1 sec, +8 sec] + time_to_tx

@@ -64,40 +64,45 @@ unsigned long oled_get_last_page_nav_timestamp()
 void oled_display_page_rx_info(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
     lorawan_message_buf_t last_reception = lorawan_get_last_reception(), last_transmission = lorawan_get_transmission();
-    unsigned long last_tx = (millis() - last_transmission.timestamp_millis) / 1000;
+    unsigned long last_tx_sec = (millis() - last_transmission.timestamp_millis) / 1000;
+    int next_tx_sec = 0, tx_interval_sec = power_get_config().tx_interval_sec;
     String morse_signals = gp_button_get_latest_morse_signals(), morse_message = gp_button_get_morse_message_buf();
     if (last_transmission.timestamp_millis < 1)
     {
-        last_tx = -1;
+        last_tx_sec = -1;
     }
-    unsigned long last_rx = (millis() - last_reception.timestamp_millis) / 1000;
+    if (last_tx_sec != -1)
+    {
+        next_tx_sec = tx_interval_sec - last_tx_sec;
+    }
+    int last_rx_sec = (millis() - last_reception.timestamp_millis) / 1000;
     if (last_reception.timestamp_millis < 1)
     {
-        last_rx = -1;
+        last_rx_sec = -1;
     }
     if (last_transmission.timestamp_millis > 0)
     {
         if ((morse_signals.length() == 0 && morse_message.length() == 0) || last_morse_input_page_num == 0)
         {
-            snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Last check in: %lus ago", last_tx);
+            snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Next check in: %ds", next_tx_sec);
         }
         else if (last_morse_input_page_num == OLED_PAGE_TX_COMMAND)
         {
-            snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Transmit cmd: %lus ago", last_tx);
+            snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Transmit cmd in: %ds", next_tx_sec);
         }
         else if (last_morse_input_page_num == OLED_PAGE_TX_MESSAGE)
         {
-            snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Transmit msg: %lus ago", last_tx);
+            snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Transmit msg in: %ds", next_tx_sec);
         }
     }
     else
     {
-        snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Last check in: ?s ago");
+        snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "Just a moment...");
     }
     if (last_reception.timestamp_millis > 0)
     {
         char rx_info_display[OLED_MAX_LINE_LEN * 4 + 1] = {0};
-        snprintf(rx_info_display, OLED_MAX_LINE_LEN * 4 + 1, "Received %lus ago: %s", last_rx, last_reception.buf);
+        snprintf(rx_info_display, OLED_MAX_LINE_LEN * 4 + 1, "Received %ds ago: %s", last_rx_sec, last_reception.buf);
         memcpy(lines[1], rx_info_display, OLED_MAX_LINE_LEN);
         memcpy(lines[2], &rx_info_display[OLED_MAX_LINE_LEN], OLED_MAX_LINE_LEN);
         memcpy(lines[3], &rx_info_display[OLED_MAX_LINE_LEN * 2], OLED_MAX_LINE_LEN);
