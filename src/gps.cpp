@@ -48,9 +48,11 @@ void gps_on()
                 ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1);
                 ublox.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1);
                 ublox.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1);
-                ublox.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1);
-                // GGA - position fix, ZDA - date and time.
-                ESP_LOGI(LOG_TAG, "enable GGA: %d, enable ZDA: %d", ublox.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1), ublox.enableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_UART1));
+                // GGA - position fix, ZDA - date and time, RMC - position + course + speed.
+                ESP_LOGI(LOG_TAG, "enable GGA: %d, enable ZDA: %d, enable RMC: %d",
+                         ublox.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1),
+                         ublox.enableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_UART1),
+                         ublox.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1));
                 ESP_LOGI(LOG_TAG, "save config: %d", ublox.saveConfiguration());
                 break;
             }
