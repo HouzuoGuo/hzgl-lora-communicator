@@ -101,7 +101,7 @@ void power_i2c_lock()
 {
     if (xSemaphoreTake(i2c_mutex, MUTEX_LOCK_TIMEOUT_MS) == pdFALSE)
     {
-        ESP_LOGE(TAG, "failed to obtain i2c_mutex lock");
+        ESP_LOGE(LOG_TAG, "failed to obtain i2c_mutex lock");
         assert(false);
     }
 }
@@ -115,7 +115,7 @@ void power_wifi_bt_lock()
 {
     if (xSemaphoreTake(wifi_bt_mutex, MUTEX_LOCK_TIMEOUT_MS) == pdFALSE)
     {
-        ESP_LOGE(TAG, "failed to obtain wifi_bt_mutex lock");
+        ESP_LOGE(LOG_TAG, "failed to obtain wifi_bt_mutex lock");
         assert(false);
     }
 }
@@ -165,19 +165,19 @@ void power_read_handle_lastest_irq()
     pmu.readIRQ();
     if (pmu.isVbusOverVoltageIRQ())
     {
-        ESP_LOGW(TAG, "USB power supply voltage is too high (%f.3v)", pmu.getVbusVoltage() / 1000);
+        ESP_LOGW(LOG_TAG, "USB power supply voltage is too high (%f.3v)", pmu.getVbusVoltage() / 1000);
     }
     if (pmu.isBattPlugInIRQ())
     {
-        ESP_LOGI(TAG, "battery inserted");
+        ESP_LOGI(LOG_TAG, "battery inserted");
     }
     if (pmu.isBattRemoveIRQ())
     {
-        ESP_LOGI(TAG, "battery removed");
+        ESP_LOGI(LOG_TAG, "battery removed");
     }
     if (pmu.isChargingDoneIRQ())
     {
-        ESP_LOGI(TAG, "battery charging completed");
+        ESP_LOGI(LOG_TAG, "battery charging completed");
     }
     if (pmu.isPEKShortPressIRQ())
     {
@@ -185,13 +185,13 @@ void power_read_handle_lastest_irq()
         // Otherwise, the user is simply clicking the button to wake the screen up.
         if (!oled_reset_last_input_timestamp())
         {
-            ESP_LOGI(TAG, "turning to the next page");
+            ESP_LOGI(LOG_TAG, "turning to the next page");
             oled_go_to_next_page();
         }
     }
     if (pmu.isPEKLongtPressIRQ())
     {
-        ESP_LOGW(TAG, "shutting down");
+        ESP_LOGW(LOG_TAG, "shutting down");
         pmu.setChgLEDMode(AXP20X_LED_OFF);
         pmu.shutdown();
     }
@@ -207,7 +207,7 @@ void power_start_conserving()
         power_i2c_unlock();
         return;
     }
-    ESP_LOGW(TAG, "start conserving power by switching from mode %d to power save mode, battery current reads: %+.1f", config_mode_id, status.batt_milliamp);
+    ESP_LOGW(LOG_TAG, "start conserving power by switching from mode %d to power save mode, battery current reads: %+.1f", config_mode_id, status.batt_milliamp);
     config_mode_id_before_conserving = config_mode_id;
     config_mode_id = POWER_SAVER;
     is_conserving_power = true;
@@ -222,7 +222,7 @@ void power_stop_conserving()
         power_i2c_unlock();
         return;
     }
-    ESP_LOGW(TAG, "stop conserving power and return to power mode %d", config_mode_id_before_conserving);
+    ESP_LOGW(LOG_TAG, "stop conserving power and return to power mode %d", config_mode_id_before_conserving);
     config_mode_id = config_mode_id_before_conserving;
     is_conserving_power = false;
     last_stop_conserve_power_timestamp = millis();
@@ -352,7 +352,7 @@ void power_read_status()
     }
     if (status.power_draw_milliamp < 0)
     {
-        ESP_LOGI(TAG, "power draw reads negative (%.2f) - this should not have happened", status.power_draw_milliamp);
+        ESP_LOGI(LOG_TAG, "power draw reads negative (%.2f) - this should not have happened", status.power_draw_milliamp);
         status.power_draw_milliamp = 0;
     }
     sum_curr_draw_readings += status.power_draw_milliamp;
@@ -369,7 +369,7 @@ void power_log_status()
 
 void power_set_config(int new_mode_id)
 {
-    ESP_LOGI(TAG, "setting power mode to %d", new_mode_id);
+    ESP_LOGI(LOG_TAG, "setting power mode to %d", new_mode_id);
     config_mode_id = new_mode_id;
 }
 
@@ -396,7 +396,7 @@ void power_set_cpu_freq_mhz(int new_mhz)
     power_i2c_lock();
     if (last_cpu_freq_mhz != new_mhz)
     {
-        ESP_LOGI(TAG, "setting CPU frequency to %d MHz", new_mhz);
+        ESP_LOGI(LOG_TAG, "setting CPU frequency to %d MHz", new_mhz);
         if (!setCpuFrequencyMhz(new_mhz))
         {
             ESP_LOGW(LOG_TAG, "failed to set CPU frequency to %d MHz", new_mhz);

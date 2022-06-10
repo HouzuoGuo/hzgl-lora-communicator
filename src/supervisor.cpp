@@ -103,7 +103,7 @@ void supervisor_reset()
 void supervisor_check_task_stack()
 {
     uint32_t heap_min_free_kb = ESP.getMinFreeHeap() / 1024;
-    ESP_LOGI(TAG, "heap usage: free - %dKB, min.free - %dKB, capacity - %dKB, maxalloc: %dKB, min.free stack: %dKB",
+    ESP_LOGI(LOG_TAG, "heap usage: free - %dKB, min.free - %dKB, capacity - %dKB, maxalloc: %dKB, min.free stack: %dKB",
              ESP.getFreeHeap() / 1024, heap_min_free_kb, ESP.getHeapSize() / 1024,
              ESP.getMaxAllocHeap() / 1024, uxTaskGetStackHighWaterMark(NULL) / 1024);
     UBaseType_t bluetooth_stack_free_kb = uxTaskGetStackHighWaterMark(bluetooth_task) / 1024,
@@ -122,15 +122,15 @@ void supervisor_check_task_stack()
         oled_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB || button_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB ||
         power_stack_free_kb < SUPERVISOR_FREE_MEM_RESET_THRESHOLD_KB)
     {
-        ESP_LOGE(TAG, "bluetooth task state: %d, min.free stack: %dKB", eTaskGetState(bluetooth_task), bluetooth_stack_free_kb);
-        ESP_LOGE(TAG, "wifi task state: %d, min.free stack: %dKB", eTaskGetState(wifi_task), wifi_stack_free_kb);
-        ESP_LOGE(TAG, "gps task state: %d, min.free stack: %dKB", eTaskGetState(gps_task), gps_stack_free_kb);
-        ESP_LOGE(TAG, "sensor task state: %d, min.free stack: %dKB", eTaskGetState(env_sensor_task), sensor_stack_free_kb);
-        ESP_LOGE(TAG, "lorawan task state: %d, min.free stack: %dKB", eTaskGetState(lorawan_task), lorawan_stack_free_kb);
-        ESP_LOGE(TAG, "oled task state: %d, min.free stack: %dKB", eTaskGetState(oled_task), oled_stack_free_kb);
-        ESP_LOGE(TAG, "GP button task state: %d, min.free stack: %dKB", eTaskGetState(gp_button_task), button_stack_free_kb);
-        ESP_LOGE(TAG, "power task state: %d, min.free stack: %dKB", eTaskGetState(power_task), power_stack_free_kb);
-        ESP_LOGE(TAG, "supervisor task state: %d, min.free stack: %dKB", eTaskGetState(supervisor_task), supervisor_stack_free_kb);
+        ESP_LOGE(LOG_TAG, "bluetooth task state: %d, min.free stack: %dKB", eTaskGetState(bluetooth_task), bluetooth_stack_free_kb);
+        ESP_LOGE(LOG_TAG, "wifi task state: %d, min.free stack: %dKB", eTaskGetState(wifi_task), wifi_stack_free_kb);
+        ESP_LOGE(LOG_TAG, "gps task state: %d, min.free stack: %dKB", eTaskGetState(gps_task), gps_stack_free_kb);
+        ESP_LOGE(LOG_TAG, "sensor task state: %d, min.free stack: %dKB", eTaskGetState(env_sensor_task), sensor_stack_free_kb);
+        ESP_LOGE(LOG_TAG, "lorawan task state: %d, min.free stack: %dKB", eTaskGetState(lorawan_task), lorawan_stack_free_kb);
+        ESP_LOGE(LOG_TAG, "oled task state: %d, min.free stack: %dKB", eTaskGetState(oled_task), oled_stack_free_kb);
+        ESP_LOGE(LOG_TAG, "GP button task state: %d, min.free stack: %dKB", eTaskGetState(gp_button_task), button_stack_free_kb);
+        ESP_LOGE(LOG_TAG, "power task state: %d, min.free stack: %dKB", eTaskGetState(power_task), power_stack_free_kb);
+        ESP_LOGE(LOG_TAG, "supervisor task state: %d, min.free stack: %dKB", eTaskGetState(supervisor_task), supervisor_stack_free_kb);
         supervisor_reset();
     }
 }
@@ -141,7 +141,7 @@ void supervisor_check_gps()
     {
         if (++gps_consecutive_readings > SUPERVISOR_STUCK_PROGRESS_THRESHOLD / 2)
         {
-            ESP_LOGE(TAG, "gps task does not appear to be making progress, chars processed reads %lu for %d times", gps_chars_processed_reading, gps_consecutive_readings);
+            ESP_LOGE(LOG_TAG, "gps task does not appear to be making progress, chars processed reads %lu for %d times", gps_chars_processed_reading, gps_consecutive_readings);
         }
         if (gps_consecutive_readings >= SUPERVISOR_STUCK_PROGRESS_THRESHOLD)
         {
@@ -161,7 +161,7 @@ void supervisor_check_lorawan()
     {
         if (++lorawan_consecutive_readings > SUPERVISOR_STUCK_PROGRESS_THRESHOLD / 2)
         {
-            ESP_LOGE(TAG, "lorawan task does not appear to be making progress, tx counter reads %d for %d times", lorawan_tx_counter_reading, lorawan_consecutive_readings);
+            ESP_LOGE(LOG_TAG, "lorawan task does not appear to be making progress, tx counter reads %d for %d times", lorawan_tx_counter_reading, lorawan_consecutive_readings);
             lorawan_debug_to_log();
             lorawan_reset();
         }
@@ -183,7 +183,7 @@ void supervisor_check_wifi()
     {
         if (++wifi_consecutive_readings > SUPERVISOR_STUCK_PROGRESS_THRESHOLD / 2)
         {
-            ESP_LOGE(TAG, "wifi task does not appear to be making progress, total number of rounds reads %d for %d times", wifi_rounds_reading, wifi_consecutive_readings);
+            ESP_LOGE(LOG_TAG, "wifi task does not appear to be making progress, total number of rounds reads %d for %d times", wifi_rounds_reading, wifi_consecutive_readings);
         }
         if (wifi_consecutive_readings >= SUPERVISOR_STUCK_PROGRESS_THRESHOLD)
         {
@@ -203,7 +203,7 @@ void supervisor_check_bluetooth()
     {
         if (++bluetooth_consecutive_readings > SUPERVISOR_STUCK_PROGRESS_THRESHOLD / 2)
         {
-            ESP_LOGE(TAG, "bluetooth task does not appear to be making progress, total number of rounds reads %d for %d times", bluetooth_rounds_reading, bluetooth_consecutive_readings);
+            ESP_LOGE(LOG_TAG, "bluetooth task does not appear to be making progress, total number of rounds reads %d for %d times", bluetooth_rounds_reading, bluetooth_consecutive_readings);
         }
         if (bluetooth_consecutive_readings >= SUPERVISOR_STUCK_PROGRESS_THRESHOLD)
         {
@@ -223,7 +223,7 @@ void supervisor_check_env_sensor()
     {
         if (++env_sensor_consecutive_readings > SUPERVISOR_STUCK_PROGRESS_THRESHOLD / 2)
         {
-            ESP_LOGE(TAG, "env sensor task does not appear to be making progress, temp sum reads %f for %d times", env_sensor_sum_temp_readings, env_sensor_consecutive_readings);
+            ESP_LOGE(LOG_TAG, "env sensor task does not appear to be making progress, temp sum reads %f for %d times", env_sensor_sum_temp_readings, env_sensor_consecutive_readings);
         }
         if (env_sensor_consecutive_readings >= SUPERVISOR_STUCK_PROGRESS_THRESHOLD)
         {
@@ -243,7 +243,7 @@ void supervisor_check_power()
     {
         if (++power_consecutive_readings > SUPERVISOR_STUCK_PROGRESS_THRESHOLD / 2)
         {
-            ESP_LOGE(TAG, "power management task does not appear to be making progress, total number of rounds reads %f for %d times", power_sum_curr_draw_readings, power_consecutive_readings);
+            ESP_LOGE(LOG_TAG, "power management task does not appear to be making progress, total number of rounds reads %f for %d times", power_sum_curr_draw_readings, power_consecutive_readings);
         }
         if (power_consecutive_readings >= SUPERVISOR_STUCK_PROGRESS_THRESHOLD)
         {
