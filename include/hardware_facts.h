@@ -31,7 +31,8 @@
 // Be aware of the curious remark made by seller's pin diagram that noted "ESP32(RX)".
 #define GPS_SERIAL_TX 34
 
-#define GPS_POWER_CHANNEL AXP192_LDO3
+// I2C_FREQUENCY_HZ is slower than the default frequency (700kHz) to cater for the CPU frequency used during power-saving configuration.
+#define I2C_FREQUENCY_HZ 400000
 
 // I2C_SCL is described on schematic as: I2C_DEV(0):SCL - GPIO22
 #define I2C_SCL 22

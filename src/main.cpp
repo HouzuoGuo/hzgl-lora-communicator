@@ -21,6 +21,7 @@ void setup()
   // Keey an eye on the setup itself too.
   ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
   Serial.begin(9600);
+  ESP_LOGI(LOG_TAG, "hzgl-lorawan-communicator is starting up");
   pinMode(GENERIC_PURPOSE_BUTTON, INPUT);
   power_setup();
   lorawan_setup();

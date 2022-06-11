@@ -128,12 +128,13 @@ void onEvent(ev_t event)
 
 void lorawan_setup()
 {
-  SPI.begin(SPI_SCK_GPIO, SPI_MISO_GPIO, SPI_MOSI_GPIO, SPI_NSS_GPIO);
+  ESP_LOGI(LOG_TAG, "setting up lorawan");
   memset(&last_rx_message, 0, sizeof(last_rx_message));
   memset(&next_tx_message, 0, sizeof(next_tx_message));
   // Initialise the library's internal states.
   os_init();
   lorawan_reset();
+  ESP_LOGI(LOG_TAG, "lorawan is ready");
 }
 
 void lorawan_reset()
@@ -155,14 +156,14 @@ void lorawan_reset()
 
   // The Things Stack Community Edition could potentially use all of these channels.
   // The magic channel number and frequencies took inspirations from: https://github.com/mcci-catena/arduino-lmic/blob/master/examples/ttn-abp/ttn-abp.ino
-  LMIC_setupChannel(0, 868100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);
+  LMIC_setupChannel(0, 868100000, DR_RANGE_MAP(DR_SF12, DR_SF7), BAND_CENTI);
   LMIC_setupChannel(1, 868300000, DR_RANGE_MAP(DR_SF12, DR_SF7B), BAND_CENTI);
-  LMIC_setupChannel(2, 868500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);
-  LMIC_setupChannel(3, 867100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);
-  LMIC_setupChannel(4, 867300000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);
-  LMIC_setupChannel(5, 867500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);
-  LMIC_setupChannel(6, 867700000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);
-  LMIC_setupChannel(7, 867900000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);
+  LMIC_setupChannel(2, 868500000, DR_RANGE_MAP(DR_SF12, DR_SF7), BAND_CENTI);
+  LMIC_setupChannel(3, 867100000, DR_RANGE_MAP(DR_SF12, DR_SF7), BAND_CENTI);
+  LMIC_setupChannel(4, 867300000, DR_RANGE_MAP(DR_SF12, DR_SF7), BAND_CENTI);
+  LMIC_setupChannel(5, 867500000, DR_RANGE_MAP(DR_SF12, DR_SF7), BAND_CENTI);
+  LMIC_setupChannel(6, 867700000, DR_RANGE_MAP(DR_SF12, DR_SF7), BAND_CENTI);
+  LMIC_setupChannel(7, 867900000, DR_RANGE_MAP(DR_SF12, DR_SF7), BAND_CENTI);
   // Though I am unsure if The Things Stack Community Edition uses FSK.
   LMIC_setupChannel(8, 868800000, DR_RANGE_MAP(DR_FSK, DR_FSK), BAND_MILLI);
   // This is in the frequency plan - "Europe 863-870 MHz (SF9 for RX2 - recommended)".

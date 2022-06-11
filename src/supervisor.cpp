@@ -36,6 +36,7 @@ static int power_consecutive_readings = 0;
 
 void supervisor_setup()
 {
+    ESP_LOGI(LOG_TAG, "setting up supervisor");
     esp_sleep_wakeup_cause_t wakeup_reason;
     wakeup_reason = esp_sleep_get_wakeup_cause();
     switch (wakeup_reason)

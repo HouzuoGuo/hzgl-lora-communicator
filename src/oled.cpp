@@ -17,7 +17,7 @@ static struct gps_data last_gps_data;
 static bool is_oled_on = false, is_initialised = false;
 static unsigned long last_input_timestamp = 0;
 
-static SSD1306Wire oled(OLED_I2C_ADDR, I2C_SDA, I2C_SCL);
+static SSD1306Wire oled(OLED_I2C_ADDR, -1, -1, GEOMETRY_128_64, I2C_ONE, I2C_FREQUENCY_HZ);
 
 bool oled_reset_last_input_timestamp()
 {

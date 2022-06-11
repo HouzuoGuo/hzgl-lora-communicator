@@ -1,6 +1,7 @@
 #include <axp20x.h>
 #include <esp_log.h>
 #include <esp_task_wdt.h>
+#include <SPI.h>
 #include "hardware_facts.h"
 #include "oled.h"
 #include "lorawan.h"
@@ -33,13 +34,15 @@ static const int env_sensor_prep_duration_ms = 2000;
 
 void power_setup()
 {
+    ESP_LOGI(LOG_TAG, "setting up power management");
     memset(&status, 0, sizeof(status));
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     power_i2c_lock();
-    if (!Wire.begin(I2C_SDA, I2C_SCL))
+    if (!Wire.begin(I2C_SDA, I2C_SCL, (uint32_t)I2C_FREQUENCY_HZ))
     {
         ESP_LOGW(LOG_TAG, "failed to initialise I2C");
     }
+    SPI.begin(SPI_SCK_GPIO, SPI_MISO_GPIO, SPI_MOSI_GPIO, SPI_NSS_GPIO);
     if (pmu.begin(Wire, AXP192_SLAVE_ADDRESS) != AXP_PASS)
     {
         ESP_LOGW(LOG_TAG, "failed to initialise AXP power management chip");
@@ -90,12 +93,13 @@ void power_setup()
     pmu.setBackupChargeVoltage(AXP202_BACKUP_VOLTAGE_3V0);
     pmu.setBackupChargeControl(true);
 
-    pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);      // OLED
-    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_OFF);     // Unused
-    pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);       // LoRa
-    pmu.setPowerOutPut(GPS_POWER_CHANNEL, AXP202_ON); // GPS
-    pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF);     // Unused
+    pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);  // OLED
+    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_OFF); // Unused
+    pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);   // LoRa
+    pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON);   // GPS
+    pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF); // Unused
     power_i2c_unlock();
+    ESP_LOGI(LOG_TAG, "power management is ready");
 }
 void power_i2c_lock()
 {
