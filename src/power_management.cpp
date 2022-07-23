@@ -28,9 +28,9 @@ RTC_DATA_ATTR static unsigned long last_stop_conserve_power_timestamp = 0;
 
 // The durations must be sufficient for taking a round of readings - preferrably with a generous amount of time buffer.
 // They are largely magic numbers determined by inspecting the serial output.
-static const int bt_prep_duration_ms = 3500;
-static const int wifi_prep_duration_ms = 6000;
-static const int interval_between_wifi_bt_ms = 1000;
+static const int bt_prep_duration_ms = 4000;
+static const int wifi_prep_duration_ms = 6500;
+static const int interval_between_wifi_bt_ms = 2000;
 static const int env_sensor_prep_duration_ms = 2000;
 
 void power_setup()
