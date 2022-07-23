@@ -21,6 +21,11 @@
 #define OLED_PAGE_POWER_MGMT 7
 // OLED_PAGE_DIAGNOSIS is the page index number of the diagnosis information page.
 #define OLED_PAGE_DIAGNOSIS 8
+// OLED_PAGE_DIAGNOSIS is the page index number of the morse code table page.
+#define OLED_PAGE_MORSE_TABLE 9
+
+// OLED_TOTAL_PAGE_NUM is the total number of pages.
+#define OLED_TOTAL_PAGE_NUM 10
 
 // OLED_SLEEP_AFTER_INACTIVE_MS is the number of seconds after which the screen goes to sleep.
 #define OLED_SLEEP_AFTER_INACTIVE_MS (30 * 1000)

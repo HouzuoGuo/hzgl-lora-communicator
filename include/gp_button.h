@@ -34,3 +34,4 @@ unsigned long gp_button_get_last_click_timestamp();
 void gp_button_task_loop(void *_);
 String gp_button_get_edit_hint();
 bool gp_button_is_input_lower_case();
+int gp_button_get_morse_table_page_clicks();

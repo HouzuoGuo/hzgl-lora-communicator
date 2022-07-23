@@ -48,7 +48,7 @@ int oled_get_last_morse_input_page_num()
 
 void oled_go_to_next_page()
 {
-    if (++curr_page_num == 9)
+    if (++curr_page_num == OLED_TOTAL_PAGE_NUM)
     {
         curr_page_num = OLED_PAGE_RX_INFO;
     }
@@ -314,6 +314,42 @@ void oled_display_page_diagnosis(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LE
     snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "Scan: WiFi %lu BT %lu", wifi_get_round_num(), bluetooth_get_round_num());
 }
 
+void oled_display_morse_table(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
+{
+    snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "User button->next page");
+    switch (gp_button_get_morse_table_page_clicks() % 4)
+    {
+    case 0:
+        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "a=.- b=-... c=-.-.");
+        snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "d=-.. e=. f=..-. g=--.");
+        snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "h=.... i=.. j=.---");
+        snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "k=-.- l=.-.. m=-- n=-.");
+        snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "o=--- p=.--. q=--.-");
+        break;
+    case 1:
+        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "r=.-. s=... t=- u=..-");
+        snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "v=...- w=.-- x=-..-");
+        snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "y=-.-- z=--.. 1=.----");
+        snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "2=..--- 3=...-- 4=....-");
+        snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "5=..... 6=-.... 7=--...");
+        break;
+    case 2:
+        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "8=---.. 9=----. 0=-----");
+        snprintf(lines[2], OLED_MAX_LINE_LEN + 1, ".=.-.-.- ,=--..--");
+        snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "?=..--.. \\=.----.");
+        snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "!=-.-.-- /=-..-.");
+        snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "(=-.--.)=-.--.- &=.-...");
+        break;
+    case 3:
+        snprintf(lines[1], OLED_MAX_LINE_LEN + 1, ":=---... ;=-.-.-.");
+        snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "==-...- +=.-.-.");
+        snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "-=-....- _=..--.-");
+        snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "\"=.-..-. $=...-..-");
+        snprintf(lines[5], OLED_MAX_LINE_LEN + 1, "@=.--.-.");
+        break;
+    }
+}
+
 void oled_display_going_to_sleep(char lines[OLED_MAX_NUM_LINES][OLED_MAX_LINE_LEN + 1])
 {
     snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "The screen is going to");
@@ -426,6 +462,9 @@ void oled_display_refresh()
                 break;
             case OLED_PAGE_DIAGNOSIS:
                 oled_display_page_diagnosis(lines);
+                break;
+            case OLED_PAGE_MORSE_TABLE:
+                oled_display_morse_table(lines);
                 break;
             default:
                 break;

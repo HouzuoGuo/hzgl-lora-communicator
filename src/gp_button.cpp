@@ -15,6 +15,7 @@ static String morse_signals_buf = "";
 static String morse_message_buf = "";
 static String morse_edit_hint = "";
 static bool morse_space_inserted_after_word = false;
+static int morse_table_page_clicks = 0;
 
 unsigned long gp_button_get_last_click_timestamp()
 {
@@ -258,6 +259,14 @@ void gp_button_read()
           }
         }
       }
+      else if (oled_get_page_number() == OLED_PAGE_MORSE_TABLE)
+      {
+        // Flip to the next page of morse table.
+        if (duration > GP_BUTTON_CLICK_DURATION)
+        {
+          morse_table_page_clicks++;
+        }
+      }
     }
     if (oled_get_page_number() == OLED_PAGE_TX_MESSAGE || oled_get_page_number() == OLED_PAGE_TX_COMMAND)
     {
@@ -320,4 +329,10 @@ bool gp_button_is_input_lower_case()
   bool ret = is_lower_case;
   xSemaphoreGive(mutex);
   return ret;
+}
+
+int gp_button_get_morse_table_page_clicks()
+{
+  int clicks = morse_table_page_clicks;
+  return clicks;
 }
