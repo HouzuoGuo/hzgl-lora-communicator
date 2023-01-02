@@ -14,6 +14,7 @@ static double sum_temp_readings = 0.0;
 
 void env_sensor_setup()
 {
+    ESP_LOGI(LOG_TAG, "setting up sensors");
     memset(&latest, 0, sizeof(latest));
     power_i2c_lock();
     if (!bme.begin(BME280_I2C_ADDR))
@@ -21,6 +22,8 @@ void env_sensor_setup()
         ESP_LOGW(LOG_TAG, "failed to initialise BME280 sensor");
     }
     power_i2c_unlock();
+
+    ESP_LOGI(LOG_TAG, "sensors are ready");
 }
 
 void env_sensor_read_decode()
