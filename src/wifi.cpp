@@ -30,7 +30,7 @@ void wifi_on()
         power_wifi_bt_unlock();
         return;
     }
-    ESP_LOGI(LOG_TAG, "turing on WiFi");
+    ESP_LOGI(LOG_TAG, "turning on WiFi");
     memset(&channel_pkt_counter, 0, sizeof(channel_pkt_counter));
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     wifi_init_config_t wifi_init_conf = WIFI_INIT_CONFIG_DEFAULT();
@@ -61,7 +61,7 @@ void wifi_off()
         power_wifi_bt_unlock();
         return;
     }
-    ESP_LOGI(LOG_TAG, "turing off WiFi");
+    ESP_LOGI(LOG_TAG, "turning off WiFi");
     esp_wifi_disconnect();
     vTaskDelay(pdMS_TO_TICKS(5));
     esp_wifi_scan_stop();

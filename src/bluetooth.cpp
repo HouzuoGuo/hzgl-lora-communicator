@@ -24,7 +24,7 @@ void bluetooth_on()
         power_wifi_bt_unlock();
         return;
     }
-    ESP_LOGI(LOG_TAG, "turing on Bluetooth");
+    ESP_LOGI(LOG_TAG, "turning on Bluetooth");
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     // The device name is not used because this scanner does not need to advertise itself.
     BLEDevice::init("hzgl-comm");
@@ -45,7 +45,7 @@ void bluetooth_off()
         power_wifi_bt_unlock();
         return;
     }
-    ESP_LOGI(LOG_TAG, "turing off Bluetooth");
+    ESP_LOGI(LOG_TAG, "turning off Bluetooth");
     btStop();
     BLEDevice::deinit();
     is_powered_on = false;

@@ -61,7 +61,7 @@ void gps_on()
         is_initialised = true;
     }
     // According to the ublox library, sending an info query wakes the GPS up.
-    ESP_LOGI(LOG_TAG, "turing on GPS - time %d:%d lat %d long %d", ublox.getMinute(), ublox.getSecond(), ublox.getLatitude(), ublox.getLongitude());
+    ESP_LOGI(LOG_TAG, "turning on GPS - time %d:%d lat %d long %d", ublox.getMinute(), ublox.getSecond(), ublox.getLatitude(), ublox.getLongitude());
     is_powered_on = true;
     xSemaphoreGive(mutex);
 }
@@ -80,7 +80,7 @@ void gps_off()
         return;
     }
     // The off duration does not really matter as gps_on wakes the GPS up when needed.
-    ESP_LOGI(LOG_TAG, "turing off GPS - cmd result: %d", ublox.powerOff(3600 * 1000));
+    ESP_LOGI(LOG_TAG, "turning off GPS - cmd result: %d", ublox.powerOff(3600 * 1000));
     is_powered_on = false;
     xSemaphoreGive(mutex);
 }

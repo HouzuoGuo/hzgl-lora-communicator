@@ -408,14 +408,13 @@ void oled_off()
 
 void oled_display_refresh()
 {
-    // Conserve power when power management is in the saver mode.
-    if (power_get_config().mode_id == POWER_SAVER && oled_get_ms_since_last_input() > OLED_SLEEP_AFTER_INACTIVE_MS)
+    // Conserve power and prevent OLED burn-in.
+    if (oled_get_ms_since_last_input() > OLED_SLEEP_AFTER_INACTIVE_MS)
     {
         oled_off();
     }
     else
     {
-        // The OLED never sleeps under other power modes.
         oled_on();
     }
     if (is_oled_on)
@@ -425,8 +424,7 @@ void oled_display_refresh()
         {
             memset(lines[i], 0, OLED_MAX_LINE_LEN + 1);
         }
-        if (power_get_config().mode_id == POWER_SAVER &&
-            (oled_get_ms_since_last_input() > (OLED_SLEEP_AFTER_INACTIVE_MS - OLED_SLEEP_REMINDER_DURATION_MS) &&
+        if ((oled_get_ms_since_last_input() > (OLED_SLEEP_AFTER_INACTIVE_MS - OLED_SLEEP_REMINDER_DURATION_MS) &&
              oled_get_ms_since_last_input() < OLED_SLEEP_AFTER_INACTIVE_MS))
         {
             // Reminder the user for the brief period before the screen goes to sleep.
