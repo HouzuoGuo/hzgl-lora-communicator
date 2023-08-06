@@ -253,12 +253,14 @@ void lorawan_prepare_uplink_transmission()
     pkt.write32BitDouble(env.altitude_metre);
     // The reset reasons are explained in https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
     // See "Table 9: PRO_CPU and APP_CPU Reset Reason Values".
-    // Byte 26 - CPU core 0's reset reason.
+    // Byte 26 - CPU core 0's lower-level reset reason.
     pkt.writeInteger(rtc_get_reset_reason(0), 1);
-    // Byte 27 - CPU core 1's reset reason.
+    // Byte 27 - CPU core 1's lower-level reset reason.
     pkt.writeInteger(rtc_get_reset_reason(1), 1);
     // Byte 28 - CPU's wake-up cause.
     pkt.writeInteger(rtc_get_wakeup_cause(), 1);
+    // Byte 29 - ESP's higher-level reset reason.
+    pkt.writeInteger(esp_reset_reason(), 1);
     lorawan_set_next_transmission(pkt.content, pkt.cursor, LORAWAN_PORT_STATUS_SENSOR);
     ESP_LOGI(LOG_TAG, "going to transmit status and sensor info in %d bytes", pkt.cursor);
   }

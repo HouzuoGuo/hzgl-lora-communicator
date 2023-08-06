@@ -16,7 +16,7 @@ static const char LOG_TAG[] = __FILE__;
 
 void setup()
 {
-  // Automatically panic and reset when a task gets stuck for over 30 seconds.
+  // Automatically panic and reset when any task becomes stuck.
   ESP_ERROR_CHECK(esp_task_wdt_init(SUPERVISOR_WATCHDOG_TIMEOUT_SEC, true));
   // Keey an eye on the setup itself too.
   ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
@@ -33,7 +33,16 @@ void setup()
 
 void loop()
 {
-  // The loop is not used at all. Just yield to all other tasks.
-  esp_task_wdt_reset();
   vTaskDelay(pdMS_TO_TICKS(SUPERVISOR_TASK_LOOP_DELAY_MS));
+  if (millis() / 1000 < SUPERVISOR_UNCONDITIONAL_RESET_INTERVAL_SEC)
+  {
+    // Reset watchdog timer prior to reaching the soft reset interval.
+    esp_task_wdt_reset();
+  }
+  else
+  {
+    ESP_LOGW(LOG_TAG, "performing regular soft reset");
+    // Always perform a soft reset at regular interval. This helps clear unpredictable faults.
+    esp_restart();
+  }
 }

@@ -39,6 +39,8 @@ function decodeUplink(input) {
         data.cpu1_reset_reason = buf[i++];
         // Byte 28 - CPU's wake-up cause.
         data.cpu_wake_up_cause = buf[i++];
+        // Byte 29 - Last microcontroller reset reason.
+        data.esp_reset_reason = buf[i++];
     } else if (input.fPort == 120) {
         // Byte 0, 1, 2, 3 - GPS latitude.
         data.latitude = decode_double(buf[i], buf[i + 1], buf[i + 2], buf[i + 3]);
