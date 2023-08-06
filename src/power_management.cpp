@@ -406,7 +406,11 @@ void power_set_cpu_freq_mhz(int new_mhz)
     if (last_cpu_freq_mhz != new_mhz)
     {
         ESP_LOGI(LOG_TAG, "setting CPU frequency to %d MHz", new_mhz);
-        if (!setCpuFrequencyMhz(new_mhz))
+        bool success = setCpuFrequencyMhz(new_mhz);
+        // Changing CPU frequency seems to always mess up the monitor baud rate.
+        // See also: https://github.com/espressif/arduino-esp32/issues/6032 ("setCpuFrequencyMhz() changes Serial bauds if frequency<80Mhz")
+        Serial.updateBaudRate(SERIAL_MONITOR_BAUD_RATE);
+        if (!success)
         {
             ESP_LOGW(LOG_TAG, "failed to set CPU frequency to %d MHz", new_mhz);
         }
