@@ -4,8 +4,10 @@
 #include <esp_wifi_types.h>
 #include <esp_task_wdt.h>
 
-#include "oled.h"
 #include "power_management.h"
+#include "bluetooth.h"
+#include "wifi.h"
+#include "oled.h"
 
 static const char LOG_TAG[] = __FILE__;
 
@@ -27,6 +29,12 @@ static size_t last_loudest_channel = 0, loudest_channel = 0;
 void wifi_on()
 {
     power_wifi_bt_lock();
+    if (bluetooth_get_state())
+    {
+        ESP_LOGI(LOG_TAG, "refusing to turn on WiFi because bluetooth is active");
+        power_wifi_bt_unlock();
+        return;
+    }
     if (is_powered_on)
     {
         power_wifi_bt_unlock();
@@ -40,18 +48,18 @@ void wifi_on()
     wifi_init_conf.nvs_enable = 0;
     // Core 1 is already occupied by a great number of tasks, see setup.
     wifi_init_conf.wifi_task_core_id = 0;
-    esp_wifi_init(&wifi_init_conf);
+    ESP_ERROR_CHECK(esp_wifi_init(&wifi_init_conf));
     esp_wifi_set_country(&wifi_country_params);
     esp_wifi_set_storage(WIFI_STORAGE_RAM);
     esp_wifi_set_mode(WIFI_MODE_NULL);
     esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
 
-    esp_wifi_start();
+    ESP_ERROR_CHECK(esp_wifi_start());
     esp_wifi_set_channel(channel_num, WIFI_SECOND_CHAN_NONE);
 
     esp_wifi_set_promiscuous_filter(&pkt_filter);
     esp_wifi_set_promiscuous_rx_cb(&wifi_sniffer_packet_handler);
-    esp_wifi_set_promiscuous(true);
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
     is_powered_on = true;
     power_wifi_bt_unlock();
 }
@@ -66,13 +74,9 @@ void wifi_off()
     }
     ESP_LOGI(LOG_TAG, "turning off WiFi");
     esp_wifi_disconnect();
-    vTaskDelay(pdMS_TO_TICKS(5));
     esp_wifi_scan_stop();
-    vTaskDelay(pdMS_TO_TICKS(5));
     esp_wifi_set_promiscuous(false);
-    vTaskDelay(pdMS_TO_TICKS(5));
     esp_wifi_stop();
-    vTaskDelay(pdMS_TO_TICKS(5));
     esp_wifi_deinit();
     is_powered_on = false;
     power_wifi_bt_unlock();
@@ -104,6 +108,11 @@ void wifi_task_loop(void *_)
 void wifi_next_channel()
 {
     power_wifi_bt_lock();
+    if (!wifi_get_state())
+    {
+        power_wifi_bt_unlock();
+        return;
+    }
     channel_pkt_counter[channel_num - 1] = pkt_counter;
     channel_pkt_size_sum[channel_num - 1] = pkt_size_sum;
     pkt_counter = 0;
@@ -192,6 +201,4 @@ void wifi_sniffer_packet_handler(void *buff, wifi_promiscuous_pkt_type_t type)
         loudest_channel = pkt->rx_ctrl.channel;
         memcpy(loudest_sender, header->addr2, sizeof(uint8_t) * 6);
     }
-    // Without yield the wifi will become stuck and receive no more packets. Pretty strange.
-    yield();
 }

@@ -26,11 +26,11 @@ RTC_DATA_ATTR static int config_mode_id = POWER_REGULAR;
 RTC_DATA_ATTR static int config_mode_id_before_conserving = config_mode_id;
 RTC_DATA_ATTR static unsigned long last_stop_conserve_power_timestamp = 0;
 
-// The durations must be sufficient for taking a round of readings - preferrably with a generous amount of time buffer.
-// They are largely magic numbers determined by inspecting the serial output.
+// The durations must be sufficient for taking two rounds of readings, the first round is often unreliable.
 static const int bt_prep_duration_ms = (3000 * 2 + BLUETOOTH_TASK_LOOP_DELAY_MS * 3 + POWER_TASK_LOOP_DELAY_MS * 3); // typical: 3 seconds per bluetooth scan at 80MHz CPU frequency.
+static const int bt_wifi_gap_ms = (2000 + POWER_TASK_LOOP_DELAY_MS * 3);                                             // typical: 2 seconds to shut down bluetooth and free up memory for wifi.
 static const int wifi_prep_duration_ms = (4000 * 2 + WIFI_TASK_LOOP_DELAY_MS * 3 + POWER_TASK_LOOP_DELAY_MS * 3);    // typical: 4 seconds per wifi scan at 80MHz CPU frequency.
-static const int env_sensor_prep_duration_ms = (ENV_SENSOR_TASK_LOOP_DELAY_MS + POWER_TASK_LOOP_DELAY_MS * 3);
+static const int env_sensor_prep_duration_ms = (ENV_SENSOR_TASK_LOOP_DELAY_MS * 3 + POWER_TASK_LOOP_DELAY_MS * 3);
 
 void power_setup()
 {
@@ -288,16 +288,20 @@ int power_get_todo()
     }
 
     // Give Bluetooth and WiFi a turn at scanning prior to transmitting foxhunt info.
-    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&                                    // transmitting POS + foxhunt info
-        (!oled_get_state() || oled_get_page_number() != OLED_PAGE_WIFI_INFO) &&                            // not looking at wifi info on screen
-        (ms_since_last_tx > config.tx_interval_sec * 1000 - bt_prep_duration_ms - wifi_prep_duration_ms && // turning on bt for routine fox hunt
-         ms_since_last_tx < config.tx_interval_sec * 1000 - wifi_prep_duration_ms))
+    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
+        // There is not enough memory to run bluetooth and wifi simultaneously.
+        !(ret & POWER_TODO_TURN_ON_WIFI) && (!oled_get_state() || oled_get_page_number() != OLED_PAGE_WIFI_INFO) &&
+        // Is it time to turn on bluetooth for routine scan?
+        (ms_since_last_tx > config.tx_interval_sec * 1000 - bt_prep_duration_ms - wifi_prep_duration_ms - bt_wifi_gap_ms &&
+         ms_since_last_tx < config.tx_interval_sec * 1000 - wifi_prep_duration_ms - bt_wifi_gap_ms))
     {
         ret |= POWER_TODO_TURN_ON_BLUETOOTH;
     }
-    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&              // transmitting POS + foxhunt info
-        (!oled_get_state() || oled_get_page_number() != OLED_PAGE_BT_INFO) &&        // not looking at bt info on screen
-        (ms_since_last_tx > config.tx_interval_sec * 1000 - wifi_prep_duration_ms && // turning on wifi for routine fox hunt
+    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
+        // There is not enough memory to run bluetooth and wifi simultaneously.
+        !(ret & POWER_TODO_TURN_ON_BLUETOOTH) && (!oled_get_state() || oled_get_page_number() != OLED_PAGE_BT_INFO) &&
+        // Is it time to turn on wifi for routine scan?
+        (ms_since_last_tx > config.tx_interval_sec * 1000 - wifi_prep_duration_ms &&
          ms_since_last_tx < config.tx_interval_sec * 1000))
     {
         ret |= POWER_TODO_TURN_ON_WIFI;

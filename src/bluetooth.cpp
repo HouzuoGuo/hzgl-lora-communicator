@@ -2,8 +2,9 @@
 #include <BLEDevice.h>
 #include <esp_task_wdt.h>
 
-#include "bluetooth.h"
 #include "power_management.h"
+#include "bluetooth.h"
+#include "wifi.h"
 #include "oled.h"
 
 static const char LOG_TAG[] = __FILE__;
@@ -19,6 +20,12 @@ static int last_num_devices = 0, num_devices = 0;
 void bluetooth_on()
 {
     power_wifi_bt_lock();
+    if (wifi_get_state())
+    {
+        ESP_LOGI(LOG_TAG, "refusing to turn on bluetooth because WiFi is active");
+        power_wifi_bt_unlock();
+        return;
+    }
     if (is_powered_on)
     {
         power_wifi_bt_unlock();
@@ -47,6 +54,8 @@ void bluetooth_off()
     }
     ESP_LOGI(LOG_TAG, "turning off Bluetooth");
     btStop();
+    // Do not set release_memory parameter, or the next init will fail.
+    // deinit otherwise already frees up enough memory for wifi operations.
     BLEDevice::deinit();
     is_powered_on = false;
     power_wifi_bt_unlock();
@@ -60,6 +69,11 @@ bool bluetooth_get_state()
 void bluetooth_scan()
 {
     power_wifi_bt_lock();
+    if (!bluetooth_get_state())
+    {
+        power_wifi_bt_unlock();
+        return;
+    }
     // Remember the results from the previous round of scan.
     last_loudest_sender = loudest_sender;
     last_loudest_rssi = loudest_rssi;
