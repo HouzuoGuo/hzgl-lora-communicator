@@ -241,8 +241,8 @@ void oled_display_page_env_wifi_sniffer_info(char lines[OLED_MAX_NUM_LINES][OLED
 {
     uint8_t *loudest_sender_mac = wifi_get_last_loudest_sender_mac();
     snprintf(lines[0], OLED_MAX_LINE_LEN + 1, "WiFi 2.4GHz monitor");
-    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "Scanning channel: %d", wifi_get_channel_num());
-    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Pkts (all.chan.): %d", wifi_get_total_num_pkts());
+    snprintf(lines[1], OLED_MAX_LINE_LEN + 1, "All chan: %d pkts %dKB", wifi_get_total_num_pkts(), wifi_get_total_pkt_data_len() / 1024);
+    snprintf(lines[2], OLED_MAX_LINE_LEN + 1, "Scanning channel: %d", wifi_get_channel_num());
     snprintf(lines[3], OLED_MAX_LINE_LEN + 1, "Loudest RSSI %d ch#%d", wifi_get_last_loudest_sender_rssi(), wifi_get_last_loudest_sender_channel());
     snprintf(lines[4], OLED_MAX_LINE_LEN + 1, "MAC: %02x:%02x:%02x:%02x:%02x:%02x", loudest_sender_mac[0], loudest_sender_mac[1], loudest_sender_mac[2], loudest_sender_mac[3], loudest_sender_mac[4], loudest_sender_mac[5]);
 }

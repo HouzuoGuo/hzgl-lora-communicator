@@ -14,8 +14,10 @@ static bool is_powered_on = false;
 static unsigned long round_num = 0;
 static size_t channel_num = 1;
 static size_t pkt_counter = 0;
+static size_t pkt_size_sum = 0;
 static size_t channel_pkt_counter[WIFI_MAX_CHANNEL_NUM];
-static const wifi_promiscuous_filter_t pkt_filter = {.filter_mask = WIFI_PROMIS_FILTER_MASK_MGMT | WIFI_PROMIS_FILTER_MASK_DATA};
+static size_t channel_pkt_size_sum[WIFI_MAX_CHANNEL_NUM];
+static const wifi_promiscuous_filter_t pkt_filter = {.filter_mask = WIFI_PROMIS_FILTER_MASK_ALL};
 static wifi_country_t wifi_country_params = {"IE", 1, WIFI_MAX_CHANNEL_NUM, 100, WIFI_COUNTRY_POLICY_MANUAL};
 
 static uint8_t last_loudest_sender[6], loudest_sender[6];
@@ -31,7 +33,8 @@ void wifi_on()
         return;
     }
     ESP_LOGI(LOG_TAG, "turning on WiFi");
-    memset(&channel_pkt_counter, 0, sizeof(channel_pkt_counter));
+    memset(&channel_pkt_counter, 0, WIFI_MAX_CHANNEL_NUM);
+    memset(&channel_pkt_size_sum, 0, WIFI_MAX_CHANNEL_NUM);
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     wifi_init_config_t wifi_init_conf = WIFI_INIT_CONFIG_DEFAULT();
     wifi_init_conf.nvs_enable = 0;
@@ -102,7 +105,9 @@ void wifi_next_channel()
 {
     power_wifi_bt_lock();
     channel_pkt_counter[channel_num - 1] = pkt_counter;
+    channel_pkt_size_sum[channel_num - 1] = pkt_size_sum;
     pkt_counter = 0;
+    pkt_size_sum = 0;
     if (++channel_num > WIFI_MAX_CHANNEL_NUM)
     {
         channel_num = 1;
@@ -115,10 +120,11 @@ void wifi_next_channel()
         loudest_rssi = WIFI_RSSI_FLOOR;
         loudest_channel = 0;
         memset(loudest_sender, 0, sizeof(loudest_sender));
-        ESP_LOGI(LOG_TAG, "just finished a round of scan");
+        ESP_LOGI(LOG_TAG, "found %d packets and %d bytes of data in a round of scan", wifi_get_total_num_pkts(), wifi_get_total_pkt_data_len());
     }
     esp_wifi_set_channel(channel_num, WIFI_SECOND_CHAN_NONE);
     channel_pkt_counter[channel_num] = 0;
+    channel_pkt_size_sum[channel_num] = 0;
     power_wifi_bt_unlock();
 }
 
@@ -147,6 +153,16 @@ size_t wifi_get_total_num_pkts()
     return sum;
 }
 
+size_t wifi_get_total_pkt_data_len()
+{
+    size_t sum = 0;
+    for (size_t i = 0; i < WIFI_MAX_CHANNEL_NUM; ++i)
+    {
+        sum += channel_pkt_size_sum[i];
+    }
+    return sum;
+}
+
 size_t wifi_get_channel_num()
 {
     return channel_num;
@@ -161,7 +177,7 @@ void wifi_sniffer_packet_handler(void *buff, wifi_promiscuous_pkt_type_t type)
 {
     // Do not obtain a mutex in this function, or WiFi task loop will have a chance to get stuck.
     // I suspect that if wifi_off and wifi_sniffer_packet_handler run simultaneously there will be a deadlock.
-    if (type != WIFI_PKT_MGMT)
+    if (type != WIFI_PKT_MGMT && type != WIFI_PKT_CTRL && type != WIFI_PKT_DATA)
     {
         return;
     }
@@ -169,10 +185,13 @@ void wifi_sniffer_packet_handler(void *buff, wifi_promiscuous_pkt_type_t type)
     const wifi_ieee80211_packet_t *payload = (wifi_ieee80211_packet_t *)pkt->payload;
     const wifi_ieee80211_mac_hdr_t *header = &payload->hdr;
     pkt_counter++;
+    pkt_size_sum += pkt->rx_ctrl.sig_len;
     if (pkt->rx_ctrl.rssi > loudest_rssi)
     {
         loudest_rssi = pkt->rx_ctrl.rssi;
         loudest_channel = pkt->rx_ctrl.channel;
         memcpy(loudest_sender, header->addr2, sizeof(uint8_t) * 6);
     }
+    // Without yield the wifi will become stuck and receive no more packets. Pretty strange.
+    yield();
 }

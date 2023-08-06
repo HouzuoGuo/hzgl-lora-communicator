@@ -82,7 +82,7 @@ void bluetooth_scan()
     }
     round_num++;
     power_wifi_bt_unlock();
-    ESP_LOGI(LOG_TAG, "just finished a round of scan");
+    ESP_LOGI(LOG_TAG, "found %d devices in a round of scan", bluetooth_get_total_num_devices());
 }
 
 void bluetooth_task_loop(void *_)

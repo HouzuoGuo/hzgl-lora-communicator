@@ -6,7 +6,7 @@
 
 #define WIFI_TASK_LOOP_DELAY_MS 200
 #define WIFI_MAX_CHANNEL_NUM 13
-#define WIFI_RSSI_FLOOR -100
+#define WIFI_RSSI_FLOOR -120
 
 typedef struct
 {
@@ -31,6 +31,7 @@ bool wifi_get_state();
 void wifi_task_loop(void *_);
 void wifi_next_channel();
 size_t wifi_get_total_num_pkts();
+size_t wifi_get_total_pkt_data_len();
 size_t wifi_get_channel_num();
 unsigned long wifi_get_round_num();
 void wifi_sniffer_packet_handler(void *buff, wifi_promiscuous_pkt_type_t type);
