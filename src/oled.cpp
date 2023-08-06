@@ -48,16 +48,6 @@ int oled_get_last_morse_input_page_num()
 
 void oled_go_to_next_page()
 {
-    // Shut down wifi or BT as soon as possible to conserve memory.
-    // Avoid the background routine transmission from turning on a conflicting radio.
-    if (curr_page_num == OLED_PAGE_BT_INFO)
-    {
-        bluetooth_off();
-    }
-    else if (curr_page_num == OLED_PAGE_WIFI_INFO)
-    {
-        wifi_off();
-    }
     if (++curr_page_num == OLED_TOTAL_PAGE_NUM)
     {
         curr_page_num = OLED_PAGE_RX_INFO;
