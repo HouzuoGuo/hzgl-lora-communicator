@@ -28,10 +28,9 @@ RTC_DATA_ATTR static unsigned long last_stop_conserve_power_timestamp = 0;
 
 // The durations must be sufficient for taking a round of readings - preferrably with a generous amount of time buffer.
 // They are largely magic numbers determined by inspecting the serial output.
-static const int bt_prep_duration_ms = 4000;
-static const int wifi_prep_duration_ms = 6500;
-static const int interval_between_wifi_bt_ms = 2000;
-static const int env_sensor_prep_duration_ms = 2000;
+static const int bt_prep_duration_ms = (3000 * 2 + BLUETOOTH_TASK_LOOP_DELAY_MS * 3 + POWER_TASK_LOOP_DELAY_MS * 3); // typical: 3 seconds per bluetooth scan at 80MHz CPU frequency.
+static const int wifi_prep_duration_ms = (4000 * 2 + WIFI_TASK_LOOP_DELAY_MS * 3 + POWER_TASK_LOOP_DELAY_MS * 3); // typical: 4 seconds per wifi scan at 80MHz CPU frequency.
+static const int env_sensor_prep_duration_ms = (ENV_SENSOR_TASK_LOOP_DELAY_MS + POWER_TASK_LOOP_DELAY_MS * 3);
 
 void power_setup()
 {
@@ -289,21 +288,15 @@ int power_get_todo()
     }
 
     // Give Bluetooth and WiFi a turn at scanning prior to transmitting foxhunt info.
-    /*
-    20220611 - there's a bug in esp-arduino framework or esp-idf. If Bluetooth is turned on seconds after turning on WiFi, there's going to be a panic at:
-    Guru Meditation Error: Core  0 panic'ed (LoadProhibited). Exception was unhandled.
-    #0  0x40097e94:0x3fffeb800 in uxListRemove at /home/runner/work/esp32-arduino-lib-builder/esp32-arduino-lib-builder/esp-idf/components/freertos/list.c:18
-    This problem was not observed prior to April 2022. Moving on, work around the problem by avoiding turning them on at the same time.
-    */
-    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
-        (!oled_get_state() || oled_get_page_number() != OLED_PAGE_WIFI_INFO) &&
-        (ms_since_last_tx > config.tx_interval_sec * 1000 - bt_prep_duration_ms - wifi_prep_duration_ms - interval_between_wifi_bt_ms &&
-         ms_since_last_tx < config.tx_interval_sec * 1000 - wifi_prep_duration_ms - interval_between_wifi_bt_ms))
+    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS && // transmitting POS + foxhunt info
+        (!oled_get_state() || oled_get_page_number() != OLED_PAGE_WIFI_INFO) && // not looking at wifi info on screen
+        (ms_since_last_tx > config.tx_interval_sec * 1000 - bt_prep_duration_ms - wifi_prep_duration_ms &&
+         ms_since_last_tx < config.tx_interval_sec * 1000 - wifi_prep_duration_ms))
     {
         ret |= POWER_TODO_TURN_ON_BLUETOOTH;
     }
-    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
-        (!oled_get_state() || oled_get_page_number() != OLED_PAGE_BT_INFO) &&
+    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&  // transmitting POS + foxhunt info
+        (!oled_get_state() || oled_get_page_number() != OLED_PAGE_BT_INFO) && // not looking at bt info on screen
         (ms_since_last_tx > config.tx_interval_sec * 1000 - wifi_prep_duration_ms &&
          ms_since_last_tx < config.tx_interval_sec * 1000))
     {

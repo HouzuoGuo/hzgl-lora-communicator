@@ -23,6 +23,7 @@ const lmic_pinmap lmic_pins = {
     .rxtx = LMIC_UNUSED_PIN,
     .rst = LORA_RST_GPIO,
     .dio = {LORA_DIO0_GPIO, LORA_DIO1_GPIO, LORA_DIO2_GPIO},
+    .rxtx_rx_active = 0,
 };
 
 static SemaphoreHandle_t mutex = xSemaphoreCreateMutex();
