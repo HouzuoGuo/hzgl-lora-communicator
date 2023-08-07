@@ -330,8 +330,9 @@ void lorawan_prepare_uplink_transmission()
     {
       pkt.writeInteger(bt_mac[i], 1);
     }
-    // Byte 37 - the size of all inflight packets across all channels.
-    pkt.writeInteger(wifi_get_total_pkt_data_len(), 1);
+    // Byte 37, 38 - the size of all inflight packets across all channels in KB.
+    int wifi_data_kb = wifi_get_total_pkt_data_len() / 1024;
+    pkt.writeInteger(wifi_data_kb, 2);
     lorawan_set_next_transmission(pkt.content, pkt.cursor, LORAWAN_PORT_GPS_WIFI);
     ESP_LOGI(LOG_TAG, "going to transmit GPS, wifi, and bluetooth info in %d bytes", pkt.cursor);
   }

@@ -80,8 +80,9 @@ function decodeUplink(input) {
         // Byte 31, 32, 33, 34, 35, 36 - Bluetooth monitor - the loudest sender's MAC address.
         data.bt_loudest_tx_mac = buf[i].toString(16) + ':' + buf[i + 1].toString(16) + ':' + buf[i + 2].toString(16) + ':' + buf[i + 3].toString(16) + ':' + buf[i + 4].toString(16) + ':' + buf[i + 5].toString(16);
         i += 6;
-        // Byte 37 - WiFi monitor - the size of all inflight packets across all channels.
+        // Byte 38 - WiFi monitor - the size of all inflight packets across all channels.
         data.wifi_inflight_pkt_data_len_all_chans = buf[i++];
+        data.wifi_inflight_pkt_data_len_all_chans += buf[i++] << 8;
     }
     return {
         data: data,
