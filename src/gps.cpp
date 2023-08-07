@@ -41,24 +41,28 @@ void gps_on()
         {
             if (ublox.begin(gps_serial))
             {
-                // Change serial output content type to NMEA.
-                ESP_LOGI(LOG_TAG, "demand NMEA output: %d", ublox.setUART1Output(COM_TYPE_NMEA));
-                // Disable unused NMEA sentences.
-                ESP_LOGI(LOG_TAG, "disable GLL: %d, disable GSA: %d, disable GSV: %d, disable VTG: %d",
-                         ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1),
-                         ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1),
-                         ublox.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1),
-                         ublox.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1));
-                // GGA - position fix, ZDA - date and time, RMC - position + course + speed.
-                ESP_LOGI(LOG_TAG, "enable GGA: %d, enable ZDA: %d, enable RMC: %d",
-                         ublox.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1),
-                         ublox.enableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_UART1),
-                         ublox.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1));
                 for (int j = 0; j < 3; j++)
                 {
+                    bool success = true;
+                    // Change serial output content type to NMEA.
+                    bool nmeaOut = ublox.setUART1Output(COM_TYPE_NMEA);
+                    success = success & nmeaOut;
+                    ESP_LOGI(LOG_TAG, "demand NMEA output: %d", nmeaOut);
+                    // Disable unused NMEA sentences.
+                    ESP_LOGI(LOG_TAG, "disable GLL: %d, disable GSA: %d, disable GSV: %d, disable VTG: %d",
+                             ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_UART1),
+                             ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_UART1),
+                             ublox.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_UART1),
+                             ublox.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_UART1));
+                    // GGA - position fix, ZDA - date and time, RMC - position + course + speed.
+                    ESP_LOGI(LOG_TAG, "enable GGA: %d, enable ZDA: %d, enable RMC: %d",
+                             ublox.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_UART1),
+                             ublox.enableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_UART1),
+                             ublox.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_UART1));
                     bool save = ublox.saveConfiguration(5000);
+                    success = success & save;
                     ESP_LOGI(LOG_TAG, "save config: %d", save);
-                    if (save)
+                    if (success)
                     {
                         break;
                     }
