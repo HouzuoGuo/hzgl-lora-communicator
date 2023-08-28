@@ -141,6 +141,7 @@ func main() {
 	}
 	for {
 		loop()
+		time.Sleep(10 * time.Second)
 	}
 }
 
@@ -178,6 +179,11 @@ func loop() {
 	wg.Add(len(partClients))
 	for _, client := range partClients {
 		go func(client *azeventhubs.PartitionClient) {
+			defer func() {
+				timeoutCtx, cancelFunc := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancelFunc()
+				log.Printf("close client: %+v", client.Close(timeoutCtx))
+			}()
 			defer wg.Done()
 			for {
 				received, err := client.ReceiveEvents(context.Background(), 1, nil)
@@ -250,6 +256,8 @@ func handleEvent(ev *azeventhubs.ReceivedEventData, appendBlobClient *appendblob
 }
 
 func initBlobClient(containerClient *container.Client) *appendblob.Client {
+	timeoutCtx, cancelFunc := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancelFunc()
 	blobName := time.Now().UTC().Format(time.DateOnly) + ".jsonl"
 	appendBlobClient, err := appendblob.NewClientFromConnectionString(storageConnStr, storageContainer, blobName, nil)
 	if err != nil {
@@ -257,11 +265,11 @@ func initBlobClient(containerClient *container.Client) *appendblob.Client {
 	}
 	// Create the blob if it does not exist yet.
 	existingBlob := containerClient.NewBlobClient(blobName)
-	_, err = existingBlob.GetProperties(context.Background(), nil)
+	_, err = existingBlob.GetProperties(timeoutCtx, nil)
 	var respErr *azcore.ResponseError
 	if errors.As(err, &respErr) {
 		if respErr.StatusCode == http.StatusNotFound {
-			if _, err := appendBlobClient.Create(context.Background(), nil); err != nil {
+			if _, err := appendBlobClient.Create(timeoutCtx, nil); err != nil {
 				log.Panic(err)
 			}
 			log.Printf("created new blob %q", blobName)
