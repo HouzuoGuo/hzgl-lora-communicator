@@ -104,22 +104,22 @@ func flattenedRecord(evProps map[string]any, env, rf IotDecodedPayload) map[stri
 	ret["power_milliamp"] = env.PowerMilliamp
 	ret["uptime_sec"] = env.UptimeSec
 
-	ret["altitude"] = env.Altitude
-	ret["bt_loudest_tx_mac"] = env.BluetoothLoudestTXMac
-	ret["bt_loudest_tx_rssi"] = env.BluetoothLoudestTXRssi
-	ret["bt_num_devices"] = env.BluetoothNumDevices
-	ret["gps_heading_deg"] = env.GpsHeadingDeg
-	ret["gps_pos_age_sec"] = env.GpsPosAgeSec
-	ret["gps_speed_kmh"] = env.GpsSpeedKhm
-	ret["hdop"] = env.Hdop
-	ret["latitude"] = env.Latitude
-	ret["longitude"] = env.Longitude
-	ret["sats"] = env.Sats
-	ret["wifi_inflight_pkt_data_len_all_chans"] = env.WifiInflightPktsDataLenAllChans
-	ret["wifi_inflight_pkts_all_chans"] = env.WifiInflightPktsAllChans
-	ret["wifi_loudest_tx_chan"] = env.WifiLoudestTXChan
-	ret["wifi_loudest_tx_mac"] = env.WifiLoudestTXMac
-	ret["wifi_loudest_tx_rssi"] = env.WifiLoudestTXRssi
+	ret["altitude"] = rf.Altitude
+	ret["bt_loudest_tx_mac"] = rf.BluetoothLoudestTXMac
+	ret["bt_loudest_tx_rssi"] = rf.BluetoothLoudestTXRssi
+	ret["bt_num_devices"] = rf.BluetoothNumDevices
+	ret["gps_heading_deg"] = rf.GpsHeadingDeg
+	ret["gps_pos_age_sec"] = rf.GpsPosAgeSec
+	ret["gps_speed_kmh"] = rf.GpsSpeedKhm
+	ret["hdop"] = rf.Hdop
+	ret["latitude"] = rf.Latitude
+	ret["longitude"] = rf.Longitude
+	ret["sats"] = rf.Sats
+	ret["wifi_inflight_pkt_data_len_all_chans"] = rf.WifiInflightPktsDataLenAllChans
+	ret["wifi_inflight_pkts_all_chans"] = rf.WifiInflightPktsAllChans
+	ret["wifi_loudest_tx_chan"] = rf.WifiLoudestTXChan
+	ret["wifi_loudest_tx_mac"] = rf.WifiLoudestTXMac
+	ret["wifi_loudest_tx_rssi"] = rf.WifiLoudestTXRssi
 
 	return ret
 }
