@@ -2,7 +2,6 @@
 #include <HardwareSerial.h>
 #include <TinyGPS++.h>
 #include <esp_task_wdt.h>
-#include <axp20x.h>
 #include <SparkFun_u-blox_GNSS_Arduino_Library.h>
 #include "gps.h"
 #include "oled.h"

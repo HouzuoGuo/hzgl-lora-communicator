@@ -1,7 +1,20 @@
 #pragma once
 
 #include <lmic.h>
+
+#ifdef AXP192
+#define XPOWERS_CHIP_AXP192 = 1
+#endif
+
+#ifdef AXP2101
+#define XPOWERS_CHIP_AXP2101 = 1
+#endif
+
+#include <XPowersLib.h>
 #include "lorawan.h"
+
+// POWER_PMU_IRQ is the IRQ of the AXP192 and AXP2101 PMU chip on TTGO-TBeam.
+#define POWER_PMU_IRQ 35
 
 // POWER_TASK_LOOP_DELAY_MS is the sleep interval of power management IRQ polling task loop.
 #define POWER_TASK_LOOP_DELAY_MS 100
@@ -128,3 +141,4 @@ power_config_t power_get_config();
 void power_read_status();
 void power_log_status();
 void power_task_loop(void *);
+void power_set_pmu_irq_flag(void);

@@ -1,4 +1,3 @@
-#include <axp20x.h>
 #include <esp_log.h>
 #include <esp_task_wdt.h>
 #include <SPI.h>
@@ -13,12 +12,13 @@
 
 static const char LOG_TAG[] = __FILE__;
 
-static AXP20X_Class pmu;
+static XPowersPMU *pmu;
 static SemaphoreHandle_t i2c_mutex = xSemaphoreCreateMutex(), wifi_bt_mutex = xSemaphoreCreateMutex();
 static unsigned long last_transmision_timestamp = 0;
 static int last_cpu_freq_mhz = 240;
 static int lorawan_tx_counter = 0;
 static double sum_curr_draw_readings = 0.0;
+static bool pmu_irq_flag = false;
 
 RTC_DATA_ATTR static struct power_status status;
 RTC_DATA_ATTR static bool is_conserving_power;
@@ -38,69 +38,125 @@ void power_setup()
     memset(&status, 0, sizeof(status));
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     power_i2c_lock();
+
     if (!Wire.begin(I2C_SDA, I2C_SCL, (uint32_t)I2C_FREQUENCY_HZ))
     {
         ESP_LOGW(LOG_TAG, "failed to initialise I2C");
     }
-    SPI.begin(SPI_SCK_GPIO, SPI_MISO_GPIO, SPI_MOSI_GPIO, SPI_NSS_GPIO);
-    if (pmu.begin(Wire, AXP192_SLAVE_ADDRESS) != AXP_PASS)
+
+#ifdef AXP192
+    pmu = new XPowersAXP192(Wire);
+    // Both AXP192 and AXP2101 use the same I2C address - 0x34.
+    if (!pmu->begin(Wire, AXP192_SLAVE_ADDRESS, I2C_SDA, I2C_SCL))
     {
         ESP_LOGW(LOG_TAG, "failed to initialise AXP power management chip");
     }
+#endif
+#ifdef AXP2101
+    pmu = new XPowersAXP2101(Wire);
+    // Both AXP192 and AXP2101 use the same I2C address - 0x34.
+    if (!pmu->begin(Wire, AXP2101_SLAVE_ADDRESS, I2C_SDA, I2C_SCL))
+    {
+        ESP_LOGW(LOG_TAG, "failed to initialise AXP power management chip");
+    }
+#endif
 
-    // https://www.solomon-systech.com/product/ssd1306/
-    // "– VDD= 1.65V – 3.3V, <VBAT for IC Logic"
-    // "– VBAT= 3.3V – 4.2V for charge pump regulator circuit"
-    pmu.setDCDC1Voltage(3300); // OLED
-    pmu.setDCDC2Voltage(0);    // Unused
-    // https://cdn-shop.adafruit.com/product-files/3179/sx1276_77_78_79.pdf
-    // "Supply voltage = 3.3 V"
-    pmu.setLDO2Voltage(3300); // LoRa
-    // https://www.u-blox.com/sites/default/files/products/documents/NEO-6_DataSheet_(GPS.G6-HW-09005).pdf
-    // "NEO-6Q/M NEO-6P/V/T Min: 2.7, Typ: 3.0, Max: 3.6"
-    pmu.setLDO3Voltage(3000); // GPS
+    // Set USB power limits.
+    if (pmu->getChipModel() == XPOWERS_AXP192)
+    {
+        ESP_LOGI(LOG_TAG, "setting up AXP192");
+#ifdef AXP192
+        // Protection.
+        pmu->setVbusVoltageLimit(XPOWERS_AXP192_VBUS_VOL_LIM_4V);
+        pmu->setVbusCurrentLimit(XPOWERS_AXP192_VBUS_CUR_LIM_OFF);
+        pmu->setSysPowerDownVoltage(3000);
 
-    pmu.setVWarningLevel1(3600);
-    pmu.setVWarningLevel2(3800);
-    pmu.setPowerDownVoltage(3300);
+        pmu->enablePowerKeyLongPressPowerOff();
+        pmu->setPowerKeyPressOffTime(XPOWERS_AXP192_POWEROFF_4S);
+        pmu->setPowerKeyPressOnTime(XPOWERS_POWERON_2S);
 
-    pmu.setTimeOutShutdown(false);
-    pmu.setTSmode(AXP_TS_PIN_MODE_DISABLE);
-    pmu.setShutdownTime(AXP_POWER_OFF_TIME_4S);
-    pmu.setStartupTime(AXP192_STARTUP_TIME_1S);
+        pmu->disableTSPinMeasure();
+        pmu->setChargingLedMode(false);
 
-    // Turn on ADCs.
-    pmu.adc1Enable(AXP202_BATT_VOL_ADC1, true);
-    pmu.adc1Enable(AXP202_BATT_CUR_ADC1, true);
-    pmu.adc1Enable(AXP202_VBUS_VOL_ADC1, true);
-    pmu.adc1Enable(AXP202_VBUS_CUR_ADC1, true);
+        pmu->enableBattDetection();
+        pmu->enableVbusVoltageMeasure();
+        pmu->enableBattVoltageMeasure();
+        pmu->enableSystemVoltageMeasure();
 
-    // Handle power management events.
-    pinMode(GPIO_NUM_35, INPUT_PULLUP);
-    pmu.enableIRQ(AXP202_VBUS_REMOVED_IRQ | AXP202_VBUS_CONNECT_IRQ | AXP202_VBUS_OVER_VOL_IRQ | AXP202_BATT_REMOVED_IRQ |
-                      AXP202_BATT_CONNECT_IRQ | AXP202_CHARGING_FINISHED_IRQ | AXP202_PEK_SHORTPRESS_IRQ,
-                  1);
-    pmu.clearIRQ();
+        // https://www.solomon-systech.com/product/ssd1306/
+        // "– VDD= 1.65V – 3.3V, <VBAT for IC Logic"
+        // "– VBAT= 3.3V – 4.2V for charge pump regulator circuit"
+        pmu->setDC1Voltage(3300);
+        pmu->enableDC1();
+        // DC2 is unused.
+        pmu->setDC2Voltage(0);
+        pmu->disableDC2();
+        // https://cdn-shop.adafruit.com/product-files/3179/sx1276_77_78_79.pdf
+        // "Supply voltage = 3.3 V"
+        pmu->setLDO2Voltage(3300);
+        pmu->enableLDO2();
+        // https://www.u-blox.com/sites/default/files/products/documents/NEO-6_DataSheet_(GPS.G6-HW-09005).pdf
+        // "NEO-6Q/M NEO-6P/V/T Min: 2.7, Typ: 3.0, Max: 3.6"
+        pmu->setLDO3Voltage(3000);
 
-    // Start charging the battery if it is installed.
-    pmu.setChargeControlCur(AXP1XX_CHARGE_CUR_1000MA);
-    pmu.setChargingTargetVoltage(AXP202_TARGET_VOL_4_2V);
-    pmu.enableChargeing(true);
-    pmu.setChgLEDMode(AXP20X_LED_OFF);
+        // Start charging the battery if it is installed.
+        pmu->setChargerConstantCurr(XPOWERS_AXP192_CHG_CUR_1000MA);
+        pmu->setChargerTerminationCurr(XPOWERS_AXP192_CHG_ITERM_LESS_10_PERCENT);
+        pmu->setChargeTargetVoltage(XPOWERS_AXP192_CHG_VOL_4V2);
 
-    // Keep the on-board clock (& GPS) battery topped up.
-    pmu.setBackupChargeCurrent(AXP202_BACKUP_CURRENT_100UA);
-    pmu.setBackupChargeVoltage(AXP202_BACKUP_VOLTAGE_3V0);
-    pmu.setBackupChargeControl(true);
+        // Start charging the GPS memory backup battery.
+        pmu->setBackupBattChargerCurr(XPOWERS_AXP192_BACKUP_BAT_CUR_100UA);
+        pmu->setBackupBattChargerVoltage(XPOWERS_AXP192_BACKUP_BAT_VOL_3V0);
 
-    pmu.setPowerOutPut(AXP192_DCDC1, AXP202_ON);  // OLED
-    pmu.setPowerOutPut(AXP192_DCDC2, AXP202_OFF); // Unused
-    pmu.setPowerOutPut(AXP192_LDO2, AXP202_ON);   // LoRa
-    pmu.setPowerOutPut(AXP192_LDO3, AXP202_ON);   // GPS
-    pmu.setPowerOutPut(AXP192_EXTEN, AXP202_OFF); // Unused
+        // Handle power management events.
+        pinMode(POWER_PMU_IRQ, INPUT);
+        attachInterrupt(POWER_PMU_IRQ, power_set_pmu_irq_flag, FALLING);
+        pmu->disableIRQ(XPOWERS_AXP192_ALL_IRQ);
+        pmu->clearIrqStatus();
+        pmu->enableIRQ(
+            XPOWERS_AXP192_BAT_INSERT_IRQ | XPOWERS_AXP192_BAT_REMOVE_IRQ |
+            XPOWERS_AXP192_VBUS_INSERT_IRQ | XPOWERS_AXP192_VBUS_REMOVE_IRQ |
+            XPOWERS_AXP192_PKEY_SHORT_IRQ |
+            XPOWERS_AXP192_BAT_CHG_DONE_IRQ | XPOWERS_AXP192_BAT_CHG_START_IRQ);
+        pmu->clearIrqStatus();
+#endif
+    }
+    else if (pmu->getChipModel() == XPOWERS_AXP2101)
+    {
+        ESP_LOGI(LOG_TAG, "setting up AXP2101");
+#ifdef AXP2101
+        pmu->setVbusCurrentLimit(XPOWERS_AXP2101_VBUS_CUR_LIM_2000MA);
+        pmu->setLongPressPowerOFF();
+        pmu->setLowBatShutdownThreshold(5);
+        pmu->disablePowerOutput(XPOWERS_DCDC2);
+        pmu->disablePowerOutput(XPOWERS_DCDC5);
+        pmu->disablePowerOutput(XPOWERS_DLDO1);
+        pmu->disablePowerOutput(XPOWERS_DLDO2);
+
+        pmu->setPowerChannelVoltage(XPOWERS_DCDC1, 3300);
+        pmu->enablePowerOutput(XPOWERS_DCDC1);
+        pmu->setProtectedChannel(XPOWERS_DCDC1);
+
+        pmu->setPowerChannelVoltage(XPOWERS_LDO2, 3300);
+        pmu->enablePowerOutput(XPOWERS_LDO2);
+
+        // ESP32 itself.
+        pmu->setProtectedChannel(XPOWERS_DCDC3);
+
+        pmu->setPowerChannelVoltage(XPOWERS_LDO3, 3300);
+        pmu->enablePowerOutput(XPOWERS_LDO3);
+#endif
+    }
+
     power_i2c_unlock();
     ESP_LOGI(LOG_TAG, "power management is ready");
 }
+
+void power_set_pmu_irq_flag(void)
+{
+    pmu_irq_flag = true;
+}
+
 void power_i2c_lock()
 {
     if (xSemaphoreTake(i2c_mutex, MUTEX_LOCK_TIMEOUT_MS) == pdFALSE)
@@ -147,14 +203,14 @@ bool power_get_may_transmit_lorawan()
 void power_led_on()
 {
     power_i2c_lock();
-    pmu.setChgLEDMode(AXP20X_LED_LOW_LEVEL);
+    pmu->setChargingLedMode(true);
     power_i2c_unlock();
 }
 
 void power_led_off()
 {
     power_i2c_lock();
-    pmu.setChgLEDMode(AXP20X_LED_OFF);
+    pmu->setChargingLedMode(false);
     power_i2c_unlock();
 }
 
@@ -166,40 +222,44 @@ double power_get_sum_curr_draw_readings()
 void power_read_handle_lastest_irq()
 {
     power_i2c_lock();
-    pmu.readIRQ();
-    if (pmu.isVbusOverVoltageIRQ())
+    if (pmu_irq_flag)
     {
-        ESP_LOGW(LOG_TAG, "USB power supply voltage is too high (%f.3v)", pmu.getVbusVoltage() / 1000);
-    }
-    if (pmu.isBattPlugInIRQ())
-    {
-        ESP_LOGI(LOG_TAG, "battery inserted");
-    }
-    if (pmu.isBattRemoveIRQ())
-    {
-        ESP_LOGI(LOG_TAG, "battery removed");
-    }
-    if (pmu.isChargingDoneIRQ())
-    {
-        ESP_LOGI(LOG_TAG, "battery charging completed");
-    }
-    if (pmu.isPEKShortPressIRQ())
-    {
-        // If the button is clicked before OLED's timer deemed the display to have been inactive.
-        // Otherwise, the user is simply clicking the button to wake the screen up.
-        if (!oled_reset_last_input_timestamp())
+        pmu_irq_flag = false;
+        uint32_t status = pmu->getIrqStatus();
+        if (pmu->isVbusOverVoltageIrq())
         {
-            ESP_LOGI(LOG_TAG, "turning to the next page");
-            oled_go_to_next_page();
+            ESP_LOGW(LOG_TAG, "USB power supply voltage is too high");
         }
+        if (pmu->isBatInsertIrq())
+        {
+            ESP_LOGI(LOG_TAG, "battery inserted");
+        }
+        if (pmu->isBatRemoveIrq())
+        {
+            ESP_LOGI(LOG_TAG, "battery removed");
+        }
+        if (pmu->isBatChagerDoneIrq())
+        {
+            ESP_LOGI(LOG_TAG, "battery charging completed");
+        }
+        if (pmu->isPekeyShortPressIrq())
+        {
+            // If the button is clicked before OLED's timer deemed the display to have been inactive.
+            // Otherwise, the user is simply clicking the button to wake the screen up.
+            if (!oled_reset_last_input_timestamp())
+            {
+                ESP_LOGI(LOG_TAG, "turning to the next page");
+                oled_go_to_next_page();
+            }
+        }
+        if (pmu->isPekeyLongPressIrq())
+        {
+            ESP_LOGW(LOG_TAG, "shutting down");
+            pmu->setChargingLedMode(false);
+            pmu->shutdown();
+        }
+        pmu->clearIrqStatus();
     }
-    if (pmu.isPEKLongtPressIRQ())
-    {
-        ESP_LOGW(LOG_TAG, "shutting down");
-        pmu.setChgLEDMode(AXP20X_LED_OFF);
-        pmu.shutdown();
-    }
-    pmu.clearIRQ();
     power_i2c_unlock();
 }
 
@@ -341,26 +401,26 @@ void power_inc_lorawan_tx_counter()
 void power_read_status()
 {
     power_i2c_lock();
-    status.is_batt_charging = pmu.isChargeing();
-    status.batt_millivolt = pmu.getBattVoltage();
+    status.is_batt_charging = pmu->isCharging();
+    status.batt_millivolt = pmu->getBattVoltage();
     if (status.batt_millivolt < 500)
     {
         // The AXP chip occasionally produces erranous and exceedingly low battery voltage readings even without a battery installed.
         status.batt_millivolt = 0;
     }
-    status.usb_millivolt = pmu.getVbusVoltage();
+    status.usb_millivolt = pmu->getVbusVoltage();
     if (status.is_batt_charging)
     {
-        status.batt_milliamp = pmu.getBattChargeCurrent();
+        status.batt_milliamp = pmu->getBatteryChargeCurrent();
     }
     else
     {
-        status.batt_milliamp = -pmu.getBattDischargeCurrent();
+        status.batt_milliamp = -pmu->getBattDischargeCurrent();
     }
-    status.power_draw_milliamp = pmu.getVbusCurrent();
+    status.power_draw_milliamp = pmu->getVbusCurrent();
     // The power management chip always draws power from USB when it is available.
     // Use battery discharging current as a condition too because the VBus current occasionally reads 0.
-    status.is_usb_power_available = status.is_batt_charging || status.batt_milliamp > 3 || status.batt_millivolt < 3000 || status.power_draw_milliamp > 3 || pmu.getVbusVoltage() > 4000;
+    status.is_usb_power_available = status.is_batt_charging || status.batt_milliamp > 3 || status.batt_millivolt < 3000 || status.power_draw_milliamp > 3 || status.usb_millivolt > 4000;
     if (!status.is_usb_power_available)
     {
         status.power_draw_milliamp = -status.batt_milliamp;

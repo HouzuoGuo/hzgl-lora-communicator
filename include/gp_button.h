@@ -1,6 +1,7 @@
+#include <Arduino.h>
+
 #pragma once
 
-#include <axp20x.h>
 #include "lorawan.h"
 
 // MORSE_DOT_PRESS_DURATION_MS is the duration the button needs to be held in order to register a dot morse signal.

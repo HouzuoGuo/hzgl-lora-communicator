@@ -1,7 +1,5 @@
 #pragma once
 
-#include <axp20x.h>
-
 // There are a few sources that describe the hardware capabilities and configuration:
 // - https://doc.riot-os.org/group__boards__esp32__ttgo-t-beam.html
 // - https://github.com/lnlp/pinout-diagrams/blob/main/LoRa%20development%20boards/TTGO%20T-Beam%20V1.1%20Pinout.pdf
