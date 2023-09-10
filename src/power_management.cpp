@@ -66,9 +66,11 @@ void power_setup()
     {
         ESP_LOGI(LOG_TAG, "setting up AXP192");
 #ifdef AXP192
-        // Protection.
-        pmu->setVbusVoltageLimit(XPOWERS_AXP192_VBUS_VOL_LIM_4V);
+        // https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/datasheet/core/AXP192_datasheet_en.pdf & AXP192%20Datasheet%20v1.13_cn..pdf
+        pmu->setVbusVoltageLimit(XPOWERS_AXP192_VBUS_VOL_LIM_4V1);
+        // There is no suitable current limit for 1.5A, the closest is only 0.5A.
         pmu->setVbusCurrentLimit(XPOWERS_AXP192_VBUS_CUR_LIM_OFF);
+        // "wide input voltage range": 2.9V~6.3V
         pmu->setSysPowerDownVoltage(3000);
 
         pmu->enablePowerKeyLongPressPowerOff();
@@ -89,7 +91,6 @@ void power_setup()
         pmu->setDC1Voltage(3300);
         pmu->enableDC1();
         // DC2 is unused.
-        pmu->setDC2Voltage(0);
         pmu->disableDC2();
         // https://cdn-shop.adafruit.com/product-files/3179/sx1276_77_78_79.pdf
         // "Supply voltage = 3.3 V"
@@ -100,13 +101,14 @@ void power_setup()
         pmu->setLDO3Voltage(3000);
 
         // Start charging the battery if it is installed.
+        // The maximum supported charging current is 1.4A.
         pmu->setChargerConstantCurr(XPOWERS_AXP192_CHG_CUR_1000MA);
         pmu->setChargerTerminationCurr(XPOWERS_AXP192_CHG_ITERM_LESS_10_PERCENT);
         pmu->setChargeTargetVoltage(XPOWERS_AXP192_CHG_VOL_4V2);
 
         // Start charging the GPS memory backup battery.
+        pmu->setBackupBattChargerVoltage(XPOWERS_AXP192_BACKUP_BAT_VOL_3V1);
         pmu->setBackupBattChargerCurr(XPOWERS_AXP192_BACKUP_BAT_CUR_100UA);
-        pmu->setBackupBattChargerVoltage(XPOWERS_AXP192_BACKUP_BAT_VOL_3V0);
 
         // Handle power management events.
         pinMode(POWER_PMU_IRQ, INPUT);
@@ -125,29 +127,75 @@ void power_setup()
     {
         ESP_LOGI(LOG_TAG, "setting up AXP2101");
 #ifdef AXP2101
-        pmu->setVbusCurrentLimit(XPOWERS_AXP2101_VBUS_CUR_LIM_2000MA);
-        pmu->setLongPressPowerOFF();
+        // https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/datasheet/core/K128%20CoreS3/AXP2101_Datasheet_V1.0_en.pdf
+        // VBUS min 3.9V, max 5.5V.
+        pmu->setVbusVoltageLimit(XPOWERS_AXP2101_VBUS_VOL_LIM_4V12);
+        // VBUS max 2A both in and out.
+        pmu->setVbusCurrentLimit(XPOWERS_AXP2101_VBUS_CUR_LIM_1500MA);
+        // VBAT operating range is between 2.5V and 4.5V.
+        pmu->setSysPowerDownVoltage(3000);
         pmu->setLowBatShutdownThreshold(5);
-        pmu->disablePowerOutput(XPOWERS_DCDC2);
-        pmu->disablePowerOutput(XPOWERS_DCDC5);
-        pmu->disablePowerOutput(XPOWERS_DLDO1);
-        pmu->disablePowerOutput(XPOWERS_DLDO2);
 
-        pmu->setPowerChannelVoltage(XPOWERS_DCDC1, 3300);
-        pmu->enablePowerOutput(XPOWERS_DCDC1);
-        pmu->setProtectedChannel(XPOWERS_DCDC1);
+        pmu->setLongPressPowerOFF();
+        pmu->setPowerKeyPressOffTime(XPOWERS_POWEROFF_4S);
+        pmu->setPowerKeyPressOnTime(XPOWERS_POWERON_2S);
 
-        pmu->setPowerChannelVoltage(XPOWERS_LDO2, 3300);
-        pmu->enablePowerOutput(XPOWERS_LDO2);
+        pmu->disableTSPinMeasure();
+        pmu->setChargingLedMode(false);
+        pmu->disableDC2();
+        pmu->disableDC4();
+        pmu->disableDC5();
+        pmu->disableALDO1();
+        pmu->disableALDO4();
+        pmu->disableBLDO1();
+        pmu->disableBLDO2();
+        pmu->disableDLDO1();
+        pmu->disableDLDO2();
 
-        // ESP32 itself.
-        pmu->setProtectedChannel(XPOWERS_DCDC3);
+        pmu->enableBattDetection();
+        pmu->enableVbusVoltageMeasure();
+        pmu->enableBattVoltageMeasure();
+        pmu->enableSystemVoltageMeasure();
 
-        pmu->setPowerChannelVoltage(XPOWERS_LDO3, 3300);
-        pmu->enablePowerOutput(XPOWERS_LDO3);
+        // https://www.solomon-systech.com/product/ssd1306/
+        // "– VDD= 1.65V – 3.3V, <VBAT for IC Logic"
+        // "– VBAT= 3.3V – 4.2V for charge pump regulator circuit"
+        pmu->setDC1Voltage(3300);
+        pmu->enableDC1();
+        // DC2 is unused.
+        pmu->disableDC2();
+        // https://cdn-shop.adafruit.com/product-files/3179/sx1276_77_78_79.pdf
+        // "Supply voltage = 3.3 V"
+        pmu->setALDO2Voltage(3300);
+        pmu->enableALDO2();
+        // https://www.u-blox.com/sites/default/files/products/documents/NEO-6_DataSheet_(GPS.G6-HW-09005).pdf
+        // "NEO-6Q/M NEO-6P/V/T Min: 2.7, Typ: 3.0, Max: 3.6"
+        pmu->setALDO3Voltage(3000);
+        pmu->enableALDO3();
+
+        // Start charging the battery if it is installed.
+        pmu->setPrechargeCurr(XPOWERS_AXP2101_PRECHARGE_100MA);
+        pmu->setChargerConstantCurr(XPOWERS_AXP202_CHG_CUR_1000MA);
+        pmu->setChargerTerminationCurr(XPOWERS_AXP2101_CHG_ITERM_50MA);
+        pmu->setChargeTargetVoltage(XPOWERS_AXP202_CHG_VOL_4V2);
+
+        // Start charging the GPS memory backup battery.
+        pmu->setButtonBatteryChargeVoltage(3100);
+        pmu->enableButtonBatteryCharge();
+
+        // Handle power management events.
+        pinMode(POWER_PMU_IRQ, INPUT);
+        attachInterrupt(POWER_PMU_IRQ, power_set_pmu_irq_flag, FALLING);
+        pmu->disableIRQ(XPOWERS_AXP192_ALL_IRQ);
+        pmu->clearIrqStatus();
+        pmu->enableIRQ(
+            XPOWERS_AXP202_BAT_INSERT_IRQ | XPOWERS_AXP202_BAT_REMOVE_IRQ |
+            XPOWERS_AXP202_VBUS_INSERT_IRQ | XPOWERS_AXP202_VBUS_REMOVE_IRQ |
+            XPOWERS_AXP202_PKEY_SHORT_IRQ |
+            XPOWERS_AXP202_BAT_CHG_DONE_IRQ | XPOWERS_AXP202_BAT_CHG_START_IRQ);
+        pmu->clearIrqStatus();
 #endif
     }
-
     power_i2c_unlock();
     ESP_LOGI(LOG_TAG, "power management is ready");
 }
@@ -225,11 +273,7 @@ void power_read_handle_lastest_irq()
     if (pmu_irq_flag)
     {
         pmu_irq_flag = false;
-        uint32_t status = pmu->getIrqStatus();
-        if (pmu->isVbusOverVoltageIrq())
-        {
-            ESP_LOGW(LOG_TAG, "USB power supply voltage is too high");
-        }
+        pmu->getIrqStatus();
         if (pmu->isBatInsertIrq())
         {
             ESP_LOGI(LOG_TAG, "battery inserted");
@@ -409,6 +453,7 @@ void power_read_status()
         status.batt_millivolt = 0;
     }
     status.usb_millivolt = pmu->getVbusVoltage();
+#ifdef AXP192
     if (status.is_batt_charging)
     {
         status.batt_milliamp = pmu->getBatteryChargeCurrent();
@@ -418,6 +463,12 @@ void power_read_status()
         status.batt_milliamp = -pmu->getBattDischargeCurrent();
     }
     status.power_draw_milliamp = pmu->getVbusCurrent();
+#endif
+#ifdef AXP2101
+    // Unsure if the library is capable of reading the current consumptino: https://github.com/lewisxhe/XPowersLib/issues/12
+    status.batt_milliamp = 0;
+    status.power_draw_milliamp = 0;
+#endif
     // The power management chip always draws power from USB when it is available.
     // Use battery discharging current as a condition too because the VBus current occasionally reads 0.
     status.is_usb_power_available = status.is_batt_charging || status.batt_milliamp > 3 || status.batt_millivolt < 3000 || status.power_draw_milliamp > 3 || status.usb_millivolt > 4000;
