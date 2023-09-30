@@ -71,6 +71,7 @@ void power_setup()
         // There is no suitable current limit for 1.5A, the closest is only 0.5A.
         pmu->setVbusCurrentLimit(XPOWERS_AXP192_VBUS_CUR_LIM_OFF);
         // "wide input voltage range": 2.9V~6.3V
+        // When set to 3V the PMU actually shuts down just below 3.1V, which is <2% of useful capacity left.
         pmu->setSysPowerDownVoltage(3000);
 
         pmu->enablePowerKeyLongPressPowerOff();
@@ -134,6 +135,7 @@ void power_setup()
         pmu->setVbusCurrentLimit(XPOWERS_AXP2101_VBUS_CUR_LIM_1500MA);
         // VBAT operating range is between 2.5V and 4.5V.
         pmu->setSysPowerDownVoltage(3000);
+        // The PMU shuts down just below 3.3V.
         pmu->setLowBatShutdownThreshold(5);
 
         pmu->setLongPressPowerOFF();
@@ -250,9 +252,12 @@ bool power_get_may_transmit_lorawan()
 
 void power_led_on()
 {
+    // Unfortunately, AXP2101's blue LED won't stay on.
+#ifdef AXP192
     power_i2c_lock();
     pmu->setChargingLedMode(true);
     power_i2c_unlock();
+#endif
 }
 
 void power_led_off()
