@@ -30,7 +30,8 @@
 #define GPS_SERIAL_TX 34
 
 // SERIAL_MONITOR_BAUD_RATE is the serial monitor baud rate. The GPS uses a different & independent baud rate.
-#define SERIAL_MONITOR_BAUD_RATE 9600
+// Baud rates other than 115K may cause deep sleep to become unstable.
+#define SERIAL_MONITOR_BAUD_RATE 115200
 
 // I2C_FREQUENCY_HZ is slower than the default frequency (400kHz) to cater for the CPU frequency used during power-saving configuration.
 #define I2C_FREQUENCY_HZ 100000
