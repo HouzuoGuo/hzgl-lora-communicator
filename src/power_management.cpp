@@ -71,8 +71,8 @@ void power_setup()
         // There is no suitable current limit for 1.5A, the closest is only 0.5A.
         pmu->setVbusCurrentLimit(XPOWERS_AXP192_VBUS_CUR_LIM_OFF);
         // "wide input voltage range": 2.9V~6.3V
-        // When set to 3V the PMU actually shuts down just below 3.1V, which is <2% of useful capacity left.
-        pmu->setSysPowerDownVoltage(3000);
+        // When using 3V for the shutdown voltage, the PMU actually shuts down at ~3.4V.
+        pmu->setSysPowerDownVoltage(2800);
 
         pmu->enablePowerKeyLongPressPowerOff();
         pmu->setPowerKeyPressOffTime(XPOWERS_AXP192_POWEROFF_4S);
@@ -133,10 +133,10 @@ void power_setup()
         pmu->setVbusVoltageLimit(XPOWERS_AXP2101_VBUS_VOL_LIM_4V12);
         // VBUS max 2A both in and out.
         pmu->setVbusCurrentLimit(XPOWERS_AXP2101_VBUS_CUR_LIM_1500MA);
-        // VBAT operating range is between 2.5V and 4.5V.
-        pmu->setSysPowerDownVoltage(3000);
-        // The PMU shuts down just below 3.3V.
-        pmu->setLowBatShutdownThreshold(5);
+        // VBAT operating range is between 2.5V and 4.5V. The PMU shuts down just below 3.3V.
+        // When using 3V for the shutdown voltage and 5% for the threshold, the PMU actually shuts down at ~3.1v.
+        pmu->setSysPowerDownVoltage(3100);
+        pmu->setLowBatShutdownThreshold(7);
 
         pmu->setLongPressPowerOFF();
         pmu->setPowerKeyPressOffTime(XPOWERS_POWEROFF_4S);
