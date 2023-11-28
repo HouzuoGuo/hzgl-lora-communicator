@@ -471,8 +471,13 @@ void power_read_status()
 #endif
 #ifdef AXP2101
     // Unsure if the library is capable of reading the current consumptino: https://github.com/lewisxhe/XPowersLib/issues/12
+    // Just default to typical readings.
+    status.power_draw_milliamp = 80;
     status.batt_milliamp = 0;
-    status.power_draw_milliamp = 0;
+    if (status.batt_millivolt > 2000 && !status.is_batt_charging && status.usb_millivolt < 4000)
+    {
+        status.batt_milliamp = -80;
+    }
 #endif
     // The power management chip always draws power from USB when it is available.
     // Use battery discharging current as a condition too because the VBus current occasionally reads 0.
