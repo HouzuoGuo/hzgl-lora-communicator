@@ -109,9 +109,9 @@ const static power_config_t power_config_saver = {
     .power_dbm = 14,
     .spreading_factor = DR_SF7,
     .tx_interval_sec = POWER_SLOWEST_TX_INTERVAL_SEC,
-    .deep_sleep_start_sec = POWER_SAVER_WAKE_DURATION_SEC,
+    .deep_sleep_start_sec = 20,
     // Enter deep sleep for 2/3rds of that duration.
-    .deep_sleep_duration_sec = POWER_SAVER_WAKE_DURATION_SEC * 2 / 3,
+    .deep_sleep_duration_sec = 120,
     .mode_name = "saver"};
 
 power_config_t power_get_config();

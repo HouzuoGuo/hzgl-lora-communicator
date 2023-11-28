@@ -369,8 +369,11 @@ int power_get_todo()
     }
     else
     {
-        // Leave GPS turned on while not sleeping. It takes many minutes to obtain a GPS location fix.
-        ret |= POWER_TODO_TURN_ON_GPS;
+        if (config.mode_id != POWER_SAVER)
+        {
+            // Leave GPS turned on while not sleeping. It takes many minutes to obtain a GPS location fix.
+            ret |= POWER_TODO_TURN_ON_GPS;
+        }
     }
 
     // Calculate whether LoRaWAN RX/TX can/may be in progress.
@@ -397,7 +400,7 @@ int power_get_todo()
     }
 
     // Give Bluetooth and WiFi a turn at scanning prior to transmitting foxhunt info.
-    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
+    if (config.mode_id != POWER_SAVER && lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
         // There is not enough memory to run bluetooth and wifi simultaneously.
         !(ret & POWER_TODO_TURN_ON_WIFI) && (!oled_get_state() || oled_get_page_number() != OLED_PAGE_WIFI_INFO) &&
         // Is it time to turn on bluetooth for routine scan?
@@ -406,7 +409,7 @@ int power_get_todo()
     {
         ret |= POWER_TODO_TURN_ON_BLUETOOTH;
     }
-    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
+    if (config.mode_id != POWER_SAVER && lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
         // There is not enough memory to run bluetooth and wifi simultaneously.
         !(ret & POWER_TODO_TURN_ON_BLUETOOTH) && (!oled_get_state() || oled_get_page_number() != OLED_PAGE_BT_INFO) &&
         // Is it time to turn on wifi for routine scan?
@@ -427,7 +430,7 @@ int power_get_todo()
     // If there is no power-related task to do and no user input, then ask caller to reduce CPU speed to conserve power.
     // Be aware that if user is looking at WiFi/BT scanner then CPU speed must not be reduced or WiFi/BT will cause a panic.
     // The lower CPU clock speed is sufficient for GPS though.
-    if (ret == POWER_TODO_TURN_ON_GPS &&                                                // lora / wifi / bt / sensor are not needed (flags unset)
+    if (config.mode_id != POWER_SAVER && ret == POWER_TODO_TURN_ON_GPS &&               // lora / wifi / bt / sensor are not needed (flags unset)
         oled_get_ms_since_last_input() > wifi_prep_duration_ms + bt_prep_duration_ms && // leave CPU frequency high for recent button input
         !wifi_get_state() && !bluetooth_get_state())                                    // wifi and bt are powered off
     {
