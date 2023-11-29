@@ -41,8 +41,8 @@ void wifi_on()
         return;
     }
     ESP_LOGI(LOG_TAG, "turning on WiFi");
-    memset(&channel_pkt_counter, 0, WIFI_MAX_CHANNEL_NUM);
-    memset(&channel_pkt_size_sum, 0, WIFI_MAX_CHANNEL_NUM);
+    memset(&channel_pkt_counter, 0, WIFI_MAX_CHANNEL_NUM * sizeof(size_t));
+    memset(&channel_pkt_size_sum, 0, WIFI_MAX_CHANNEL_NUM * sizeof(size_t));
     power_set_cpu_freq_mhz(POWER_DEFAULT_CPU_FREQ_MHZ);
     wifi_init_config_t wifi_init_conf = WIFI_INIT_CONFIG_DEFAULT();
     wifi_init_conf.nvs_enable = 0;
