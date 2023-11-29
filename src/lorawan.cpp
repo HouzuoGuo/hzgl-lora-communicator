@@ -221,6 +221,11 @@ void lorawan_prepare_uplink_transmission()
 {
   DataPacket pkt(LORAWAN_MAX_MESSAGE_LEN);
   int message_kind = power_get_lorawan_tx_counter() % LORAWAN_TX_KINDS;
+  if (power_get_config().mode_id == POWER_SUPER_SAVER)
+  {
+    // The super saver power mode disables WiFi, bluetooth, or GPS.
+    message_kind = LORAWAN_TX_KIND_ENV;
+  }
   if (message_kind == LORAWAN_TX_KIND_ENV)
   {
     // Byte 0, 1 - number of seconds since the reception of last downlink message (0 - 65535).

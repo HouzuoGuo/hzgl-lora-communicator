@@ -1,6 +1,7 @@
 #pragma once
 
 #include <lmic.h>
+#include "oled.h"
 
 #ifdef AXP192
 #define XPOWERS_CHIP_AXP192 = 1
@@ -70,6 +71,7 @@ struct power_status
 const static int POWER_BOOST = 19909;
 const static int POWER_REGULAR = 19905;
 const static int POWER_SAVER = 19901;
+const static int POWER_SUPER_SAVER = 19800;
 
 typedef struct
 {
@@ -109,10 +111,20 @@ const static power_config_t power_config_saver = {
     .power_dbm = 14,
     .spreading_factor = DR_SF7,
     .tx_interval_sec = POWER_SLOWEST_TX_INTERVAL_SEC,
+    // 9 minutes on, 6 minutes off, duty cycle 60%.
     .deep_sleep_start_sec = POWER_SAVER_WAKE_DURATION_SEC,
-    // Enter deep sleep for 2/3rds of that duration.
     .deep_sleep_duration_sec = POWER_SAVER_WAKE_DURATION_SEC * 2 / 3,
     .mode_name = "saver"};
+const static power_config_t power_config_supersaver = {
+    .mode_id = POWER_SUPER_SAVER,
+    .power_dbm = 14,
+    .spreading_factor = DR_SF7,
+    .tx_interval_sec = 15,
+    // The cycle goes: 1st transmission attempt (8s), 15s interval, 2nd transmission attempt(8s), then sleep.
+    .deep_sleep_start_sec = 8 + 15 + 8,
+    // Duty cycle: 17%.
+    .deep_sleep_duration_sec = 180,
+    .mode_name = "supersaver"};
 
 power_config_t power_get_config();
 
