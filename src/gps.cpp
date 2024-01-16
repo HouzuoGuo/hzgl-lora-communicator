@@ -93,6 +93,7 @@ void gps_off()
     }
     // The off duration does not really matter as gps_on wakes the GPS up when needed.
     ESP_LOGI(LOG_TAG, "turning off GPS - cmd result: %d", ublox.powerOff(3600 * 1000));
+    ublox.end();
     is_powered_on = false;
     xSemaphoreGive(mutex);
 }

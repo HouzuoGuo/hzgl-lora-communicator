@@ -111,6 +111,9 @@ void power_setup()
         pmu->setBackupBattChargerVoltage(XPOWERS_AXP192_BACKUP_BAT_VOL_3V1);
         pmu->setBackupBattChargerCurr(XPOWERS_AXP192_BACKUP_BAT_CUR_100UA);
 
+        // Conserve power by disabling temperature measurement.
+        pmu->disableTemperatureMeasure();
+
         // Handle power management events.
         pinMode(POWER_PMU_IRQ, INPUT);
         attachInterrupt(POWER_PMU_IRQ, power_set_pmu_irq_flag, FALLING);
@@ -174,6 +177,9 @@ void power_setup()
         // "NEO-6Q/M NEO-6P/V/T Min: 2.7, Typ: 3.0, Max: 3.6"
         pmu->setALDO3Voltage(3000);
         pmu->enableALDO3();
+
+        // Conserve power by disabling temperature measurement.
+        pmu->disableTemperatureMeasure();
 
         // Start charging the battery if it is installed.
         pmu->setPrechargeCurr(XPOWERS_AXP2101_PRECHARGE_100MA);
