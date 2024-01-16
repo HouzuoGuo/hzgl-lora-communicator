@@ -28,28 +28,52 @@ void env_sensor_setup()
 
 void env_sensor_read_decode()
 {
+    static struct env_data new_readings;
     power_i2c_lock();
-    latest.altitude_metre = bme.readAltitude(1013.25);
-    latest.humidity_pct = bme.readHumidity();
-    latest.pressure_hpa = bme.readPressure() / 100;
-    latest.temp_celcius = bme.readTemperature();
+    new_readings.altitude_metre = bme.readAltitude(1013.25);
+    new_readings.humidity_pct = bme.readHumidity();
+    new_readings.pressure_hpa = bme.readPressure() / 100;
+    new_readings.temp_celcius = bme.readTemperature();
     power_i2c_unlock();
-    if (latest.humidity_pct == 0 && latest.pressure_hpa == 0 && latest.temp_celcius == 0)
+    // Handle invalid sensor readings.
+    if (new_readings.humidity_pct == 0 && new_readings.pressure_hpa == 0 && new_readings.temp_celcius == 0)
     {
-        // Otherwise it will read 44330m.
-        latest.altitude_metre = 0;
+        ESP_LOGI(LOG_TAG, "invalid bme humidity reading: %.2f", new_readings.pressure_hpa);
+        return;
+    }
+    // -6000ft to 60000ft.
+    if (new_readings.pressure_hpa > 1240 || new_readings.pressure_hpa < 70)
+    {
+        ESP_LOGI(LOG_TAG, "invalid bme pressure reading: %.2f", new_readings.pressure_hpa);
+        return;
+    }
+    if (new_readings.altitude_metre > 19000 || new_readings.altitude_metre < -1900)
+    {
+        ESP_LOGI(LOG_TAG, "invalid bme altitude reading: %.2f", new_readings.altitude_metre);
+        return;
+    }
+    // Not sure why humidity would ever be negative.
+    if (new_readings.humidity_pct > 120 || new_readings.humidity_pct < -20)
+    {
+        ESP_LOGI(LOG_TAG, "invalid bme humidity reading: %.2f", new_readings.humidity_pct);
+        return;
+    }
+    // +-20 celcius from esp32 storage temperature maximum
+    if (new_readings.temp_celcius > 170 || new_readings.temp_celcius < -60)
+    {
+        ESP_LOGI(LOG_TAG, "invalid bme temperature reading: %.2f", new_readings.temp_celcius);
+        return;
+    }
+    // Save the latest readings
+    latest = new_readings;
+    struct power_status power = power_get_status();
+    if (power.is_usb_power_available)
+    {
+        latest.temp_celcius += TEMP_OFFSET_CELCIUS_USB;
     }
     else
     {
-        struct power_status power = power_get_status();
-        if (power.is_usb_power_available)
-        {
-            latest.temp_celcius += TEMP_OFFSET_CELCIUS_USB;
-        }
-        else
-        {
-            latest.temp_celcius += TEMP_OFFSET_CELCIUS_BATT;
-        }
+        latest.temp_celcius += TEMP_OFFSET_CELCIUS_BATT;
     }
     sum_temp_readings += latest.temp_celcius;
     ESP_LOGI(LOG_TAG, "just took a round of readings");
