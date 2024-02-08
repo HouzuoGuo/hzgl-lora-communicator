@@ -1,785 +1,788 @@
 {
-  "@id": "dtmi:hzglloracommunicator:communicator3;1",
-  "@type": "Interface",
-  "contents": [
-    {
-      "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message;1",
-      "@type": "Telemetry",
-      "displayName": {
-        "en": "Uplink Telemetry Message"
-      },
-      "name": "uplink_message",
-      "schema": {
-        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema;1",
-        "@type": "Object",
-        "fields": [
-          {
-            "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload;1",
+    "@id": "dtmi:hzglloracommunicator:communicator3;1",
+    "@type": "Interface",
+    "contents": [
+        {
+            "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message;1",
+            "@type": "Telemetry",
             "displayName": {
-              "en": "Decoded Telemetry Payload"
+                "en": "Uplink Telemetry Message"
             },
-            "name": "decoded_payload",
+            "name": "uplink_message",
             "schema": {
-              "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema;1",
-              "@type": "Object",
-              "fields": [
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:altitude;1",
-                  "displayName": {
-                    "en": "Altitude Meters"
-                  },
-                  "name": "altitude",
-                  "schema": "double"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:bt_loudest_tx_mac;1",
-                  "displayName": {
-                    "en": "Bluetooth Nearby Loudest TX MAC"
-                  },
-                  "name": "bt_loudest_tx_mac",
-                  "schema": "string"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:bt_loudest_tx_rssi;1",
-                  "displayName": {
-                    "en": "Bluetooth Nearby Loudest TX RSSI"
-                  },
-                  "name": "bt_loudest_tx_rssi",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:bt_num_devices;1",
-                  "displayName": {
-                    "en": "Bluetooth Nearby Number Devices"
-                  },
-                  "name": "bt_num_devices",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:gps_heading_deg;1",
-                  "displayName": {
-                    "en": "GPS Heading Degrees"
-                  },
-                  "name": "gps_heading_deg",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:gps_pos_age_sec;1",
-                  "displayName": {
-                    "en": "GPS Last Position Fix Seconds Ago"
-                  },
-                  "name": "gps_pos_age_sec",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:gps_speed_kmh;1",
-                  "displayName": {
-                    "en": "GPS Speed KM/H"
-                  },
-                  "name": "gps_speed_kmh",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:hdop;1",
-                  "displayName": {
-                    "en": "GPS HDOP"
-                  },
-                  "name": "hdop",
-                  "schema": "double"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:latitude;1",
-                  "displayName": {
-                    "en": "Latitude Degrees"
-                  },
-                  "name": "latitude",
-                  "schema": "double"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:longitude;1",
-                  "displayName": {
-                    "en": "Longitude Degrees"
-                  },
-                  "name": "longitude",
-                  "schema": "double"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:sats;1",
-                  "displayName": {
-                    "en": "GPS Number Satellites"
-                  },
-                  "name": "sats",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:wifi_inflight_pkt_data_len_all_chans;1",
-                  "displayName": {
-                    "en": "Wifi Nearby Packets Size"
-                  },
-                  "name": "wifi_inflight_pkt_data_len_all_chans",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:wifi_inflight_pkts_all_chans;1",
-                  "displayName": {
-                    "en": "Wifi Number Nearby Packets"
-                  },
-                  "name": "wifi_inflight_pkts_all_chans",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:wifi_loudest_tx_chan;1",
-                  "displayName": {
-                    "en": "Wifi Nearby Loudest Channel"
-                  },
-                  "name": "wifi_loudest_tx_chan",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:wifi_loudest_tx_mac;1",
-                  "displayName": {
-                    "en": "Wifi Nearby Loudest TX MAC"
-                  },
-                  "name": "wifi_loudest_tx_mac",
-                  "schema": "string"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:wifi_loudest_tx_rssi;1",
-                  "displayName": {
-                    "en": "Wifi Nearby Loudest TX RSSI"
-                  },
-                  "name": "wifi_loudest_tx_rssi",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:ambient_altitude_metre;1",
-                  "displayName": {
-                    "en": "Ambient Altitude Metres"
-                  },
-                  "name": "ambient_altitude_metre",
-                  "schema": "double"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:ambient_humidity_pct;1",
-                  "displayName": {
-                    "en": "Ambient Humidity Percent"
-                  },
-                  "name": "ambient_humidity_pct",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:ambient_pressure_hpa;1",
-                  "displayName": {
-                    "en": "Ambient Pressure HPA"
-                  },
-                  "name": "ambient_pressure_hpa",
-                  "schema": "double"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:ambient_temp_celcius;1",
-                  "displayName": {
-                    "en": "Ambient Temperature Celcius"
-                  },
-                  "name": "ambient_temp_celcius",
-                  "schema": "double"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:batt_millivolt;1",
-                  "displayName": {
-                    "en": "Battery Millivolts"
-                  },
-                  "name": "batt_millivolt",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason;1",
-                  "displayName": {
-                    "en": "CPU0 Reset Reason"
-                  },
-                  "name": "cpu0_reset_reason",
-                  "schema": {
-                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema;1",
-                    "@type": "Enum",
-                    "displayName": {
-                      "en": "Enum"
-                    },
-                    "enumValues": [
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:Unknown;1",
+                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema;1",
+                "@type": "Object",
+                "fields": [
+                    {
+                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload;1",
                         "displayName": {
-                          "en": "Unknown"
+                            "en": "Decoded Telemetry Payload"
                         },
-                        "enumValue": 0,
-                        "name": "Unknown"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:PowerCycle;1",
-                        "displayName": {
-                          "en": "Power Cycle"
-                        },
-                        "enumValue": 1,
-                        "name": "PowerCycle"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:SoftReset;1",
-                        "displayName": {
-                          "en": "Soft Reset"
-                        },
-                        "enumValue": 3,
-                        "name": "SoftReset"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:LegacyWatchdog;1",
-                        "displayName": {
-                          "en": "Legacy Watchdog"
-                        },
-                        "enumValue": 4,
-                        "name": "LegacyWatchdog"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:DeepSleep;1",
-                        "displayName": {
-                          "en": "Deep Sleep"
-                        },
-                        "enumValue": 5,
-                        "name": "DeepSleep"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:SLCModule;1",
-                        "displayName": {
-                          "en": "SLC Module"
-                        },
-                        "enumValue": 6,
-                        "name": "SLCModule"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:WatchdogG0;1",
-                        "displayName": {
-                          "en": "Watchdog G0"
-                        },
-                        "enumValue": 7,
-                        "name": "WatchdogG0"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:WatchdogG1;1",
-                        "displayName": {
-                          "en": "Watchdog G1"
-                        },
-                        "enumValue": 8,
-                        "name": "WatchdogG1"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:RTCClock;1",
-                        "displayName": {
-                          "en": "RTC Clock"
-                        },
-                        "enumValue": 9,
-                        "name": "RTCClock"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:Intrusion;1",
-                        "displayName": {
-                          "en": "Intrusion"
-                        },
-                        "enumValue": 10,
-                        "name": "Intrusion"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:TimeGroupReset;1",
-                        "displayName": {
-                          "en": "Time Group Reset"
-                        },
-                        "enumValue": 11,
-                        "name": "TimeGroupReset"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:SoftCPUReset;1",
-                        "displayName": {
-                          "en": "Soft CPU Reset"
-                        },
-                        "enumValue": 12,
-                        "name": "SoftCPUReset"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:RTCReset;1",
-                        "displayName": {
-                          "en": "RTC Reset"
-                        },
-                        "enumValue": 13,
-                        "name": "RTCReset"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:CPU0Reset;1",
-                        "displayName": {
-                          "en": "CPU0 Reset"
-                        },
-                        "enumValue": 14,
-                        "name": "CPU0Reset"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:UnstablePower;1",
-                        "displayName": {
-                          "en": "Unstable Power"
-                        },
-                        "enumValue": 15,
-                        "name": "UnstablePower"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:RTCModuleReset;1",
-                        "displayName": {
-                          "en": "RTC Module Reset"
-                        },
-                        "enumValue": 16,
-                        "name": "RTCModuleReset"
-                      }
-                    ],
-                    "valueSchema": "integer"
-                  }
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason;1",
-                  "displayName": {
-                    "en": "CPU1 Reset Reason"
-                  },
-                  "name": "cpu1_reset_reason",
-                  "schema": {
-                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema;1",
-                    "@type": "Enum",
-                    "displayName": {
-                      "en": "Enum"
-                    },
-                    "enumValues": [
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:Unknown;1",
-                        "displayName": {
-                          "en": "Unknown"
-                        },
-                        "enumValue": 0,
-                        "name": "Unknown"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:PowerCycle;1",
-                        "displayName": {
-                          "en": "Power Cycle"
-                        },
-                        "enumValue": 1,
-                        "name": "PowerCycle"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:SoftReset;1",
-                        "displayName": {
-                          "en": "Soft Reset"
-                        },
-                        "enumValue": 3,
-                        "name": "SoftReset"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:LegacyWatchdog;1",
-                        "displayName": {
-                          "en": "Legacy Watchdog"
-                        },
-                        "enumValue": 4,
-                        "name": "LegacyWatchdog"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:DeepSleep;1",
-                        "displayName": {
-                          "en": "Deep Sleep"
-                        },
-                        "enumValue": 5,
-                        "name": "DeepSleep"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:SLCModule;1",
-                        "displayName": {
-                          "en": "SLC Module"
-                        },
-                        "enumValue": 6,
-                        "name": "SLCModule"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:WatchdogG0;1",
-                        "displayName": {
-                          "en": "Watchdog G0"
-                        },
-                        "enumValue": 7,
-                        "name": "WatchdogG0"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:WatchdogG1;1",
-                        "displayName": {
-                          "en": "Watchdog G1"
-                        },
-                        "enumValue": 8,
-                        "name": "WatchdogG1"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:RTCClock;1",
-                        "displayName": {
-                          "en": "RTC Clock"
-                        },
-                        "enumValue": 9,
-                        "name": "RTCClock"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:Intrusion;1",
-                        "displayName": {
-                          "en": "Intrusion"
-                        },
-                        "enumValue": 10,
-                        "name": "Intrusion"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:TimeGroupReset;1",
-                        "displayName": {
-                          "en": "Time Group Reset"
-                        },
-                        "enumValue": 11,
-                        "name": "TimeGroupReset"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:SoftCPUReset;1",
-                        "displayName": {
-                          "en": "Soft CPU reset"
-                        },
-                        "enumValue": 12,
-                        "name": "SoftCPUReset"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:RTCReset;1",
-                        "displayName": {
-                          "en": "RTC Reset"
-                        },
-                        "enumValue": 13,
-                        "name": "RTCReset"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:CPU0Reset;1",
-                        "displayName": {
-                          "en": "CPU0 Reset"
-                        },
-                        "enumValue": 14,
-                        "name": "CPU0Reset"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:UnstablePower;1",
-                        "displayName": {
-                          "en": "Unstable Power"
-                        },
-                        "enumValue": 15,
-                        "name": "UnstablePower"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:RTCModuleReset;1",
-                        "displayName": {
-                          "en": "RTC Module Reset"
-                        },
-                        "enumValue": 16,
-                        "name": "RTCModuleReset"
-                      }
-                    ],
-                    "valueSchema": "integer"
-                  }
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu_wake_up_cause;1",
-                  "displayName": {
-                    "en": "CPU Wake Up Cause"
-                  },
-                  "name": "cpu_wake_up_cause",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason;1",
-                  "displayName": {
-                    "en": "ESP Reset Reason"
-                  },
-                  "name": "esp_reset_reason",
-                  "schema": {
-                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema;1",
-                    "@type": "Enum",
-                    "displayName": {
-                      "en": "Enum"
-                    },
-                    "enumValues": [
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:Unknown;1",
-                        "displayName": {
-                          "en": "Unknown"
-                        },
-                        "enumValue": 0,
-                        "name": "Unknown"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:PoweredOn;1",
-                        "displayName": {
-                          "en": "Powered On"
-                        },
-                        "enumValue": 1,
-                        "name": "PoweredOn"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:PinInput;1",
-                        "displayName": {
-                          "en": "Pin Input"
-                        },
-                        "enumValue": 2,
-                        "name": "PinInput"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:SoftReset;1",
-                        "displayName": {
-                          "en": "Soft Reset"
-                        },
-                        "enumValue": 3,
-                        "name": "SoftReset"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:SoftwareBug;1",
-                        "displayName": {
-                          "en": "Software Bug"
-                        },
-                        "enumValue": 4,
-                        "name": "SoftwareBug"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:InterruptWatchdog;1",
-                        "displayName": {
-                          "en": "Interrupt Watchdog"
-                        },
-                        "enumValue": 5,
-                        "name": "InterruptWatchdog"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:TaskWatchdog;1",
-                        "displayName": {
-                          "en": "Task Watchdog"
-                        },
-                        "enumValue": 6,
-                        "name": "TaskWatchdog"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:OtherWatchdog;1",
-                        "displayName": {
-                          "en": "Other Watchdog"
-                        },
-                        "enumValue": 7,
-                        "name": "OtherWatchdog"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:PowerBrownOut;1",
-                        "displayName": {
-                          "en": "Power Brown-Out"
-                        },
-                        "enumValue": 8,
-                        "name": "PowerBrownOut"
-                      },
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:SDIOCardPeripheral;1",
-                        "displayName": {
-                          "en": "SDIO Card Peripheral"
-                        },
-                        "enumValue": 9,
-                        "name": "SDIOCardPeripheral"
-                      }
-                    ],
-                    "valueSchema": "integer"
-                  }
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:heap_usage_kb;1",
-                  "displayName": {
-                    "en": "Heap Usage KB"
-                  },
-                  "name": "heap_usage_kb",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:is_batt_charging;1",
-                  "displayName": {
-                    "en": "Is Battery Charging"
-                  },
-                  "name": "is_batt_charging",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:last_rx_sec;1",
-                  "displayName": {
-                    "en": "Last RX Seconds Ago"
-                  },
-                  "name": "last_rx_sec",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:power_milliamp;1",
-                  "displayName": {
-                    "en": "Power Consumption Milliamps"
-                  },
-                  "name": "power_milliamp",
-                  "schema": "integer"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:uptime_sec;1",
-                  "displayName": {
-                    "en": "Uptime Seconds"
-                  },
-                  "name": "uptime_sec",
-                  "schema": "integer"
-                }
-              ]
-            }
-          },
-          {
-            "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:consumed_airtime;1",
-            "displayName": {
-              "en": "Consumed Airtime"
-            },
-            "name": "consumed_airtime",
-            "schema": "duration"
-          },
-          {
-            "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings;1",
-            "displayName": {
-              "en": "Transmission Settings"
-            },
-            "name": "settings",
-            "schema": {
-              "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema;1",
-              "@type": "Object",
-              "displayName": {
-                "en": "Object"
-              },
-              "fields": [
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:data_rate;1",
-                  "displayName": {
-                    "en": "Transmission Data Rate"
-                  },
-                  "name": "data_rate",
-                  "schema": {
-                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:data_rate:schema;1",
-                    "@type": "Object",
-                    "displayName": {
-                      "en": "Object"
-                    },
-                    "fields": [
-                      {
-                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:data_rate:schema:lora;1",
-                        "displayName": {
-                          "en": "LoRa Data Rate"
-                        },
-                        "name": "lora",
+                        "name": "decoded_payload",
                         "schema": {
-                          "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:data_rate:schema:lora:schema;1",
-                          "@type": "Object",
-                          "displayName": {
-                            "en": "Object"
-                          },
-                          "fields": [
-                            {
-                              "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:data_rate:schema:lora:schema:bandwidth;1",
-                              "displayName": {
-                                "en": "LoRa Bandwidth"
-                              },
-                              "name": "bandwidth",
-                              "schema": "integer"
-                            },
-                            {
-                              "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:data_rate:schema:lora:schema:spreading_factor;1",
-                              "displayName": {
-                                "en": "LoRa Spreading Factor"
-                              },
-                              "name": "spreading_factor",
-                              "schema": "integer"
-                            }
-                          ]
+                            "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema;1",
+                            "@type": "Object",
+                            "fields": [
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:altitude;1",
+                                    "displayName": {
+                                        "en": "Altitude Meters"
+                                    },
+                                    "name": "altitude",
+                                    "schema": "double"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:bt_loudest_tx_mac;1",
+                                    "displayName": {
+                                        "en": "Bluetooth Nearby Loudest TX MAC"
+                                    },
+                                    "name": "bt_loudest_tx_mac",
+                                    "schema": "string"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:bt_loudest_tx_rssi;1",
+                                    "displayName": {
+                                        "en": "Bluetooth Nearby Loudest TX RSSI"
+                                    },
+                                    "name": "bt_loudest_tx_rssi",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:bt_num_devices;1",
+                                    "displayName": {
+                                        "en": "Bluetooth Nearby Number Devices"
+                                    },
+                                    "name": "bt_num_devices",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:gps_heading_deg;1",
+                                    "displayName": {
+                                        "en": "GPS Heading Degrees"
+                                    },
+                                    "name": "gps_heading_deg",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:gps_pos_age_sec;1",
+                                    "displayName": {
+                                        "en": "GPS Last Position Fix Seconds Ago"
+                                    },
+                                    "name": "gps_pos_age_sec",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:gps_speed_kmh;1",
+                                    "displayName": {
+                                        "en": "GPS Speed KM/H"
+                                    },
+                                    "name": "gps_speed_kmh",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:hdop;1",
+                                    "displayName": {
+                                        "en": "GPS HDOP"
+                                    },
+                                    "name": "hdop",
+                                    "schema": "double"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:latitude;1",
+                                    "displayName": {
+                                        "en": "Latitude Degrees"
+                                    },
+                                    "name": "latitude",
+                                    "schema": "double"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:longitude;1",
+                                    "displayName": {
+                                        "en": "Longitude Degrees"
+                                    },
+                                    "name": "longitude",
+                                    "schema": "double"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:sats;1",
+                                    "displayName": {
+                                        "en": "GPS Number Satellites"
+                                    },
+                                    "name": "sats",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:wifi_inflight_pkt_data_len_all_chans;1",
+                                    "displayName": {
+                                        "en": "Wifi Nearby Packets Size"
+                                    },
+                                    "name": "wifi_inflight_pkt_data_len_all_chans",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:wifi_inflight_pkts_all_chans;1",
+                                    "displayName": {
+                                        "en": "Wifi Number Nearby Packets"
+                                    },
+                                    "name": "wifi_inflight_pkts_all_chans",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:wifi_loudest_tx_chan;1",
+                                    "displayName": {
+                                        "en": "Wifi Nearby Loudest Channel"
+                                    },
+                                    "name": "wifi_loudest_tx_chan",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:wifi_loudest_tx_mac;1",
+                                    "displayName": {
+                                        "en": "Wifi Nearby Loudest TX MAC"
+                                    },
+                                    "name": "wifi_loudest_tx_mac",
+                                    "schema": "string"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:wifi_loudest_tx_rssi;1",
+                                    "displayName": {
+                                        "en": "Wifi Nearby Loudest TX RSSI"
+                                    },
+                                    "name": "wifi_loudest_tx_rssi",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:ambient_altitude_metre;1",
+                                    "displayName": {
+                                        "en": "Ambient Altitude Metres"
+                                    },
+                                    "name": "ambient_altitude_metre",
+                                    "schema": "double"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:ambient_humidity_pct;1",
+                                    "displayName": {
+                                        "en": "Ambient Humidity Percent"
+                                    },
+                                    "name": "ambient_humidity_pct",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:ambient_pressure_hpa;1",
+                                    "displayName": {
+                                        "en": "Ambient Pressure HPA"
+                                    },
+                                    "name": "ambient_pressure_hpa",
+                                    "schema": "double"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:ambient_temp_celcius;1",
+                                    "displayName": {
+                                        "en": "Ambient Temperature Celcius"
+                                    },
+                                    "name": "ambient_temp_celcius",
+                                    "schema": "double"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:batt_millivolt;1",
+                                    "displayName": {
+                                        "en": "Battery Millivolts"
+                                    },
+                                    "name": "batt_millivolt",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason;1",
+                                    "displayName": {
+                                        "en": "CPU0 Reset Reason"
+                                    },
+                                    "name": "cpu0_reset_reason",
+                                    "schema": {
+                                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema;1",
+                                        "@type": "Enum",
+                                        "displayName": {
+                                            "en": "Enum"
+                                        },
+                                        "enumValues": [
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:Unknown;1",
+                                                "displayName": {
+                                                    "en": "Unknown"
+                                                },
+                                                "enumValue": 0,
+                                                "name": "Unknown"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:PowerCycle;1",
+                                                "displayName": {
+                                                    "en": "Power Cycle"
+                                                },
+                                                "enumValue": 1,
+                                                "name": "PowerCycle"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:SoftReset;1",
+                                                "displayName": {
+                                                    "en": "Soft Reset"
+                                                },
+                                                "enumValue": 3,
+                                                "name": "SoftReset"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:LegacyWatchdog;1",
+                                                "displayName": {
+                                                    "en": "Legacy Watchdog"
+                                                },
+                                                "enumValue": 4,
+                                                "name": "LegacyWatchdog"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:DeepSleep;1",
+                                                "displayName": {
+                                                    "en": "Deep Sleep"
+                                                },
+                                                "enumValue": 5,
+                                                "name": "DeepSleep"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:SLCModule;1",
+                                                "displayName": {
+                                                    "en": "SLC Module"
+                                                },
+                                                "enumValue": 6,
+                                                "name": "SLCModule"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:WatchdogG0;1",
+                                                "displayName": {
+                                                    "en": "Watchdog G0"
+                                                },
+                                                "enumValue": 7,
+                                                "name": "WatchdogG0"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:WatchdogG1;1",
+                                                "displayName": {
+                                                    "en": "Watchdog G1"
+                                                },
+                                                "enumValue": 8,
+                                                "name": "WatchdogG1"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:RTCClock;1",
+                                                "displayName": {
+                                                    "en": "RTC Clock"
+                                                },
+                                                "enumValue": 9,
+                                                "name": "RTCClock"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:Intrusion;1",
+                                                "displayName": {
+                                                    "en": "Intrusion"
+                                                },
+                                                "enumValue": 10,
+                                                "name": "Intrusion"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:TimeGroupReset;1",
+                                                "displayName": {
+                                                    "en": "Time Group Reset"
+                                                },
+                                                "enumValue": 11,
+                                                "name": "TimeGroupReset"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:SoftCPUReset;1",
+                                                "displayName": {
+                                                    "en": "Soft CPU Reset"
+                                                },
+                                                "enumValue": 12,
+                                                "name": "SoftCPUReset"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:RTCReset;1",
+                                                "displayName": {
+                                                    "en": "RTC Reset"
+                                                },
+                                                "enumValue": 13,
+                                                "name": "RTCReset"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:CPU0Reset;1",
+                                                "displayName": {
+                                                    "en": "CPU0 Reset"
+                                                },
+                                                "enumValue": 14,
+                                                "name": "CPU0Reset"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:UnstablePower;1",
+                                                "displayName": {
+                                                    "en": "Unstable Power"
+                                                },
+                                                "enumValue": 15,
+                                                "name": "UnstablePower"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu0_reset_reason:schema:RTCModuleReset;1",
+                                                "displayName": {
+                                                    "en": "RTC Module Reset"
+                                                },
+                                                "enumValue": 16,
+                                                "name": "RTCModuleReset"
+                                            }
+                                        ],
+                                        "valueSchema": "integer"
+                                    }
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason;1",
+                                    "displayName": {
+                                        "en": "CPU1 Reset Reason"
+                                    },
+                                    "name": "cpu1_reset_reason",
+                                    "schema": {
+                                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema;1",
+                                        "@type": "Enum",
+                                        "displayName": {
+                                            "en": "Enum"
+                                        },
+                                        "enumValues": [
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:Unknown;1",
+                                                "displayName": {
+                                                    "en": "Unknown"
+                                                },
+                                                "enumValue": 0,
+                                                "name": "Unknown"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:PowerCycle;1",
+                                                "displayName": {
+                                                    "en": "Power Cycle"
+                                                },
+                                                "enumValue": 1,
+                                                "name": "PowerCycle"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:SoftReset;1",
+                                                "displayName": {
+                                                    "en": "Soft Reset"
+                                                },
+                                                "enumValue": 3,
+                                                "name": "SoftReset"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:LegacyWatchdog;1",
+                                                "displayName": {
+                                                    "en": "Legacy Watchdog"
+                                                },
+                                                "enumValue": 4,
+                                                "name": "LegacyWatchdog"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:DeepSleep;1",
+                                                "displayName": {
+                                                    "en": "Deep Sleep"
+                                                },
+                                                "enumValue": 5,
+                                                "name": "DeepSleep"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:SLCModule;1",
+                                                "displayName": {
+                                                    "en": "SLC Module"
+                                                },
+                                                "enumValue": 6,
+                                                "name": "SLCModule"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:WatchdogG0;1",
+                                                "displayName": {
+                                                    "en": "Watchdog G0"
+                                                },
+                                                "enumValue": 7,
+                                                "name": "WatchdogG0"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:WatchdogG1;1",
+                                                "displayName": {
+                                                    "en": "Watchdog G1"
+                                                },
+                                                "enumValue": 8,
+                                                "name": "WatchdogG1"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:RTCClock;1",
+                                                "displayName": {
+                                                    "en": "RTC Clock"
+                                                },
+                                                "enumValue": 9,
+                                                "name": "RTCClock"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:Intrusion;1",
+                                                "displayName": {
+                                                    "en": "Intrusion"
+                                                },
+                                                "enumValue": 10,
+                                                "name": "Intrusion"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:TimeGroupReset;1",
+                                                "displayName": {
+                                                    "en": "Time Group Reset"
+                                                },
+                                                "enumValue": 11,
+                                                "name": "TimeGroupReset"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:SoftCPUReset;1",
+                                                "displayName": {
+                                                    "en": "Soft CPU reset"
+                                                },
+                                                "enumValue": 12,
+                                                "name": "SoftCPUReset"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:RTCReset;1",
+                                                "displayName": {
+                                                    "en": "RTC Reset"
+                                                },
+                                                "enumValue": 13,
+                                                "name": "RTCReset"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:CPU0Reset;1",
+                                                "displayName": {
+                                                    "en": "CPU0 Reset"
+                                                },
+                                                "enumValue": 14,
+                                                "name": "CPU0Reset"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:UnstablePower;1",
+                                                "displayName": {
+                                                    "en": "Unstable Power"
+                                                },
+                                                "enumValue": 15,
+                                                "name": "UnstablePower"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu1_reset_reason:schema:RTCModuleReset;1",
+                                                "displayName": {
+                                                    "en": "RTC Module Reset"
+                                                },
+                                                "enumValue": 16,
+                                                "name": "RTCModuleReset"
+                                            }
+                                        ],
+                                        "valueSchema": "integer"
+                                    }
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:cpu_wake_up_cause;1",
+                                    "displayName": {
+                                        "en": "CPU Wake Up Cause"
+                                    },
+                                    "name": "cpu_wake_up_cause",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason;1",
+                                    "displayName": {
+                                        "en": "ESP Reset Reason"
+                                    },
+                                    "name": "esp_reset_reason",
+                                    "schema": {
+                                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema;1",
+                                        "@type": "Enum",
+                                        "displayName": {
+                                            "en": "Enum"
+                                        },
+                                        "enumValues": [
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:Unknown;1",
+                                                "displayName": {
+                                                    "en": "Unknown"
+                                                },
+                                                "enumValue": 0,
+                                                "name": "Unknown"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:PoweredOn;1",
+                                                "displayName": {
+                                                    "en": "Powered On"
+                                                },
+                                                "enumValue": 1,
+                                                "name": "PoweredOn"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:PinInput;1",
+                                                "displayName": {
+                                                    "en": "Pin Input"
+                                                },
+                                                "enumValue": 2,
+                                                "name": "PinInput"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:SoftReset;1",
+                                                "displayName": {
+                                                    "en": "Soft Reset"
+                                                },
+                                                "enumValue": 3,
+                                                "name": "SoftReset"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:SoftwareBug;1",
+                                                "displayName": {
+                                                    "en": "Software Bug"
+                                                },
+                                                "enumValue": 4,
+                                                "name": "SoftwareBug"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:InterruptWatchdog;1",
+                                                "displayName": {
+                                                    "en": "Interrupt Watchdog"
+                                                },
+                                                "enumValue": 5,
+                                                "name": "InterruptWatchdog"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:TaskWatchdog;1",
+                                                "displayName": {
+                                                    "en": "Task Watchdog"
+                                                },
+                                                "enumValue": 6,
+                                                "name": "TaskWatchdog"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:OtherWatchdog;1",
+                                                "displayName": {
+                                                    "en": "Other Watchdog"
+                                                },
+                                                "enumValue": 7,
+                                                "name": "OtherWatchdog"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:PowerBrownOut;1",
+                                                "displayName": {
+                                                    "en": "Power Brown-Out"
+                                                },
+                                                "enumValue": 8,
+                                                "name": "PowerBrownOut"
+                                            },
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:esp_reset_reason:schema:SDIOCardPeripheral;1",
+                                                "displayName": {
+                                                    "en": "SDIO Card Peripheral"
+                                                },
+                                                "enumValue": 9,
+                                                "name": "SDIOCardPeripheral"
+                                            }
+                                        ],
+                                        "valueSchema": "integer"
+                                    }
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:heap_usage_kb;1",
+                                    "displayName": {
+                                        "en": "Heap Usage KB"
+                                    },
+                                    "name": "heap_usage_kb",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:is_batt_charging;1",
+                                    "displayName": {
+                                        "en": "Is Battery Charging"
+                                    },
+                                    "name": "is_batt_charging",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:last_rx_sec;1",
+                                    "displayName": {
+                                        "en": "Last RX Seconds Ago"
+                                    },
+                                    "name": "last_rx_sec",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:power_milliamp;1",
+                                    "displayName": {
+                                        "en": "Power Consumption Milliamps"
+                                    },
+                                    "name": "power_milliamp",
+                                    "schema": "integer"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:decoded_payload:schema:uptime_sec;1",
+                                    "displayName": {
+                                        "en": "Uptime Seconds"
+                                    },
+                                    "name": "uptime_sec",
+                                    "schema": "integer"
+                                }
+                            ]
                         }
-                      }
-                    ]
-                  }
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:frequency;1",
-                  "displayName": {
-                    "en": "Transmission Frequency"
-                  },
-                  "name": "frequency",
-                  "schema": "integer"
-                }
-              ]
+                    },
+                    {
+                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:consumed_airtime;1",
+                        "displayName": {
+                            "en": "Consumed Airtime"
+                        },
+                        "name": "consumed_airtime",
+                        "schema": "duration"
+                    },
+                    {
+                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings;1",
+                        "displayName": {
+                            "en": "Transmission Settings"
+                        },
+                        "name": "settings",
+                        "schema": {
+                            "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema;1",
+                            "@type": "Object",
+                            "displayName": {
+                                "en": "Object"
+                            },
+                            "fields": [
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:data_rate;1",
+                                    "displayName": {
+                                        "en": "Transmission Data Rate"
+                                    },
+                                    "name": "data_rate",
+                                    "schema": {
+                                        "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:data_rate:schema;1",
+                                        "@type": "Object",
+                                        "displayName": {
+                                            "en": "Object"
+                                        },
+                                        "fields": [
+                                            {
+                                                "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:data_rate:schema:lora;1",
+                                                "displayName": {
+                                                    "en": "LoRa Data Rate"
+                                                },
+                                                "name": "lora",
+                                                "schema": {
+                                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:data_rate:schema:lora:schema;1",
+                                                    "@type": "Object",
+                                                    "displayName": {
+                                                        "en": "Object"
+                                                    },
+                                                    "fields": [
+                                                        {
+                                                            "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:data_rate:schema:lora:schema:bandwidth;1",
+                                                            "displayName": {
+                                                                "en": "LoRa Bandwidth"
+                                                            },
+                                                            "name": "bandwidth",
+                                                            "schema": "integer"
+                                                        },
+                                                        {
+                                                            "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:data_rate:schema:lora:schema:spreading_factor;1",
+                                                            "displayName": {
+                                                                "en": "LoRa Spreading Factor"
+                                                            },
+                                                            "name": "spreading_factor",
+                                                            "schema": "integer"
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:uplink_message:schema:settings:schema:frequency;1",
+                                    "displayName": {
+                                        "en": "Transmission Frequency"
+                                    },
+                                    "name": "frequency",
+                                    "schema": "integer"
+                                }
+                            ]
+                        }
+                    }
+                ]
             }
-          }
-        ]
-      }
-    },
-    {
-      "@id": "dtmi:hzglloracommunicator:communicator3:location_solved;1",
-      "@type": "Telemetry",
-      "displayName": {
-        "en": "Solved Location"
-      },
-      "name": "location_solved",
-      "schema": {
-        "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema;1",
-        "@type": "Object",
-        "displayName": {
-          "en": "Object"
         },
-        "fields": [
-          {
-            "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema:location;1",
+        {
+            "@id": "dtmi:hzglloracommunicator:communicator3:location_solved;1",
+            "@type": "Telemetry",
             "displayName": {
-              "en": "Solved Location Details"
+                "en": "Solved Location"
             },
-            "name": "location",
+            "name": "location_solved",
             "schema": {
-              "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema:location:schema;1",
-              "@type": "Object",
-              "displayName": {
-                "en": "Object"
-              },
-              "fields": [
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema:location:schema:altitude;1",
-                  "displayName": {
-                    "en": "Solved Location Altitude Metres"
-                  },
-                  "name": "altitude",
-                  "schema": "double"
+                "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema;1",
+                "@type": "Object",
+                "displayName": {
+                    "en": "Object"
                 },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema:location:schema:latitude;1",
-                  "displayName": {
-                    "en": "Solved Location Latitude Degrees"
-                  },
-                  "name": "latitude",
-                  "schema": "double"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema:location:schema:longitude;1",
-                  "displayName": {
-                    "en": "Solved Location Longitude Degrees"
-                  },
-                  "name": "longitude",
-                  "schema": "double"
-                },
-                {
-                  "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema:location:schema:source;1",
-                  "displayName": {
-                    "en": "Solved Location Source Name"
-                  },
-                  "name": "source",
-                  "schema": "string"
-                }
-              ]
+                "fields": [
+                    {
+                        "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema:location;1",
+                        "displayName": {
+                            "en": "Solved Location Details"
+                        },
+                        "name": "location",
+                        "schema": {
+                            "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema:location:schema;1",
+                            "@type": "Object",
+                            "displayName": {
+                                "en": "Object"
+                            },
+                            "fields": [
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema:location:schema:altitude;1",
+                                    "displayName": {
+                                        "en": "Solved Location Altitude Metres"
+                                    },
+                                    "name": "altitude",
+                                    "schema": "double"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema:location:schema:latitude;1",
+                                    "displayName": {
+                                        "en": "Solved Location Latitude Degrees"
+                                    },
+                                    "name": "latitude",
+                                    "schema": "double"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema:location:schema:longitude;1",
+                                    "displayName": {
+                                        "en": "Solved Location Longitude Degrees"
+                                    },
+                                    "name": "longitude",
+                                    "schema": "double"
+                                },
+                                {
+                                    "@id": "dtmi:hzglloracommunicator:communicator3:location_solved:schema:location:schema:source;1",
+                                    "displayName": {
+                                        "en": "Solved Location Source Name"
+                                    },
+                                    "name": "source",
+                                    "schema": "string"
+                                }
+                            ]
+                        }
+                    }
+                ]
             }
-          }
-        ]
-      }
-    }
-  ],
-  "displayName": {
-    "en": "hzgl-lora-communicator model"
-  },
-  "@context": ["dtmi:iotcentral:context;2", "dtmi:dtdl:context;2"]
+        }
+    ],
+    "displayName": {
+        "en": "hzgl-lora-communicator model"
+    },
+    "@context": [
+        "dtmi:iotcentral:context;2",
+        "dtmi:dtdl:context;2"
+    ]
 }
