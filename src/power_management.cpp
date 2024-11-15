@@ -293,7 +293,7 @@ void power_read_handle_lastest_irq()
         {
             ESP_LOGI(LOG_TAG, "battery removed");
         }
-        if (pmu->isBatChagerDoneIrq())
+        if (pmu->isBatChargeDoneIrq())
         {
             ESP_LOGI(LOG_TAG, "battery charging completed");
         }
