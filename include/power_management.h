@@ -58,9 +58,6 @@
 // MUTEX_LOCK_TIMEOUT_MS is the timeout in milliseconds used for obtaining a lock of bus/radio feature.
 #define MUTEX_LOCK_TIMEOUT_MS 19876
 
-// POWER_SUPER_SAVER_THRESHOLD_MILLIVOLT is the threshold of battery voltage below which the device enters super saver mode.
-#define POWER_SUPER_SAVER_THRESHOLD_MILLIVOLT 3900
-
 struct power_status
 {
     int batt_millivolt, usb_millivolt;

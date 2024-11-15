@@ -206,13 +206,6 @@ void power_setup()
     }
     power_i2c_unlock();
     ESP_LOGI(LOG_TAG, "power management is ready");
-    // When battery voltage drops low and waking up from deep sleep, enter super saver power mode.
-    if (pmu->getVbusVoltage() < 4000 && pmu->getBattVoltage() > 2000 && pmu->getBattVoltage() < POWER_SUPER_SAVER_THRESHOLD_MILLIVOLT)
-    {
-        // Set the initial power mode according to battery voltage.
-        power_set_config(POWER_SUPER_SAVER);
-        ESP_LOGI(LOG_TAG, "entering super saver power mode due to low battery voltage");
-    }
 }
 
 void power_set_pmu_irq_flag(void)
@@ -328,21 +321,21 @@ void power_read_handle_lastest_irq()
 void power_start_conserving()
 {
     power_i2c_lock();
-    int new_mode = config_mode_id;
-    if (status.batt_millivolt < POWER_SUPER_SAVER_THRESHOLD_MILLIVOLT)
+    if (is_conserving_power)
     {
-        new_mode = POWER_SUPER_SAVER;
+        power_i2c_unlock();
+        return;
+    }
+    config_mode_id_before_conserving = config_mode_id;
+    if (status.batt_millivolt < 3900)
+    {
+        config_mode_id = POWER_SUPER_SAVER;
     }
     else
     {
-        new_mode = POWER_SAVER;
+        config_mode_id = POWER_SAVER;
     }
-    if (new_mode != config_mode_id)
-    {
-        config_mode_id_before_conserving = config_mode_id;
-        config_mode_id = new_mode;
-        ESP_LOGW(LOG_TAG, "start conserving power by switching from mode %d to power save mode %d, battery voltage: %+.2f, current: %.2f", config_mode_id_before_conserving, config_mode_id, status.batt_millivolt, status.batt_milliamp);
-    }
+    ESP_LOGW(LOG_TAG, "start conserving power by switching from mode %d to power save mode %d, battery voltage: %+.2f, current: %.2f", config_mode_id_before_conserving, config_mode_id, status.batt_millivolt, status.batt_milliamp);
     is_conserving_power = true;
     power_i2c_unlock();
 }
