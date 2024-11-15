@@ -253,10 +253,6 @@ void gp_button_read()
           {
             power_set_config(POWER_SAVER);
           }
-          else if (conf.mode_id == POWER_SAVER)
-          {
-            power_set_config(POWER_SUPER_SAVER);
-          }
           else
           {
             power_set_config(POWER_REGULAR);

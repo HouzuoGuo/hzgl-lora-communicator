@@ -326,16 +326,9 @@ void power_start_conserving()
         power_i2c_unlock();
         return;
     }
+    ESP_LOGW(LOG_TAG, "start conserving power by switching from mode %d to power save mode, battery current reads: %+.1f", config_mode_id, status.batt_milliamp);
     config_mode_id_before_conserving = config_mode_id;
-    if (status.batt_millivolt < 3900)
-    {
-        config_mode_id = POWER_SUPER_SAVER;
-    }
-    else
-    {
-        config_mode_id = POWER_SAVER;
-    }
-    ESP_LOGW(LOG_TAG, "start conserving power by switching from mode %d to power save mode %d, battery voltage: %+.2f, current: %.2f", config_mode_id_before_conserving, config_mode_id, status.batt_millivolt, status.batt_milliamp);
+    config_mode_id = POWER_SAVER;
     is_conserving_power = true;
     power_i2c_unlock();
 }
@@ -380,7 +373,7 @@ int power_get_todo()
         return POWER_TODO_ENTER_DEEP_SLEEP;
         // There's no need to ask caller to turn on anything else. The CPUs will be powered off entirely during deep sleep.
     }
-    else if (config.mode_id != POWER_SUPER_SAVER)
+    else
     {
         // Leave GPS turned on while not sleeping. It takes many minutes to obtain a GPS location fix.
         ret |= POWER_TODO_TURN_ON_GPS;
@@ -410,8 +403,7 @@ int power_get_todo()
     }
 
     // Give Bluetooth and WiFi a turn at scanning prior to transmitting foxhunt info.
-    if (config.mode_id != POWER_SUPER_SAVER &&
-        lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
+    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
         // There is not enough memory to run bluetooth and wifi simultaneously.
         !(ret & POWER_TODO_TURN_ON_WIFI) && (!oled_get_state() || oled_get_page_number() != OLED_PAGE_WIFI_INFO) &&
         // Is it time to turn on bluetooth for routine scan?
@@ -420,8 +412,7 @@ int power_get_todo()
     {
         ret |= POWER_TODO_TURN_ON_BLUETOOTH;
     }
-    if (config.mode_id != POWER_SUPER_SAVER &&
-        lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
+    if (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_POS &&
         // There is not enough memory to run bluetooth and wifi simultaneously.
         !(ret & POWER_TODO_TURN_ON_BLUETOOTH) && (!oled_get_state() || oled_get_page_number() != OLED_PAGE_BT_INFO) &&
         // Is it time to turn on wifi for routine scan?
@@ -433,8 +424,7 @@ int power_get_todo()
 
     // The sensor readings need to be taken for the first TX since boot as well as shortly before next TX.
     if (lorawan_tx_counter == 0 ||
-        // The super saver power mode only transmits environment condition readings.
-        (((lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_ENV) || (config.mode_id == POWER_SUPER_SAVER)) &&
+        (lorawan_tx_counter % LORAWAN_TX_KINDS == LORAWAN_TX_KIND_ENV &&
          (ms_since_last_tx > config.tx_interval_sec * 1000 - env_sensor_prep_duration_ms && ms_since_last_tx < config.tx_interval_sec * 1000)))
     {
         ret |= POWER_TODO_READ_ENV_SENSOR;
@@ -443,7 +433,7 @@ int power_get_todo()
     // If there is no power-related task to do and no user input, then ask caller to reduce CPU speed to conserve power.
     // Be aware that if user is looking at WiFi/BT scanner then CPU speed must not be reduced or WiFi/BT will cause a panic.
     // The lower CPU clock speed is sufficient for GPS though.
-    if ((ret == 0 || ret == POWER_TODO_TURN_ON_GPS) &&                                  // lora / wifi / bt / sensor are not needed (flags unset)
+    if (ret == POWER_TODO_TURN_ON_GPS &&                                                // lora / wifi / bt / sensor are not needed (flags unset)
         oled_get_ms_since_last_input() > wifi_prep_duration_ms + bt_prep_duration_ms && // leave CPU frequency high for recent button input
         !wifi_get_state() && !bluetooth_get_state())                                    // wifi and bt are powered off
     {
@@ -537,9 +527,6 @@ power_config_t power_get_config()
         break;
     case POWER_SAVER:
         return power_config_saver;
-        break;
-    case POWER_SUPER_SAVER:
-        return power_config_supersaver;
         break;
     default:
         return power_config_regular;

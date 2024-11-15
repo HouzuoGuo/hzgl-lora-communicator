@@ -28,9 +28,9 @@
 #define OLED_TOTAL_PAGE_NUM 10
 
 // OLED_SLEEP_AFTER_INACTIVE_MS is the number of seconds after which the screen goes to sleep.
-#define OLED_SLEEP_AFTER_INACTIVE_MS (20 * 1000)
+#define OLED_SLEEP_AFTER_INACTIVE_MS (60 * 1000)
 // OLED_SLEEP_AFTER_INACTIVE_MS is the number of seconds to display the screen sleep reminder before it goes to sleep.
-#define OLED_SLEEP_REMINDER_DURATION_MS (5 * 1000)
+#define OLED_SLEEP_REMINDER_DURATION_MS (10 * 1000)
 
 // OLED_TASK_LOOP_DELAY_MS is the sleep interval of the OLED display refresh task loop. The display refreshes at 15 FPS.
 #define OLED_TASK_LOOP_DELAY_MS (1000 / 15)
