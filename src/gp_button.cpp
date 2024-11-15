@@ -170,7 +170,6 @@ void gp_button_read()
   // LOW means the button is pressed down.
   if (digitalRead(GENERIC_PURPOSE_BUTTON) == LOW)
   {
-    power_led_on();
     if (!is_button_down)
     {
       is_button_down = true;
@@ -199,7 +198,6 @@ void gp_button_read()
   {
     if (is_button_down)
     {
-      power_led_off();
       last_click_timestamp = millis();
       unsigned long duration = millis() - pushed_down_timestamp;
       ESP_LOGI(LOG_TAG, "pressed duration %d", duration);

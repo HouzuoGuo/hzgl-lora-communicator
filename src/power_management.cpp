@@ -256,23 +256,6 @@ bool power_get_may_transmit_lorawan()
     return last_transmision_timestamp == 0 || millis() - last_transmision_timestamp > power_get_config().tx_interval_sec * 1000;
 }
 
-void power_led_on()
-{
-    // Unfortunately, AXP2101's blue LED won't stay on.
-#ifdef AXP192
-    power_i2c_lock();
-    pmu->setChargingLedMode(true);
-    power_i2c_unlock();
-#endif
-}
-
-void power_led_off()
-{
-    power_i2c_lock();
-    pmu->setChargingLedMode(false);
-    power_i2c_unlock();
-}
-
 double power_get_sum_curr_draw_readings()
 {
     return sum_curr_draw_readings;
@@ -559,7 +542,6 @@ void power_enter_deep_sleep()
     wifi_off();
     gps_off();
     oled_off();
-    power_led_off();
     esp_sleep_enable_timer_wakeup(power_get_config().deep_sleep_duration_sec * 1000 * 1000);
     ESP_LOGW(LOG_TAG, "entering deep sleep now");
     esp_deep_sleep_start();
